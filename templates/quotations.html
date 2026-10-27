@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quotations | Universal Marketplace</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f3f6fb; padding: 20px; color: #111; }
+        main { max-width: 1100px; margin: auto; }
+        header { background: #00209F; color: white; padding: 22px; border-bottom: 6px solid #009543; border-radius: 10px; }
+        .actions { margin: 20px 0; }
+        a.button { display: inline-block; background: #009543; color: white; padding: 11px 14px; margin-right: 8px; border-radius: 6px; text-decoration: none; font-weight: bold; }
+        .table-wrap { overflow-x: auto; background: white; border-radius: 10px; }
+        table { border-collapse: collapse; width: 100%; min-width: 800px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e5ec; }
+        th { background: #e9eefb; }
+        .message { padding: 12px; margin: 14px 0; border-radius: 6px; background: #e0f5e8; }
+        .empty { background: white; border-radius: 10px; padding: 20px; }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Universal Marketplace</h1>
+        <p>Quotation management</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="actions">
+        <a class="button" href="{{ url_for('create_quotation') }}">+ Create Quotation</a>
+        <a class="button" href="{{ url_for('list_suppliers') }}">Suppliers</a>
+        <a class="button" href="{{ url_for('company_dashboard') }}">Company Dashboard</a>
+    </div>
+
+    {% if quotations %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Quotation</th>
+                    <th>Request</th>
+                    <th>Supplier</th>
+                    <th>Product cost</th>
+                    <th>Other costs and fees</th>
+                    <th>Proposed total</th>
+                    <th>Status</th>
+                    <th>Expires</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in quotations %}
+                <tr>
+                    <td>QT-{{ q.id }}</td>
+                    <td>UM-{{ q.sourcing_request_id }}</td>
+                    <td>{{ q.supplier.name }}</td>
+                    <td>{{ "%.2f"|format(q.product_cost) }} {{ q.currency }}</td>
+                    <td>{{ "%.2f"|format(q.sourcing_fee + q.delivery_cost + q.other_costs) }} {{ q.currency }}</td>
+                    <td><strong>{{ "%.2f"|format(q.selling_price) }} {{ q.currency }}</strong></td>
+                    <td>{{ q.status }}</td>
+                    <td>{{ q.expires_at.strftime("%Y-%m-%d") if q.expires_at else "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty">
+        <h3>No quotations yet</h3>
+        <p>Create a draft quotation for a saved sourcing request.</p>
+    </div>
+    {% endif %}
+</main>
+</body>
+</html>

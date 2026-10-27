@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Received | Universal Marketplace</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 25px;
+            font-family: Arial, sans-serif;
+            background: #f5f8ff;
+            color: #172033;
+        }
+
+        .card {
+            max-width: 600px;
+            margin: 60px auto;
+            background: white;
+            padding: 35px;
+            border-radius: 14px;
+            border-top: 7px solid #009543;
+            text-align: center;
+        }
+
+        h1 { color: #00209F; }
+
+        .number {
+            font-size: 25px;
+            font-weight: bold;
+            color: #009543;
+        }
+
+        a {
+            display: inline-block;
+            background: #00209F;
+            color: white;
+            text-decoration: none;
+            padding: 13px 20px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Request received!</h1>
+        <p>Your sourcing request has been saved.</p>
+        <p>Your reference number is:</p>
+        <div class="number">UM-{{ request_id }}</div>
+        <p>
+            This is a request for a quotation, not a confirmed purchase.
+            Our sourcing team will need to verify supplier prices,
+            availability and delivery terms.
+        </p>
+        <a href="/">Return to homepage</a>
+    </div>
+</body>
+</html>

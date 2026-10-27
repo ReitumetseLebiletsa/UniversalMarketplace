@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request a Product | Universal Marketplace</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f8ff;
+            color: #172033;
+        }
+
+        header {
+            background: #00209F;
+            color: white;
+            padding: 20px 7%;
+            border-bottom: 5px solid #009543;
+        }
+
+        header a { color: white; text-decoration: none; }
+
+        main {
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 0 18px;
+        }
+
+        .panel {
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            border: 1px solid #d8e2f5;
+            box-shadow: 0 5px 20px rgba(0, 32, 159, 0.07);
+        }
+
+        h1, h2 { color: #00209F; }
+
+        .intro { line-height: 1.6; color: #4c566a; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .full { grid-column: 1 / -1; }
+
+        label { font-weight: bold; font-size: 14px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font: inherit;
+            background: white;
+        }
+
+        textarea { min-height: 110px; resize: vertical; }
+
+        button {
+            background: #009543;
+            color: white;
+            border: 0;
+            padding: 15px 22px;
+            border-radius: 7px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 22px;
+        }
+
+        button:hover { background: #007a36; }
+
+        .notice {
+            background: #e4f5eb;
+            padding: 14px;
+            border-left: 4px solid #009543;
+            line-height: 1.5;
+            margin: 20px 0;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #fff0f0;
+            border: 1px solid #d88;
+            border-radius: 6px;
+        }
+
+        .back { color: #00209F; display: inline-block; margin-bottom: 20px; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            .full { grid-column: auto; }
+            .panel { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <strong>UNIVERSAL MARKETPLACE 🇱🇸 🇿🇦</strong>
+    </header>
+
+    <main>
+        <a class="back" href="/">← Back to homepage</a>
+
+        <div class="panel">
+            <h1>Request a product</h1>
+            <p class="intro">
+                Tell us what you need. Our team will investigate supplier
+                availability and prepare a quotation for your approval.
+            </p>
+
+            <div class="notice">
+                Submitting a request does not place an order or commit you
+                to a purchase. We will confirm pricing, availability, fees
+                and delivery arrangements before you approve an order.
+            </div>
+
+            {% for category, message in get_flashed_messages(with_categories=true) %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+
+            <form method="POST">
+                <div class="grid">
+                    <div class="field">
+                        <label for="product_name">Product name *</label>
+                        <input id="product_name" name="product_name"
+                               placeholder="e.g. Toyota Hilux clutch kit" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="category">Category *</label>
+                        <select id="category" name="category" required>
+                            <option value="">Choose category</option>
+                            <option>Beauty & Personal Care</option>
+                            <option>Automotive & Mechanical</option>
+                            <option>Heavy Machinery</option>
+                            <option>General Wholesale</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="field full">
+                        <label for="description">Product details or link *</label>
+                        <textarea id="description" name="description"
+                                  placeholder="Describe the item, brand, model, size, or where you saw it and its advertised price."
+                                  required></textarea>
+                    </div>
+
+                    <div class="field">
+                        <label for="quantity">Quantity required *</label>
+                        <input id="quantity" type="number" name="quantity"
+                               min="1" value="1" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="target_price">Your target price (optional)</label>
+                        <input id="target_price" type="number" name="target_price"
+                               min="0" step="0.01" placeholder="e.g. 1500">
+                    </div>
+
+                    <div class="field">
+                        <label for="currency">Price currency *</label>
+                        <select id="currency" name="currency" required>
+                            <option value="LSL">LSL — Lesotho loti</option>
+                            <option value="ZAR">ZAR — South African rand</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="source_country">Where should we source it? *</label>
+                        <select id="source_country" name="source_country" required>
+                            <option value="">Choose country</option>
+                            <option>Lesotho</option>
+                            <option>South Africa</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="delivery_country">Delivery country *</label>
+                        <select id="delivery_country" name="delivery_country" required>
+                            <option value="">Choose country</option>
+                            <option>Lesotho</option>
+                            <option>South Africa</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="buyer_name">Your name *</label>
+                        <input id="buyer_name" name="buyer_name" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="buyer_contact">Phone or email *</label>
+                        <input id="buyer_contact" name="buyer_contact"
+                               placeholder="Include your country code if using a phone"
+                               required>
+                    </div>
+                </div>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Submit sourcing request</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

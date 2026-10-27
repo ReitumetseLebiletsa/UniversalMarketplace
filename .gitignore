@@ -1,0 +1,16 @@
+@'
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+*.db-*
+*.sqlite-*
+instance/
+.pytest_cache/
+.coverage
+'@ | Set-Content -Path .gitignore

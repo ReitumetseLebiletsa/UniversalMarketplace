@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Universal Marketplace | Lesotho & South Africa</title>
+    <meta name="description" content="Source products, compare quotations and connect with suppliers across Lesotho and South Africa.">
+
+    <style>
+        :root {
+            --blue: #00209F;
+            --blue-dark: #071744;
+            --green: #009543;
+            --green-dark: #007A36;
+            --light: #F5F7FC;
+            --white: #FFFFFF;
+            --text: #172033;
+            --muted: #657087;
+            --border: #E1E7F0;
+            --shadow: 0 10px 30px rgba(7, 23, 68, 0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--text);
+            background: var(--light);
+            line-height: 1.6;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible {
+            outline: 3px solid #F4C542;
+            outline-offset: 3px;
+        }
+
+        /* Navigation */
+
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: var(--white);
+            border-bottom: 3px solid var(--green);
+            box-shadow: 0 3px 15px rgba(7, 23, 68, 0.06);
+        }
+
+        .nav-container {
+            max-width: 1240px;
+            min-height: 82px;
+            margin: auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: var(--blue);
+            color: var(--white);
+            font-size: 23px;
+        }
+
+        .brand-name {
+            display: block;
+            font-size: 17px;
+            line-height: 1.25;
+            font-weight: 800;
+            color: var(--blue-dark);
+            letter-spacing: -0.4px;
+        }
+
+        .brand-subtitle {
+            display: block;
+            margin-top: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            letter-spacing: 0.7px;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #354057;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-link:hover {
+            background: #EEF2FF;
+            color: var(--blue);
+        }
+
+        .nav-link-primary {
+            background: var(--green);
+            color: var(--white);
+        }
+
+        .nav-link-primary:hover {
+            background: var(--green-dark);
+            color: var(--white);
+        }
+
+        .nav-logout {
+            padding: 9px 12px;
+            border: 1px solid #E7B9B9;
+            border-radius: 8px;
+            background: var(--white);
+            color: #A52626;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .nav-logout:hover {
+            background: #FFF0F0;
+        }
+
+        .menu-toggle {
+            display: none;
+            width: 44px;
+            height: 44px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--white);
+            color: var(--blue);
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        /* Hero */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(120deg, #061746 0%, #00209F 65%, #1748C8 100%);
+            color: var(--white);
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 360px;
+            height: 360px;
+            right: -100px;
+            top: -130px;
+            border: 55px solid rgba(255, 255, 255, 0.06);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1240px;
+            margin: auto;
+            padding: 82px 24px 76px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 7px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #D8F8E5;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+        }
+
+        .hero h1 {
+            max-width: 760px;
+            margin: 22px 0 18px;
+            font-size: clamp(36px, 5vw, 60px);
+            line-height: 1.12;
+            letter-spacing: -1.8px;
+        }
+
+        .hero h1 span {
+            color: #8EE6AD;
+        }
+
+        .hero-description {
+            max-width: 650px;
+            margin: 0;
+            color: #E3E9FF;
+            font-size: 17px;
+            line-height: 1.8;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+            padding: 12px 20px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button-green {
+            background: var(--green);
+            color: var(--white);
+        }
+
+        .button-green:hover {
+            background: var(--green-dark);
+        }
+
+        .button-light {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--white);
+        }
+
+        .button-light:hover {
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .hero-note {
+            margin-top: 25px;
+            color: #DCE5FF;
+            font-size: 13px;
+        }
+
+        /* Trust strip */
+
+        .trust-strip {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trust-container {
+            max-width: 1240px;
+            margin: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px 45px;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #364158;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .trust-icon {
+            color: var(--green);
+            font-size: 18px;
+        }
+
+        /* Main content */
+
+        .main-container {
+            max-width: 1240px;
+            margin: auto;
+            padding: 68px 24px;
+        }
+
+        .section-heading {
+            max-width: 700px;
+            margin: 0 auto 35px;
+            text-align: center;
+        }
+
+        .section-label {
+            color: var(--green-dark);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+        }
+
+        .section-heading h2 {
+            margin: 10px 0;
+            color: var(--blue-dark);
+            font-size: clamp(27px, 4vw, 38px);
+            line-height: 1.25;
+            letter-spacing: -0.7px;
+        }
+
+        .section-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .category {
+            min-width: 0;
+            padding: 26px 22px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            border-top: 4px solid var(--green);
+            background: var(--white);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .category:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(7, 23, 68, 0.11);
+        }
+
+        .category-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: #EEF2FF;
+            font-size: 28px;
+        }
+
+        .category h3 {
+            margin: 19px 0 9px;
+            color: var(--blue);
+            font-size: 17px;
+            line-height: 1.4;
+        }
+
+        .category p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        /* How it works */
+
+        .how-section {
+            background: #EAF5EE;
+            border-top: 1px solid #D8EADD;
+            border-bottom: 1px solid #D8EADD;
+        }
+
+        .how-container {
+            max-width: 1240px;
+            margin: auto;
+            padding: 65px 24px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 17px;
+            margin-top: 35px;
+        }
+
+        .step {
+            padding: 22px 18px;
+            border: 1px solid #D9E7DD;
+            border-radius: 12px;
+            background: var(--white);
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--blue);
+            color: var(--white);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .step h3 {
+            margin: 15px 0 8px;
+            color: var(--blue-dark);
+            font-size: 15px;
+        }
+
+        .step p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .bottom-cta {
+            margin-top: 35px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-radius: 14px;
+            background: var(--blue);
+            color: var(--white);
+        }
+
+        .bottom-cta h3 {
+            margin: 0 0 5px;
+            font-size: 21px;
+        }
+
+        .bottom-cta p {
+            margin: 0;
+            color: #DFE7FF;
+            font-size: 14px;
+        }
+
+        /* Footer */
+
+        .site-footer {
+            background: #07132F;
+            color: var(--white);
+        }
+
+        .footer-container {
+            max-width: 1240px;
+            margin: auto;
+            padding: 38px 24px 25px;
+        }
+
+        .footer-main {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        .footer-brand {
+            max-width: 470px;
+        }
+
+        .footer-brand h3 {
+            margin: 0 0 8px;
+            font-size: 19px;
+        }
+
+        .footer-brand p,
+        .footer-note {
+            color: #C3CBE0;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+        }
+
+        .footer-links a {
+            color: #E0E7FF;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: #8EE6AD;
+        }
+
+        .footer-bottom {
+            margin-top: 25px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+            color: #C3CBE0;
+            font-size: 12px;
+        }
+
+        /* Tablet and mobile */
+
+        @media (max-width: 1080px) {
+            .nav-container {
+                flex-wrap: wrap;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .nav-menu {
+                display: none;
+                width: 100%;
+                align-items: stretch;
+                flex-direction: column;
+                gap: 5px;
+                padding: 10px 0 5px;
+                border-top: 1px solid var(--border);
+            }
+
+            .nav-menu.is-open {
+                display: flex;
+            }
+
+            .nav-link {
+                justify-content: flex-start;
+                padding: 12px;
+                white-space: normal;
+            }
+
+            .nav-logout {
+                width: 100%;
+                padding: 12px;
+                text-align: left;
+            }
+
+            .categories {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .steps {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .nav-container {
+                padding: 12px 16px;
+                gap: 12px;
+            }
+
+            .brand-mark {
+                width: 42px;
+                height: 42px;
+            }
+
+            .brand-name {
+                font-size: 15px;
+            }
+
+            .brand-subtitle {
+                font-size: 9px;
+                letter-spacing: 0.3px;
+            }
+
+            .hero-container {
+                padding: 58px 20px 54px;
+            }
+
+            .hero h1 {
+                font-size: 37px;
+                letter-spacing: -1px;
+            }
+
+            .hero-description {
+                font-size: 15px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .hero-actions .button {
+                width: 100%;
+            }
+
+            .trust-container {
+                justify-content: flex-start;
+                gap: 12px 20px;
+                padding: 20px;
+            }
+
+            .main-container,
+            .how-container {
+                padding: 48px 18px;
+            }
+
+            .categories {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .category {
+                padding: 22px;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .step {
+                padding: 20px;
+            }
+
+            .bottom-cta {
+                padding: 23px 20px;
+            }
+
+            .bottom-cta .button {
+                width: 100%;
+            }
+
+            .footer-container {
+                padding: 32px 20px 22px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="nav-container">
+
+        <a class="brand" href="{{ url_for('home') }}" aria-label="Universal Marketplace home">
+            <span class="brand-mark" aria-hidden="true">U</span>
+            <span>
+                <span class="brand-name">UNIVERSAL MARKETPLACE</span>
+                <span class="brand-subtitle">LESOTHO 🇱🇸 · SOUTH AFRICA 🇿🇦</span>
+            </span>
+        </a>
+
+        <button
+            class="menu-toggle"
+            type="button"
+            aria-label="Open navigation menu"
+            aria-expanded="false"
+            aria-controls="main-navigation"
+        >☰</button>
+
+        <nav class="nav-menu" id="main-navigation" aria-label="Main navigation">
+
+            <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+
+            {% if current_user.is_authenticated %}
+
+                {% if current_user.role == 'buyer' %}
+                    <a class="nav-link" href="{{ url_for('request_product') }}">Request a Product</a>
+                    <a class="nav-link" href="{{ url_for('my_requests') }}">My Requests</a>
+                    <a class="nav-link" href="{{ url_for('list_quotations') }}">My Quotations</a>
+                {% elif current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                    <a class="nav-link" href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('buyer_accounts') }}">Buyers</a>
+                    <a class="nav-link" href="{{ url_for('list_suppliers') }}">Suppliers</a>
+                    <a class="nav-link" href="{{ url_for('create_quotation') }}">Create Quotation</a>
+                    <a class="nav-link" href="{{ url_for('list_quotations') }}">Quotations</a>
+                {% endif %}
+
+                <form action="{{ url_for('logout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="nav-logout">Log Out</button>
+                </form>
+
+            {% else %}
+                <a class="nav-link" href="{{ url_for('login') }}">Log In</a>
+                <a class="nav-link nav-link-primary" href="{{ url_for('register') }}">Create Account</a>
+            {% endif %}
+
+        </nav>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="hero-container">
+
+        <span class="eyebrow">YOUR CROSS-BORDER SOURCING PARTNER</span>
+
+        <h1>Find it. Source it.<br><span>Get it delivered.</span></h1>
+
+        <p class="hero-description">
+            Need a product from Lesotho or South Africa?
+            Tell us what you are looking for, and our team will help
+            source suppliers, compare costs and prepare a quotation
+            before you commit to an order.
+        </p>
+
+        <div class="hero-actions">
+            {% if current_user.is_authenticated and current_user.role == 'buyer' %}
+                <a class="button button-green" href="{{ url_for('request_product') }}">
+                    + Request a Product
+                </a>
+                <a class="button button-light" href="{{ url_for('my_requests') }}">
+                    Track My Requests →
+                </a>
+            {% elif current_user.is_authenticated and current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                <a class="button button-green" href="{{ url_for('company_dashboard') }}">
+                    Open Company Dashboard →
+                </a>
+                <a class="button button-light" href="{{ url_for('list_suppliers') }}">
+                    Manage Suppliers
+                </a>
+            {% else %}
+                <a class="button button-green" href="{{ url_for('register') }}">
+                    Get Started — Create Account
+                </a>
+                <a class="button button-light" href="{{ url_for('login') }}">
+                    I Already Have an Account
+                </a>
+            {% endif %}
+        </div>
+
+        <p class="hero-note">
+            🇱🇸 Lesotho &nbsp; · &nbsp; 🇿🇦 South Africa
+            <br>Clear quotations. Confirmed costs. Informed buying decisions.
+        </p>
+
+    </div>
+</section>
+
+<section class="trust-strip" aria-label="Marketplace features">
+    <div class="trust-container">
+        <div class="trust-item"><span class="trust-icon">✓</span> Product sourcing support</div>
+        <div class="trust-item"><span class="trust-icon">✓</span> Itemised quotations</div>
+        <div class="trust-item"><span class="trust-icon">✓</span> Cross-border requests</div>
+        <div class="trust-item"><span class="trust-icon">✓</span> Review before approval</div>
+    </div>
+</section>
+
+<main>
+    <section class="main-container" id="categories">
+
+        <div class="section-heading">
+            <span class="section-label">Explore our categories</span>
+            <h2>What do you need to source?</h2>
+            <p>
+                From everyday products to specialised equipment,
+                tell us what your household or business needs.
+            </p>
+        </div>
+
+        <div class="categories">
+
+            <article class="category">
+                <div class="category-icon" aria-hidden="true">💄</div>
+                <h3>Beauty & Personal Care</h3>
+                <p>Cosmetics, hair products, skincare, salon supplies and beauty essentials.</p>
+            </article>
+
+            <article class="category">
+                <div class="category-icon" aria-hidden="true">🚗</div>
+                <h3>Automotive & Mechanical</h3>
+                <p>Vehicle parts, tools, workshop equipment and automotive accessories.</p>
+            </article>
+
+            <article class="category">
+                <div class="category-icon" aria-hidden="true">🏗️</div>
+                <h3>Heavy Machinery</h3>
+                <p>Construction equipment, agricultural machinery and industrial supplies.</p>
+            </article>
+
+            <article class="category">
+                <div class="category-icon" aria-hidden="true">📦</div>
+                <h3>General Wholesale</h3>
+                <p>Household goods, clothing, business stock and other wholesale products.</p>
+            </article>
+
+        </div>
+
+        <div class="bottom-cta">
+            <div>
+                <h3>Can't find what you need?</h3>
+                <p>Send us the product details and let us help you source it.</p>
+            </div>
+
+            {% if current_user.is_authenticated and current_user.role == 'buyer' %}
+                <a class="button button-green" href="{{ url_for('request_product') }}">
+                    Submit a Request →
+                </a>
+            {% elif current_user.is_authenticated and current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                <a class="button button-green" href="{{ url_for('company_dashboard') }}">
+                    View Requests →
+                </a>
+            {% else %}
+                <a class="button button-green" href="{{ url_for('register') }}">
+                    Join the Marketplace →
+                </a>
+            {% endif %}
+        </div>
+
+    </section>
+
+    <section class="how-section" id="how-it-works">
+        <div class="how-container">
+
+            <div class="section-heading">
+                <span class="section-label">Simple and transparent</span>
+                <h2>How it works</h2>
+                <p>From your first request to a quotation, each step has a purpose.</p>
+            </div>
+
+            <div class="steps">
+
+                <article class="step">
+                    <div class="step-number">1</div>
+                    <h3>Tell Us What You Need</h3>
+                    <p>Submit the product, quantity, destination and target price if you have one.</p>
+                </article>
+
+                <article class="step">
+                    <div class="step-number">2</div>
+                    <h3>We Source Suppliers</h3>
+                    <p>Our team searches for suitable suppliers and available options.</p>
+                </article>
+
+                <article class="step">
+                    <div class="step-number">3</div>
+                    <h3>Review Your Quote</h3>
+                    <p>Check the product cost, fees, delivery costs and quotation terms.</p>
+                </article>
+
+                <article class="step">
+                    <div class="step-number">4</div>
+                    <h3>Approve the Order</h3>
+                    <p>Review the terms and approve before purchasing proceeds.</p>
+                </article>
+
+                <article class="step">
+                    <div class="step-number">5</div>
+                    <h3>Arrange Delivery</h3>
+                    <p>Follow up on the order and confirm the agreed delivery arrangements.</p>
+                </article>
+
+            </div>
+
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-container">
+
+        <div class="footer-main">
+            <div class="footer-brand">
+                <h3>Universal Marketplace</h3>
+                <p>
+                    Connecting buyers with sourcing opportunities
+                    across Lesotho and South Africa.
+                </p>
+            </div>
+
+            <nav class="footer-links" aria-label="Footer navigation">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="#categories">Categories</a>
+                <a href="#how-it-works">How It Works</a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'buyer' %}
+                        <a href="{{ url_for('my_requests') }}">My Requests</a>
+                    {% elif current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                        <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('login') }}">Log In</a>
+                    <a href="{{ url_for('register') }}">Register</a>
+                {% endif %}
+            </nav>
+        </div>
+
+        <div class="footer-bottom">
+            <p class="footer-note">
+                Product availability, supplier prices, delivery costs and timelines
+                must be confirmed for each order. Review your quotation and terms
+                before approving a purchase.
+            </p>
+            © {{ now.year if now is defined else 2026 }} Universal Marketplace. All rights reserved.
+        </div>
+
+    </div>
+</footer>
+
+<script>
+    (function () {
+        const menuButton = document.querySelector(".menu-toggle");
+        const menu = document.querySelector("#main-navigation");
+
+        if (!menuButton || !menu) return;
+
+        menuButton.addEventListener("click", function () {
+            const isOpen = menu.classList.toggle("is-open");
+
+            menuButton.setAttribute("aria-expanded", String(isOpen));
+            menuButton.setAttribute(
+                "aria-label",
+                isOpen ? "Close navigation menu" : "Open navigation menu"
+            );
+            menuButton.textContent = isOpen ? "×" : "☰";
+        });
+
+        menu.querySelectorAll("a").forEach(function (link) {
+            link.addEventListener("click", function () {
+                menu.classList.remove("is-open");
+                menuButton.setAttribute("aria-expanded", "false");
+                menuButton.setAttribute("aria-label", "Open navigation menu");
+                menuButton.textContent = "☰";
+            });
+        });
+    })();
+</script>
+
+</body>
+</html>

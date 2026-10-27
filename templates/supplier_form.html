@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Supplier | Universal Marketplace</title>
+    <style>
+        :root {
+            --blue: #00209F;
+            --green: #009543;
+            --black: #000000;
+            --white: #FFFFFF;
+            --light: #f3f6fb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px 14px;
+            font-family: Arial, sans-serif;
+            background: var(--light);
+            color: var(--black);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 5px 22px rgba(0, 0, 0, 0.09);
+        }
+
+        header {
+            padding: 25px;
+            color: white;
+            background: var(--blue);
+            border-bottom: 6px solid var(--green);
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 25px;
+        }
+
+        header p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        form {
+            padding: 25px;
+        }
+
+        label {
+            display: block;
+            margin: 17px 0 7px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd2df;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button, .back-link {
+            display: inline-block;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 7px;
+            font-weight: bold;
+            font-size: 15px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button {
+            margin-top: 24px;
+            background: var(--green);
+            color: white;
+        }
+
+        .back-link {
+            margin: 0 0 22px 25px;
+            color: var(--blue);
+            border: 1px solid var(--blue);
+        }
+
+        .messages {
+            margin: 20px 25px 0;
+            padding: 12px;
+            border-radius: 7px;
+            background: #fff3cd;
+        }
+
+        @media (max-width: 480px) {
+            header, form {
+                padding: 20px;
+            }
+
+            header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>Universal Marketplace</h1>
+            <p>Register a supplier or wholesaler</p>
+            <p>Lesotho 🇱🇸 · South Africa 🇿🇦</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="messages">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('add_supplier') }}">
+            <label for="name">Supplier or business name *</label>
+            <input id="name" name="name" required maxlength="150">
+
+            <label for="country">Supplier country *</label>
+            <select id="country" name="country" required>
+                <option value="">Select country</option>
+                <option value="Lesotho">Lesotho</option>
+                <option value="South Africa">South Africa</option>
+            </select>
+
+            <label for="contact_name">Contact person's name</label>
+            <input id="contact_name" name="contact_name" maxlength="120">
+
+            <label for="contact_details">Phone number or email *</label>
+            <input id="contact_details" name="contact_details"
+                   required maxlength="150">
+
+            <label for="notes">Products, brands or other notes</label>
+            <textarea id="notes" name="notes"
+                      placeholder="For example: Toyota spare parts, wholesale pricing, minimum order quantity..."></textarea>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Save Supplier</button>
+        </form>
+
+        <a class="back-link" href="{{ url_for('company_dashboard') }}">
+            Back to Company Dashboard
+        </a>
+    </main>
+</body>
+</html>

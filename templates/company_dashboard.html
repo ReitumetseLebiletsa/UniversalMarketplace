@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071744">
+
+    <title>Company Dashboard | Universal Marketplace</title>
+
+    <style>
+        :root {
+            --blue: #00209F;
+            --navy: #071744;
+            --green: #009543;
+            --green-dark: #007A36;
+            --bg: #F4F7FC;
+            --white: #FFFFFF;
+            --text: #172033;
+            --muted: #647087;
+            --border: #E1E7F0;
+            --shadow: 0 6px 22px rgba(7, 23, 68, .055);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.55;
+        }
+
+        a { color: inherit; }
+
+        button, select { font: inherit; }
+
+        a:focus-visible,
+        button:focus-visible,
+        select:focus-visible {
+            outline: 3px solid #EABF35;
+            outline-offset: 3px;
+        }
+
+        /* Header and navigation */
+
+        .site-header {
+            background: var(--navy);
+            color: var(--white);
+            border-bottom: 4px solid var(--green);
+        }
+
+        .header-inner {
+            max-width: 1500px;
+            min-height: 82px;
+            padding: 15px 4%;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 45px;
+            height: 45px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: white;
+            color: var(--blue);
+            font-size: 23px;
+            font-weight: 900;
+        }
+
+        .brand-name {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: .3px;
+        }
+
+        .brand-subtitle {
+            display: block;
+            margin-top: 4px;
+            color: #CFD8F5;
+            font-size: 10px;
+            letter-spacing: .7px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 9px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 9px 12px;
+            border-radius: 7px;
+            color: #E4EAFE;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .nav-link:hover {
+            background: #182B5B;
+            color: white;
+        }
+
+        .logout-form { margin: 0; }
+
+        .logout-button {
+            padding: 9px 13px;
+            border: 1px solid #F0B7B7;
+            border-radius: 7px;
+            background: transparent;
+            color: #FFDADA;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .logout-button:hover { background: #482532; }
+
+        /* Main layout */
+
+        main {
+            max-width: 1500px;
+            margin: auto;
+            padding: 35px 4% 55px;
+        }
+
+        .page-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 22px;
+            flex-wrap: wrap;
+            margin-bottom: 26px;
+        }
+
+        .eyebrow {
+            color: var(--green-dark);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 7px 0 8px;
+            color: var(--navy);
+            font-size: clamp(27px, 4vw, 36px);
+            letter-spacing: -.8px;
+            line-height: 1.2;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--navy);
+            font-size: 21px;
+        }
+
+        .subtext {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .home-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--blue);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .home-button:hover {
+            border-color: var(--blue);
+            background: #EEF2FF;
+        }
+
+        /* Flash messages */
+
+        .flash-messages {
+            margin-bottom: 24px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 13px 16px;
+            border: 1px solid #C8E8D2;
+            border-left: 4px solid var(--green);
+            border-radius: 7px;
+            background: #EBF8EF;
+            color: #185B32;
+            font-size: 14px;
+        }
+
+        /* Statistics */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin: 26px 0 38px;
+        }
+
+        .stat {
+            min-width: 0;
+            padding: 21px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            border-top: 4px solid var(--green);
+            background: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stat strong {
+            display: block;
+            color: var(--navy);
+            font-size: 30px;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+
+        .stat-caption {
+            display: block;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        /* Management cards */
+
+        .section-block { margin-bottom: 38px; }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .section-header p {
+            margin-top: 5px;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .management-card {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 23px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            border-top: 4px solid var(--green);
+            background: var(--white);
+            box-shadow: var(--shadow);
+            text-decoration: none;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .management-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(7, 23, 68, .10);
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: #EDF2FF;
+            color: var(--blue);
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        .management-card h3 {
+            margin: 17px 0 7px;
+            color: var(--navy);
+            font-size: 16px;
+        }
+
+        .management-card p {
+            flex: 1;
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .card-link {
+            color: var(--green-dark);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        /* Requests panel */
+
+        .panel {
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .panel-heading {
+            padding: 23px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-heading p { margin-top: 6px; }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1080px;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 14px 13px;
+            background: #F0F4FF;
+            color: #263A75;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .45px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 16px 13px;
+            border-bottom: 1px solid #EAEFF6;
+            text-align: left;
+            vertical-align: top;
+            font-size: 13px;
+        }
+
+        tbody tr:hover { background: #FAFBFF; }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        .reference {
+            color: var(--blue);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .product-name {
+            display: block;
+            max-width: 220px;
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        .detail-text {
+            display: block;
+            max-width: 230px;
+            margin-top: 5px;
+            color: var(--muted);
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .route-text { line-height: 1.8; }
+
+        .route-arrow {
+            color: var(--green-dark);
+            font-weight: 800;
+        }
+
+        .status-form {
+            min-width: 155px;
+            margin: 0;
+        }
+
+        select {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #CAD4E5;
+            border-radius: 7px;
+            background: white;
+            color: var(--text);
+            font-size: 12px;
+        }
+
+        .update-button {
+            width: 100%;
+            margin-top: 7px;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 7px;
+            background: var(--green);
+            color: white;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .update-button:hover { background: var(--green-dark); }
+
+        .current-status {
+            display: block;
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .empty {
+            padding: 55px 20px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            margin-bottom: 10px;
+            font-size: 35px;
+        }
+
+        .empty h3 {
+            margin: 0 0 8px;
+            color: var(--navy);
+            font-size: 18px;
+        }
+
+        .empty p {
+            max-width: 440px;
+            margin: auto;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .page-footer {
+            padding: 23px 15px;
+            border-top: 1px solid var(--border);
+            background: white;
+            color: var(--muted);
+            text-align: center;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1100px) {
+            .stats,
+            .management-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 650px) {
+            .header-inner {
+                padding: 15px 18px;
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 13px;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .nav-link { padding: 8px 9px; }
+
+            main { padding: 26px 15px 38px; }
+
+            .page-heading { align-items: flex-start; }
+
+            .stats { gap: 10px; }
+
+            .stat { padding: 16px; }
+
+            .stat strong { font-size: 25px; }
+
+            .management-grid { gap: 12px; }
+
+            .management-card { padding: 17px; }
+
+            .management-card h3 { font-size: 14px; }
+
+            .management-card p { font-size: 12px; }
+
+            .panel-heading { padding: 19px 16px; }
+        }
+
+        @media (max-width: 380px) {
+            .stats,
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="header-inner">
+
+        <a class="brand" href="{{ url_for('home') }}">
+            <span class="brand-icon">U</span>
+            <span>
+                <span class="brand-name">UNIVERSAL MARKETPLACE</span>
+                <span class="brand-subtitle">COMPANY MANAGEMENT PORTAL</span>
+            </span>
+        </a>
+
+        <nav class="header-right" aria-label="Company navigation">
+            <a class="nav-link" href="{{ url_for('company_dashboard') }}">Dashboard</a>
+            <a class="nav-link" href="{{ url_for('buyer_accounts') }}">Buyers</a>
+            <a class="nav-link" href="{{ url_for('list_suppliers') }}">Suppliers</a>
+            <a class="nav-link" href="{{ url_for('list_quotations') }}">Quotations</a>
+            <a class="nav-link" href="{{ url_for('home') }}">Marketplace</a>
+
+            <form class="logout-form" action="{{ url_for('logout') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="logout-button" type="submit">Log Out</button>
+            </form>
+        </nav>
+
+    </div>
+</header>
+
+<main>
+
+    <section class="page-heading">
+        <div>
+            <span class="eyebrow">Operations overview</span>
+            <h1>Company Dashboard</h1>
+            <p class="subtext">
+                Manage sourcing requests, buyers, suppliers and quotations
+                across Lesotho and South Africa.
+            </p>
+        </div>
+
+        <a class="home-button" href="{{ url_for('home') }}">
+            ← View Marketplace
+        </a>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages" aria-live="polite">
+                {% for category, message in messages %}
+                    <div class="message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <section class="stats" aria-label="Sourcing request statistics">
+
+        <div class="stat">
+            <span class="stat-label">ALL REQUESTS</span>
+            <strong>{{ requests|length }}</strong>
+            <span class="stat-caption">Total requests received</span>
+        </div>
+
+        <div class="stat">
+            <span class="stat-label">NEW REQUESTS</span>
+            <strong>{{ status_counts.get('New', 0) }}</strong>
+            <span class="stat-caption">Awaiting initial review</span>
+        </div>
+
+        <div class="stat">
+            <span class="stat-label">IN SOURCING</span>
+            <strong>{{ status_counts.get('Sourcing', 0) }}</strong>
+            <span class="stat-caption">Supplier search in progress</span>
+        </div>
+
+        <div class="stat">
+            <span class="stat-label">DELIVERED</span>
+            <strong>{{ status_counts.get('Delivered', 0) }}</strong>
+            <span class="stat-caption">Marked as delivered</span>
+        </div>
+
+    </section>
+
+    <section class="section-block">
+        <div class="section-header">
+            <div>
+                <h2>Management Centre</h2>
+                <p class="subtext">Quick access to your daily operations.</p>
+            </div>
+        </div>
+
+        <div class="management-grid">
+
+            <a class="management-card" href="{{ url_for('buyer_accounts') }}">
+                <span class="card-icon">♙</span>
+                <h3>Buyer Accounts</h3>
+                <p>View registered buyers and access customer account information.</p>
+                <span class="card-link">Manage buyers →</span>
+            </a>
+
+            <a class="management-card" href="#incoming-requests">
+                <span class="card-icon">▤</span>
+                <h3>Sourcing Requests</h3>
+                <p>Review incoming requests and update sourcing progress.</p>
+                <span class="card-link">Review requests →</span>
+            </a>
+
+            <a class="management-card" href="{{ url_for('list_suppliers') }}">
+                <span class="card-icon">⇄</span>
+                <h3>Supplier Management</h3>
+                <p>Access supplier records for products sourced across borders.</p>
+                <span class="card-link">Manage suppliers →</span>
+            </a>
+
+            <a class="management-card" href="{{ url_for('list_quotations') }}">
+                <span class="card-icon">▧</span>
+                <h3>Quotations</h3>
+                <p>Review quotations and monitor their approval status.</p>
+                <span class="card-link">View quotations →</span>
+            </a>
+
+        </div>
+    </section>
+
+    <section class="panel" id="incoming-requests">
+
+        <div class="panel-heading">
+            <h2>Incoming Sourcing Requests</h2>
+            <p class="subtext">
+                Review product requirements, check destinations and update each request.
+            </p>
+        </div>
+
+        {% if requests %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Product details</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Source & destination</th>
+                            <th>Target price</th>
+                            <th>Buyer information</th>
+                            <th>Manage status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in requests %}
+                            <tr>
+                                <td>
+                                    <span class="reference">UM-{{ item.id }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="product-name">{{ item.product_name }}</span>
+                                    <span class="detail-text">
+                                        {{ item.description or 'No description provided.' }}
+                                    </span>
+                                </td>
+
+                                <td>{{ item.category }}</td>
+
+                                <td>{{ item.quantity }}</td>
+
+                                <td>
+                                    <span class="route-text">
+                                        {{ item.source_country }}
+                                        <br>
+                                        <span class="route-arrow">↓</span>
+                                        <br>
+                                        {{ item.delivery_country }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    {% if item.target_price is not none %}
+                                        <strong>{{ item.currency }} {{ "%.2f"|format(item.target_price) }}</strong>
+                                    {% else %}
+                                        <span class="detail-text">Not specified</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <strong>{{ item.buyer_name or 'Not provided' }}</strong>
+                                    <span class="detail-text">
+                                        {{ item.buyer_contact or 'No contact provided' }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <form class="status-form"
+                                          method="POST"
+                                          action="{{ url_for('update_request_status', request_id=item.id) }}">
+
+                                        <input type="hidden"
+                                               name="csrf_token"
+                                               value="{{ csrf_token() }}">
+
+                                        <label for="status-{{ item.id }}"
+                                               class="detail-text"
+                                               style="margin: 0 0 6px;">
+                                            Update status
+                                        </label>
+
+                                        <select id="status-{{ item.id }}"
+                                                name="status"
+                                                required>
+                                            {% for status in statuses %}
+                                                <option value="{{ status }}"
+                                                    {% if item.status == status %}selected{% endif %}>
+                                                    {{ status }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <button class="update-button" type="submit">
+                                            Save Status
+                                        </button>
+
+                                        <span class="current-status">
+                                            Current: {{ item.status }}
+                                        </span>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">
+                <div class="empty-icon">📦</div>
+                <h3>No sourcing requests yet</h3>
+                <p>
+                    When buyers submit product requests, they will appear here
+                    for your team to review and manage.
+                </p>
+            </div>
+        {% endif %}
+
+    </section>
+
+</main>
+
+<footer class="page-footer">
+    <strong>Universal Marketplace</strong>
+    <br>
+    Connecting buyers and suppliers across Lesotho 🇱🇸 and South Africa 🇿🇦
+</footer>
+
+</body>
+</html>

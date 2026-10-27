@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Accounts | Universal Marketplace</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f8ff;
+            color: #172033;
+        }
+
+        header {
+            background: #00209F;
+            color: white;
+            padding: 22px 5%;
+            border-bottom: 5px solid #009543;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: auto;
+            padding: 28px 4%;
+        }
+
+        h1, h2 { color: #00209F; }
+
+        .panel {
+            background: white;
+            padding: 20px;
+            border: 1px solid #d8e2f5;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 550px;
+        }
+
+        th, td {
+            padding: 13px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e3e8f0;
+        }
+
+        th {
+            color: #00209F;
+            background: #eef3ff;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: #00209F;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #5a6475;
+        }
+
+        .count {
+            color: #007a36;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <strong>UNIVERSAL MARKETPLACE | BUYER MANAGEMENT</strong>
+</header>
+
+<main>
+    <a class="back" href="{{ url_for('company_dashboard') }}">
+        ← Back to Company Dashboard
+    </a>
+
+    <h1>Buyer Accounts</h1>
+    <p>View customers registered on Universal Marketplace.</p>
+
+    <section class="panel">
+        <h2>Registered Buyers</h2>
+        <p class="count">Total registered buyers: {{ buyers|length }}</p>
+
+        {% if buyers %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Account ID</th>
+                        <th>Username</th>
+                        <th>Email Address</th>
+                        <th>Account Status</th>
+                        <th>Date Registered</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for buyer in buyers %}
+                        <tr>
+                            <td>{{ buyer.id }}</td>
+                            <td>{{ buyer.username }}</td>
+                            <td>{{ buyer.email }}</td>
+                            <td>
+                                {% if buyer.active %}
+                                    Active
+                                {% else %}
+                                    Inactive
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if buyer.created_at %}
+                                    {{ buyer.created_at.strftime('%d %b %Y') }}
+                                {% else %}
+                                    Not available
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">
+                No buyer accounts have been registered yet.
+                Buyer accounts will appear here after registration.
+            </div>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>
