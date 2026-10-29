@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supplier Comparison | Universal Marketplace</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fb;
+            padding: 20px;
+            color: #172033;
+            margin: 0;
+        }
+        main { max-width: 1200px; margin: auto; }
+        header {
+            background: #00209F;
+            color: white;
+            padding: 22px;
+            border-bottom: 6px solid #009543;
+            border-radius: 10px;
+        }
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .actions { margin: 20px 0; }
+        a.button {
+            display: inline-block;
+            background: #009543;
+            color: white;
+            padding: 11px 14px;
+            margin: 0 8px 8px 0;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            min-width: 850px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5ec;
+        }
+        th { background: #e9eefb; }
+        .best { background: #e0f5e8; }
+        .notice {
+            background: #fff4d6;
+            padding: 12px;
+            border-radius: 6px;
+            line-height: 1.5;
+        }
+        .muted { color: #5d6678; }
+        .empty { padding: 18px; background: #f8f9fc; border-radius: 8px; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            header, .panel { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>🇱🇸 Universal Marketplace 🇿🇦</h1>
+        <p>Supplier price comparison</p>
+    </header>
+
+    <div class="actions">
+        <a class="button" href="{{ url_for('list_quotations') }}">
+            ← Back to Quotations
+        </a>
+    </div>
+
+    <section class="panel">
+        <h2>{{ sourcing_request.product_name }}</h2>
+        <p>
+            <strong>Request:</strong> UM-{{ sourcing_request.id }}
+        </p>
+        <p>
+            <strong>Quantity:</strong> {{ sourcing_request.quantity }}
+        </p>
+        <p>
+            <strong>Route:</strong>
+            {{ sourcing_request.source_country }}
+            → {{ sourcing_request.delivery_country }}
+        </p>
+
+        <div class="notice">
+            Comparisons are grouped by currency. The lowest total sourcing
+            cost is highlighted within each currency. Check quotation status
+            and expiry before making a purchasing decision.
+        </div>
+    </section>
+
+    {% if comparisons %}
+        {% for currency, items in comparisons.items() %}
+        <section class="panel">
+            <h2>Comparison in {{ currency }}</h2>
+            <p class="muted">
+                Suppliers are ranked by product cost plus sourcing,
+                delivery and other costs. Proposed selling price is shown
+                separately.
+            </p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Quotation</th>
+                            <th>Supplier</th>
+                            <th>Country</th>
+                            <th>Product cost</th>
+                            <th>Additional costs</th>
+                            <th>Total sourcing cost</th>
+                            <th>Proposed selling price</th>
+                            <th>Estimated profit</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        {% set q = item.quotation %}
+                        <tr class="{{ 'best' if loop.first else '' }}">
+                            <td>
+                                {% if loop.first %}
+                                    <strong>Lowest cost</strong>
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td>QT-{{ q.id }}</td>
+                            <td>{{ q.supplier.name }}</td>
+                            <td>{{ q.supplier.country }}</td>
+                            <td>{{ "%.2f"|format(q.product_cost) }} {{ currency }}</td>
+                            <td>
+                                {{ "%.2f"|format(
+                                    q.sourcing_fee
+                                    + q.delivery_cost
+                                    + q.other_costs
+                                ) }} {{ currency }}
+                            </td>
+                            <td>
+                                <strong>
+                                    {{ "%.2f"|format(item.total_cost) }}
+                                    {{ currency }}
+                                </strong>
+                            </td>
+                            <td>
+                                {{ "%.2f"|format(q.selling_price) }}
+                                {{ currency }}
+                            </td>
+                            <td>
+                                {{ "%.2f"|format(item.estimated_profit) }}
+                                {{ currency }}
+                            </td>
+                            <td>{{ q.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endfor %}
+    {% else %}
+        <section class="panel">
+            <div class="empty">
+                <h3>No quotations for this request yet</h3>
+                <p>Create quotations from different suppliers to compare them here.</p>
+            </div>
+        </section>
+    {% endif %}
+</main>
+</body>
+</html>

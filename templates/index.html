@@ -5,526 +5,755 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Universal Marketplace | Lesotho & South Africa</title>
-    <meta name="description" content="Source products, compare quotations and connect with suppliers across Lesotho and South Africa.">
+
+    <meta name="description" content="Connect buyers, suppliers and independent sourcing runners across Lesotho and South Africa. Request products, compare quotations and arrange delivery.">
 
     <style>
         :root {
             --blue: #00209F;
-            --blue-dark: #071744;
             --green: #009543;
-            --green-dark: #007A36;
-            --light: #F5F7FC;
             --white: #FFFFFF;
-            --text: #172033;
-            --muted: #657087;
-            --border: #E1E7F0;
-            --shadow: 0 10px 30px rgba(7, 23, 68, 0.07);
+            --black: #111827;
+            --light: #F4F7FC;
+            --muted: #64748B;
+            --border: #E2E8F0;
+            --dark-blue: #071746;
+            --radius: 18px;
+            --shadow: 0 12px 35px rgba(15, 23, 42, 0.09);
         }
 
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         html {
             scroll-behavior: smooth;
-            scroll-padding-top: 90px;
         }
 
         body {
-            margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            color: var(--text);
-            background: var(--light);
+            background: var(--white);
+            color: var(--black);
             line-height: 1.6;
         }
 
         a {
             color: inherit;
+            text-decoration: none;
         }
 
-        button,
-        input {
+        button, a {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button {
             font: inherit;
         }
 
-        button:focus-visible,
-        a:focus-visible,
-        input:focus-visible {
-            outline: 3px solid #F4C542;
-            outline-offset: 3px;
+        .container {
+            width: min(1200px, 92%);
+            margin: 0 auto;
         }
 
-        /* Navigation */
+        /* NAVIGATION */
 
-        .site-header {
+        .navbar {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: var(--white);
-            border-bottom: 3px solid var(--green);
-            box-shadow: 0 3px 15px rgba(7, 23, 68, 0.06);
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
         }
 
-        .nav-container {
-            max-width: 1240px;
-            min-height: 82px;
-            margin: auto;
-            padding: 14px 24px;
+        .nav-inner {
+            min-height: 78px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 24px;
+            gap: 22px;
         }
 
         .brand {
             display: flex;
             align-items: center;
             gap: 12px;
-            text-decoration: none;
             flex-shrink: 0;
         }
 
         .brand-mark {
-            width: 46px;
-            height: 46px;
+            width: 48px;
+            height: 48px;
             display: grid;
             place-items: center;
-            border-radius: 12px;
+            border-radius: 14px;
             background: var(--blue);
-            color: var(--white);
-            font-size: 23px;
+            color: white;
+            font-size: 19px;
+            font-weight: 900;
+            border-bottom: 5px solid var(--green);
         }
 
         .brand-name {
-            display: block;
             font-size: 17px;
-            line-height: 1.25;
-            font-weight: 800;
-            color: var(--blue-dark);
-            letter-spacing: -0.4px;
+            line-height: 1.2;
+            font-weight: 900;
+            color: var(--dark-blue);
         }
 
-        .brand-subtitle {
+        .brand-tagline {
             display: block;
             margin-top: 4px;
-            font-size: 10px;
-            font-weight: 700;
             color: var(--muted);
-            letter-spacing: 0.7px;
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            font-weight: 700;
         }
 
-        .nav-menu {
+        .nav-links {
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            gap: 5px;
+            gap: 22px;
         }
 
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 12px;
-            border-radius: 8px;
-            color: #354057;
-            text-decoration: none;
+        .nav-links > a:not(.btn) {
             font-size: 13px;
             font-weight: 700;
-            white-space: nowrap;
-            transition: background 0.2s, color 0.2s;
+            color: #334155;
         }
 
-        .nav-link:hover {
-            background: #EEF2FF;
-            color: var(--blue);
-        }
-
-        .nav-link-primary {
-            background: var(--green);
-            color: var(--white);
-        }
-
-        .nav-link-primary:hover {
-            background: var(--green-dark);
-            color: var(--white);
-        }
-
-        .nav-logout {
-            padding: 9px 12px;
-            border: 1px solid #E7B9B9;
-            border-radius: 8px;
-            background: var(--white);
-            color: #A52626;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .nav-logout:hover {
-            background: #FFF0F0;
+        .nav-links > a:not(.btn):hover {
+            color: var(--green);
         }
 
         .menu-toggle {
             display: none;
-            width: 44px;
-            height: 44px;
             border: 1px solid var(--border);
-            border-radius: 9px;
-            background: var(--white);
-            color: var(--blue);
-            font-size: 25px;
+            background: white;
+            border-radius: 10px;
+            padding: 9px 12px;
+            font-size: 22px;
             cursor: pointer;
         }
 
-        /* Hero */
+        /* BUTTONS */
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 19px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-green {
+            color: white;
+            background: var(--green);
+        }
+
+        .btn-green:hover {
+            background: #007B36;
+        }
+
+        .btn-blue {
+            color: white;
+            background: var(--blue);
+        }
+
+        .btn-blue:hover {
+            background: #001875;
+        }
+
+        .btn-white {
+            background: white;
+            color: var(--blue);
+        }
+
+        .btn-outline-white {
+            color: white;
+            border-color: rgba(255, 255, 255, 0.8);
+            background: transparent;
+        }
+
+        .btn-outline-white:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-outline {
+            color: var(--blue);
+            background: white;
+            border-color: var(--border);
+        }
+
+        /* HERO */
 
         .hero {
             position: relative;
+            isolation: isolate;
             overflow: hidden;
-            background: linear-gradient(120deg, #061746 0%, #00209F 65%, #1748C8 100%);
-            color: var(--white);
+            color: white;
+            background-color: var(--dark-blue);
+            background-image:
+                linear-gradient(
+                    90deg,
+                    rgba(3, 15, 54, 0.94) 0%,
+                    rgba(0, 32, 159, 0.78) 48%,
+                    rgba(0, 32, 159, 0.43) 100%
+                ),
+                url("{{ url_for('static', filename='uploads/maloti-mountains.jpg') }}");
+            background-size: cover;
+            background-position: center 48%;
+            background-repeat: no-repeat;
         }
 
-        .hero::after {
+        .hero::before {
             content: "";
             position: absolute;
-            width: 360px;
-            height: 360px;
-            right: -100px;
-            top: -130px;
-            border: 55px solid rgba(255, 255, 255, 0.06);
-            border-radius: 50%;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(
+                0deg,
+                rgba(0, 10, 42, 0.36),
+                transparent 65%
+            );
             pointer-events: none;
         }
 
         .hero-container {
-            position: relative;
-            z-index: 1;
-            max-width: 1240px;
-            margin: auto;
-            padding: 82px 24px 76px;
+            min-height: 540px;
+            padding: 76px 0;
+            display: flex;
+            align-items: center;
         }
 
-        .eyebrow {
-            display: inline-block;
-            padding: 7px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .hero-content {
+            position: relative;
+            max-width: 760px;
+        }
+
+        .hero-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 13px;
+            margin-bottom: 23px;
             border-radius: 30px;
-            background: rgba(255, 255, 255, 0.08);
-            color: #D8F8E5;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.7px;
+            background: rgba(255, 255, 255, 0.13);
+            border: 1px solid rgba(255, 255, 255, 0.27);
+            font-size: 11px;
+            letter-spacing: 1.1px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .hero-label .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #56E69B;
         }
 
         .hero h1 {
             max-width: 760px;
-            margin: 22px 0 18px;
-            font-size: clamp(36px, 5vw, 60px);
-            line-height: 1.12;
-            letter-spacing: -1.8px;
+            font-size: clamp(38px, 5.2vw, 66px);
+            line-height: 1.08;
+            letter-spacing: -2px;
+            margin-bottom: 22px;
+            font-weight: 900;
         }
 
         .hero h1 span {
             color: #8EE6AD;
         }
 
-        .hero-description {
-            max-width: 650px;
-            margin: 0;
-            color: #E3E9FF;
+        .hero p {
+            max-width: 630px;
+            color: rgba(255, 255, 255, 0.91);
             font-size: 17px;
-            line-height: 1.8;
+            line-height: 1.85;
+            margin-bottom: 30px;
         }
 
-        .hero-actions {
+        .hero-buttons {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 30px;
+            gap: 13px;
+            margin-bottom: 30px;
         }
 
-        .button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 48px;
-            padding: 12px 20px;
-            border: 1px solid transparent;
-            border-radius: 8px;
-            text-decoration: none;
-            text-align: center;
-            font-size: 14px;
+        .hero-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 12px;
             font-weight: 700;
-            transition: transform 0.2s, background 0.2s;
         }
 
-        .button:hover {
-            transform: translateY(-2px);
+        .hero-points span::before {
+            content: "✓";
+            display: inline-grid;
+            place-items: center;
+            width: 19px;
+            height: 19px;
+            margin-right: 7px;
+            border-radius: 50%;
+            color: #052A17;
+            background: #8EE6AD;
+            font-weight: 900;
         }
 
-        .button-green {
-            background: var(--green);
-            color: var(--white);
-        }
-
-        .button-green:hover {
-            background: var(--green-dark);
-        }
-
-        .button-light {
-            border-color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--white);
-        }
-
-        .button-light:hover {
-            background: rgba(255, 255, 255, 0.16);
-        }
-
-        .hero-note {
-            margin-top: 25px;
-            color: #DCE5FF;
-            font-size: 13px;
-        }
-
-        /* Trust strip */
+        /* TRUST STRIP */
 
         .trust-strip {
-            background: var(--white);
+            position: relative;
+            z-index: 2;
+            background: white;
             border-bottom: 1px solid var(--border);
         }
 
-        .trust-container {
-            max-width: 1240px;
-            margin: auto;
-            padding: 20px 24px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 16px 45px;
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 25px 0;
         }
 
         .trust-item {
             display: flex;
             align-items: center;
-            gap: 9px;
-            color: #364158;
-            font-size: 13px;
-            font-weight: 700;
+            justify-content: center;
+            gap: 13px;
+            text-align: left;
         }
 
         .trust-icon {
-            color: var(--green);
-            font-size: 18px;
-        }
-
-        /* Main content */
-
-        .main-container {
-            max-width: 1240px;
-            margin: auto;
-            padding: 68px 24px;
-        }
-
-        .section-heading {
-            max-width: 700px;
-            margin: 0 auto 35px;
-            text-align: center;
-        }
-
-        .section-label {
-            color: var(--green-dark);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1.3px;
-            text-transform: uppercase;
-        }
-
-        .section-heading h2 {
-            margin: 10px 0;
-            color: var(--blue-dark);
-            font-size: clamp(27px, 4vw, 38px);
-            line-height: 1.25;
-            letter-spacing: -0.7px;
-        }
-
-        .section-heading p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 15px;
-        }
-
-        .categories {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 20px;
-        }
-
-        .category {
-            min-width: 0;
-            padding: 26px 22px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            border-top: 4px solid var(--green);
-            background: var(--white);
-            box-shadow: var(--shadow);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .category:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 15px 35px rgba(7, 23, 68, 0.11);
-        }
-
-        .category-icon {
-            width: 54px;
-            height: 54px;
+            width: 43px;
+            height: 43px;
             display: grid;
             place-items: center;
+            flex-shrink: 0;
             border-radius: 13px;
-            background: #EEF2FF;
-            font-size: 28px;
-        }
-
-        .category h3 {
-            margin: 19px 0 9px;
-            color: var(--blue);
-            font-size: 17px;
-            line-height: 1.4;
-        }
-
-        .category p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.75;
-        }
-
-        /* How it works */
-
-        .how-section {
-            background: #EAF5EE;
-            border-top: 1px solid #D8EADD;
-            border-bottom: 1px solid #D8EADD;
-        }
-
-        .how-container {
-            max-width: 1240px;
-            margin: auto;
-            padding: 65px 24px;
-        }
-
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 17px;
-            margin-top: 35px;
-        }
-
-        .step {
-            padding: 22px 18px;
-            border: 1px solid #D9E7DD;
-            border-radius: 12px;
-            background: var(--white);
-        }
-
-        .step-number {
-            width: 36px;
-            height: 36px;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            background: var(--blue);
-            color: var(--white);
-            font-size: 15px;
-            font-weight: 800;
-        }
-
-        .step h3 {
-            margin: 15px 0 8px;
-            color: var(--blue-dark);
-            font-size: 15px;
-        }
-
-        .step p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.7;
-        }
-
-        .bottom-cta {
-            margin-top: 35px;
-            padding: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 20px;
-            border-radius: 14px;
-            background: var(--blue);
-            color: var(--white);
-        }
-
-        .bottom-cta h3 {
-            margin: 0 0 5px;
+            background: #EAF0FF;
             font-size: 21px;
         }
 
-        .bottom-cta p {
-            margin: 0;
-            color: #DFE7FF;
-            font-size: 14px;
-        }
-
-        /* Footer */
-
-        .site-footer {
-            background: #07132F;
-            color: var(--white);
-        }
-
-        .footer-container {
-            max-width: 1240px;
-            margin: auto;
-            padding: 38px 24px 25px;
-        }
-
-        .footer-main {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 25px;
-        }
-
-        .footer-brand {
-            max-width: 470px;
-        }
-
-        .footer-brand h3 {
-            margin: 0 0 8px;
-            font-size: 19px;
-        }
-
-        .footer-brand p,
-        .footer-note {
-            color: #C3CBE0;
+        .trust-item strong {
+            display: block;
             font-size: 13px;
+            color: var(--dark-blue);
+        }
+
+        .trust-item small {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        /* SECTION HEADINGS */
+
+        .section {
+            padding: 82px 0;
+        }
+
+        .section-light {
+            background: var(--light);
+        }
+
+        .section-heading {
+            max-width: 720px;
+            margin: 0 auto 42px;
+            text-align: center;
+        }
+
+        .eyebrow {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .section-heading h2 {
+            font-size: clamp(27px, 3.5vw, 40px);
+            line-height: 1.2;
+            letter-spacing: -1px;
+            color: var(--dark-blue);
+            margin-bottom: 13px;
+        }
+
+        .section-heading p {
+            font-size: 14px;
+            color: var(--muted);
             line-height: 1.8;
+        }
+
+        /* CATEGORY CARDS WITH PHOTOS */
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 22px;
+        }
+
+        .category-card {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.035);
+            transition:
+                transform 0.22s,
+                box-shadow 0.22s,
+                border-color 0.22s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 149, 67, 0.55);
+            box-shadow: var(--shadow);
+        }
+
+        .category-image-wrap {
+            position: relative;
+            width: 100%;
+            height: 175px;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--blue), var(--green));
+        }
+
+        .category-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.35s ease;
+        }
+
+        .category-card:hover .category-image {
+            transform: scale(1.06);
+        }
+
+        .category-image-wrap::after {
+            content: "";
+            position: absolute;
+            inset: 45% 0 0;
+            background: linear-gradient(
+                to bottom,
+                transparent,
+                rgba(7, 23, 70, 0.40)
+            );
+            pointer-events: none;
+        }
+
+        .category-badge {
+            position: absolute;
+            left: 13px;
+            top: 13px;
+            z-index: 1;
+            padding: 5px 9px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--dark-blue);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.3px;
+        }
+
+        .category-content {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 21px;
+        }
+
+        .category-card h3 {
+            margin-bottom: 8px;
+            color: var(--dark-blue);
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .category-card p {
+            flex: 1;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.75;
+            margin-bottom: 18px;
+        }
+
+        .category-link {
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .category-link span {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .category-card:hover .category-link span {
+            transform: translateX(4px);
+        }
+
+        .category-note {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* CROSS-BORDER BANNER */
+
+        .cross-border {
+            position: relative;
+            overflow: hidden;
+            padding: 42px;
+            border-radius: 24px;
+            background: var(--blue);
+            color: white;
+        }
+
+        .cross-border::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            right: -80px;
+            top: -100px;
+            border: 35px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .cross-border-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .cross-border-copy {
+            max-width: 650px;
+        }
+
+        .cross-border h2 {
+            font-size: clamp(25px, 3.5vw, 37px);
+            line-height: 1.2;
+            margin-bottom: 14px;
+        }
+
+        .cross-border p {
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .country-flags {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .country-flag {
+            width: 85px;
+            height: 62px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+        }
+
+        .flag-lesotho {
+            justify-content: center;
+            gap: 5px;
+            background: white;
+        }
+
+        .flag-lesotho .flag-blue {
+            height: 15px;
+            background: #00209F;
+        }
+
+        .flag-lesotho .flag-green {
+            height: 15px;
+            background: #009543;
+        }
+
+        .flag-lesotho .flag-black {
+            width: 25px;
+            height: 5px;
+            align-self: center;
+            background: #111111;
+        }
+
+        .flag-sa {
+            justify-content: center;
+            background: #FFFFFF;
+        }
+
+        .flag-sa .sa-red {
+            height: 17px;
+            background: #DE3831;
+        }
+
+        .flag-sa .sa-green {
+            height: 15px;
+            background: #007A4D;
+            border-top: 3px solid white;
+            border-bottom: 3px solid white;
+        }
+
+        .flag-sa .sa-blue {
+            height: 17px;
+            background: #002395;
+        }
+
+        /* HOW IT WORKS */
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 17px;
+        }
+
+        .step-card {
+            position: relative;
+            padding: 24px 19px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 16px;
+        }
+
+        .step-number {
+            width: 39px;
+            height: 39px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 17px;
+            border-radius: 12px;
+            background: var(--green);
+            color: white;
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .step-card h3 {
+            color: var(--dark-blue);
+            font-size: 14px;
+            margin-bottom: 9px;
+        }
+
+        .step-card p {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.75;
+        }
+
+        /* CALL TO ACTION */
+
+        .cta-section {
+            padding: 0 0 82px;
+        }
+
+        .cta-panel {
+            padding: 45px;
+            border-radius: 24px;
+            background: linear-gradient(120deg, #071746, #00209F);
+            color: white;
+            text-align: center;
+        }
+
+        .cta-panel h2 {
+            font-size: clamp(27px, 4vw, 39px);
+            line-height: 1.2;
+            margin-bottom: 15px;
+        }
+
+        .cta-panel p {
+            max-width: 650px;
+            margin: 0 auto 25px;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            background: #071126;
+            color: white;
+            padding: 52px 0 20px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr;
+            gap: 45px;
+            padding-bottom: 35px;
+        }
+
+        .footer .brand-name {
+            color: white;
+        }
+
+        .footer .brand-tagline {
+            color: #CBD5E1;
+        }
+
+        .footer-description {
+            max-width: 370px;
+            margin-top: 17px;
+            color: #CBD5E1;
+            font-size: 12px;
+            line-height: 1.9;
+        }
+
+        .footer h3 {
+            margin-bottom: 17px;
+            font-size: 13px;
         }
 
         .footer-links {
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px 20px;
+            flex-direction: column;
+            gap: 11px;
         }
 
         .footer-links a {
-            color: #E0E7FF;
-            font-size: 13px;
-            text-decoration: none;
+            color: #CBD5E1;
+            font-size: 12px;
         }
 
         .footer-links a:hover {
@@ -532,138 +761,201 @@
         }
 
         .footer-bottom {
-            margin-top: 25px;
-            padding-top: 18px;
-            border-top: 1px solid rgba(255, 255, 255, 0.14);
-            color: #C3CBE0;
-            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.13);
+            color: #AAB6CC;
+            font-size: 11px;
         }
 
-        /* Tablet and mobile */
+        .footer-bottom strong {
+            color: white;
+        }
 
-        @media (max-width: 1080px) {
-            .nav-container {
-                flex-wrap: wrap;
+        /* RESPONSIVE DESIGN */
+
+        @media (max-width: 1000px) {
+            .nav-links {
+                gap: 13px;
+            }
+
+            .nav-links > a:not(.btn) {
+                font-size: 12px;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .cross-border-content {
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .nav-inner {
+                min-height: 70px;
             }
 
             .menu-toggle {
                 display: block;
             }
 
-            .nav-menu {
+            .nav-links {
                 display: none;
-                width: 100%;
-                align-items: stretch;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                right: 0;
+                padding: 20px 4%;
                 flex-direction: column;
-                gap: 5px;
-                padding: 10px 0 5px;
-                border-top: 1px solid var(--border);
+                align-items: stretch;
+                gap: 0;
+                background: white;
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow);
             }
 
-            .nav-menu.is-open {
+            .nav-links.open {
                 display: flex;
             }
 
-            .nav-link {
-                justify-content: flex-start;
-                padding: 12px;
-                white-space: normal;
+            .nav-links > a {
+                padding: 12px 5px;
             }
 
-            .nav-logout {
-                width: 100%;
-                padding: 12px;
-                text-align: left;
+            .nav-links > .btn {
+                margin-top: 8px;
             }
 
-            .categories {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .steps {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 600px) {
-            .nav-container {
-                padding: 12px 16px;
-                gap: 12px;
-            }
-
-            .brand-mark {
-                width: 42px;
-                height: 42px;
-            }
-
-            .brand-name {
-                font-size: 15px;
-            }
-
-            .brand-subtitle {
-                font-size: 9px;
-                letter-spacing: 0.3px;
+            .nav-links form {
+                padding: 8px 0;
             }
 
             .hero-container {
-                padding: 58px 20px 54px;
+                min-height: 510px;
+                padding: 58px 0;
+            }
+
+            .hero {
+                background-position: center;
+            }
+
+            .hero h1 {
+                letter-spacing: -1px;
+            }
+
+            .hero p {
+                font-size: 15px;
+            }
+
+            .trust-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+
+            .trust-item {
+                justify-content: flex-start;
+            }
+
+            .section {
+                padding: 62px 0;
+            }
+
+            .cross-border {
+                padding: 30px 24px;
+            }
+
+            .cross-border-content {
+                flex-direction: column;
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .cta-panel {
+                padding: 35px 23px;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+            }
+
+            .footer-brand-column {
+                grid-column: 1 / -1;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .brand-mark {
+                width: 42px;
+                height: 42px;
+                font-size: 16px;
+            }
+
+            .brand-name {
+                font-size: 14px;
+            }
+
+            .brand-tagline {
+                font-size: 9px;
+                letter-spacing: 0.7px;
+            }
+
+            .hero-container {
+                min-height: 490px;
             }
 
             .hero h1 {
                 font-size: 37px;
-                letter-spacing: -1px;
             }
 
-            .hero-description {
-                font-size: 15px;
-            }
-
-            .hero-actions {
+            .hero-points {
                 flex-direction: column;
+                gap: 10px;
             }
 
-            .hero-actions .button {
-                width: 100%;
+            .hero-buttons {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .trust-container {
-                justify-content: flex-start;
-                gap: 12px 20px;
-                padding: 20px;
-            }
-
-            .main-container,
-            .how-container {
-                padding: 48px 18px;
-            }
-
-            .categories {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .category {
-                padding: 22px;
-            }
-
-            .steps {
+            .category-grid {
                 grid-template-columns: 1fr;
             }
 
-            .step {
-                padding: 20px;
+            .category-image-wrap {
+                height: 205px;
             }
 
-            .bottom-cta {
-                padding: 23px 20px;
+            .steps-grid {
+                grid-template-columns: 1fr;
             }
 
-            .bottom-cta .button {
-                width: 100%;
+            .country-flag {
+                width: 75px;
+                height: 53px;
             }
 
-            .footer-container {
-                padding: 32px 20px 22px;
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-brand-column {
+                grid-column: auto;
             }
         }
 
@@ -675,7 +967,7 @@
             *,
             *::before,
             *::after {
-                transition: none !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
@@ -683,310 +975,516 @@
 
 <body>
 
-<header class="site-header">
-    <div class="nav-container">
+    <!-- NAVIGATION -->
+    <header class="navbar">
+        <div class="container nav-inner">
 
-        <a class="brand" href="{{ url_for('home') }}" aria-label="Universal Marketplace home">
-            <span class="brand-mark" aria-hidden="true">U</span>
-            <span>
-                <span class="brand-name">UNIVERSAL MARKETPLACE</span>
-                <span class="brand-subtitle">LESOTHO 🇱🇸 · SOUTH AFRICA 🇿🇦</span>
-            </span>
-        </a>
+            <a href="{{ url_for('home') }}" class="brand">
+                <div class="brand-mark">UM</div>
+                <div>
+                    <div class="brand-name">Universal Marketplace</div>
+                    <span class="brand-tagline">LESOTHO ↔ SOUTH AFRICA</span>
+                </div>
+            </a>
 
-        <button
-            class="menu-toggle"
-            type="button"
-            aria-label="Open navigation menu"
-            aria-expanded="false"
-            aria-controls="main-navigation"
-        >☰</button>
+            <button
+                class="menu-toggle"
+                id="menuToggle"
+                type="button"
+                aria-label="Open navigation menu"
+                aria-expanded="false"
+                aria-controls="navLinks">
+                ☰
+            </button>
 
-        <nav class="nav-menu" id="main-navigation" aria-label="Main navigation">
-
-            <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-
-            {% if current_user.is_authenticated %}
-
-                {% if current_user.role == 'buyer' %}
-                    <a class="nav-link" href="{{ url_for('request_product') }}">Request a Product</a>
-                    <a class="nav-link" href="{{ url_for('my_requests') }}">My Requests</a>
-                    <a class="nav-link" href="{{ url_for('list_quotations') }}">My Quotations</a>
-                {% elif current_user.role in ['admin', 'super_admin', 'company_admin'] %}
-                    <a class="nav-link" href="{{ url_for('company_dashboard') }}">Dashboard</a>
-                    <a class="nav-link" href="{{ url_for('buyer_accounts') }}">Buyers</a>
-                    <a class="nav-link" href="{{ url_for('list_suppliers') }}">Suppliers</a>
-                    <a class="nav-link" href="{{ url_for('create_quotation') }}">Create Quotation</a>
-                    <a class="nav-link" href="{{ url_for('list_quotations') }}">Quotations</a>
-                {% endif %}
-
-                <form action="{{ url_for('logout') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="nav-logout">Log Out</button>
-                </form>
-
-            {% else %}
-                <a class="nav-link" href="{{ url_for('login') }}">Log In</a>
-                <a class="nav-link nav-link-primary" href="{{ url_for('register') }}">Create Account</a>
-            {% endif %}
-
-        </nav>
-    </div>
-</header>
-
-<section class="hero">
-    <div class="hero-container">
-
-        <span class="eyebrow">YOUR CROSS-BORDER SOURCING PARTNER</span>
-
-        <h1>Find it. Source it.<br><span>Get it delivered.</span></h1>
-
-        <p class="hero-description">
-            Need a product from Lesotho or South Africa?
-            Tell us what you are looking for, and our team will help
-            source suppliers, compare costs and prepare a quotation
-            before you commit to an order.
-        </p>
-
-        <div class="hero-actions">
-            {% if current_user.is_authenticated and current_user.role == 'buyer' %}
-                <a class="button button-green" href="{{ url_for('request_product') }}">
-                    + Request a Product
-                </a>
-                <a class="button button-light" href="{{ url_for('my_requests') }}">
-                    Track My Requests →
-                </a>
-            {% elif current_user.is_authenticated and current_user.role in ['admin', 'super_admin', 'company_admin'] %}
-                <a class="button button-green" href="{{ url_for('company_dashboard') }}">
-                    Open Company Dashboard →
-                </a>
-                <a class="button button-light" href="{{ url_for('list_suppliers') }}">
-                    Manage Suppliers
-                </a>
-            {% else %}
-                <a class="button button-green" href="{{ url_for('register') }}">
-                    Get Started — Create Account
-                </a>
-                <a class="button button-light" href="{{ url_for('login') }}">
-                    I Already Have an Account
-                </a>
-            {% endif %}
-        </div>
-
-        <p class="hero-note">
-            🇱🇸 Lesotho &nbsp; · &nbsp; 🇿🇦 South Africa
-            <br>Clear quotations. Confirmed costs. Informed buying decisions.
-        </p>
-
-    </div>
-</section>
-
-<section class="trust-strip" aria-label="Marketplace features">
-    <div class="trust-container">
-        <div class="trust-item"><span class="trust-icon">✓</span> Product sourcing support</div>
-        <div class="trust-item"><span class="trust-icon">✓</span> Itemised quotations</div>
-        <div class="trust-item"><span class="trust-icon">✓</span> Cross-border requests</div>
-        <div class="trust-item"><span class="trust-icon">✓</span> Review before approval</div>
-    </div>
-</section>
-
-<main>
-    <section class="main-container" id="categories">
-
-        <div class="section-heading">
-            <span class="section-label">Explore our categories</span>
-            <h2>What do you need to source?</h2>
-            <p>
-                From everyday products to specialised equipment,
-                tell us what your household or business needs.
-            </p>
-        </div>
-
-        <div class="categories">
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">💄</div>
-                <h3>Beauty &amp; Personal Care</h3>
-                <p>Cosmetics, hair products, skincare, salon supplies and beauty essentials.</p>
-            </article>
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">🚗</div>
-                <h3>Automotive &amp; Mechanical</h3>
-                <p>Vehicle parts, tools, workshop equipment and automotive accessories.</p>
-            </article>
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">🏗️</div>
-                <h3>Heavy Machinery</h3>
-                <p>Construction equipment, agricultural machinery and industrial supplies.</p>
-            </article>
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">📦</div>
-                <h3>General Wholesale</h3>
-                <p>Household goods, clothing, business stock and other wholesale products.</p>
-            </article>
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">🩺</div>
-                <h3>Medical Equipment &amp; Supplies</h3>
-                <p>Medical consumables, clinic supplies, wheelchairs, hospital equipment and diagnostic devices.</p>
-            </article>
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">📱</div>
-                <h3>Electronics: Cameras &amp; Phones</h3>
-                <p>Smartphones, digital cameras, lenses, chargers, tripods and electronic accessories.</p>
-            </article>
-
-            <article class="category">
-                <div class="category-icon" aria-hidden="true">💚</div>
-                <h3>Adult Sexuality &amp; Wellness</h3>
-                <p>Adult wellness products, condoms, personal lubricants and related personal-care products for adults.</p>
-            </article>
-
-        </div>
-
-        <div class="bottom-cta">
-            <div>
-                <h3>Can't find what you need?</h3>
-                <p>Send us the product details and let us help you source it.</p>
-            </div>
-
-            {% if current_user.is_authenticated and current_user.role == 'buyer' %}
-                <a class="button button-green" href="{{ url_for('request_product') }}">
-                    Submit a Request →
-                </a>
-            {% elif current_user.is_authenticated and current_user.role in ['admin', 'super_admin', 'company_admin'] %}
-                <a class="button button-green" href="{{ url_for('company_dashboard') }}">
-                    View Requests →
-                </a>
-            {% else %}
-                <a class="button button-green" href="{{ url_for('register') }}">
-                    Join the Marketplace →
-                </a>
-            {% endif %}
-        </div>
-
-    </section>
-
-    <section class="how-section" id="how-it-works">
-        <div class="how-container">
-
-            <div class="section-heading">
-                <span class="section-label">Simple and transparent</span>
-                <h2>How it works</h2>
-                <p>From your first request to a quotation, each step has a purpose.</p>
-            </div>
-
-            <div class="steps">
-
-                <article class="step">
-                    <div class="step-number">1</div>
-                    <h3>Tell Us What You Need</h3>
-                    <p>Submit the product, quantity, destination and target price if you have one.</p>
-                </article>
-
-                <article class="step">
-                    <div class="step-number">2</div>
-                    <h3>We Source Suppliers</h3>
-                    <p>Our team searches for suitable suppliers and available options.</p>
-                </article>
-
-                <article class="step">
-                    <div class="step-number">3</div>
-                    <h3>Review Your Quote</h3>
-                    <p>Check the product cost, fees, delivery costs and quotation terms.</p>
-                </article>
-
-                <article class="step">
-                    <div class="step-number">4</div>
-                    <h3>Approve the Order</h3>
-                    <p>Review the terms and approve before purchasing proceeds.</p>
-                </article>
-
-                <article class="step">
-                    <div class="step-number">5</div>
-                    <h3>Arrange Delivery</h3>
-                    <p>Follow up on the order and confirm the agreed delivery arrangements.</p>
-                </article>
-
-            </div>
-
-        </div>
-    </section>
-</main>
-
-<footer class="site-footer">
-    <div class="footer-container">
-
-        <div class="footer-main">
-            <div class="footer-brand">
-                <h3>Universal Marketplace</h3>
-                <p>
-                    Connecting buyers with sourcing opportunities
-                    across Lesotho and South Africa.
-                </p>
-            </div>
-
-            <nav class="footer-links" aria-label="Footer navigation">
+            <nav class="nav-links" id="navLinks">
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="#categories">Categories</a>
                 <a href="#how-it-works">How It Works</a>
+
                 {% if current_user.is_authenticated %}
+
                     {% if current_user.role == 'buyer' %}
+                        <a href="{{ url_for('request_product') }}">Request Product</a>
                         <a href="{{ url_for('my_requests') }}">My Requests</a>
-                    {% elif current_user.role in ['admin', 'super_admin', 'company_admin'] %}
-                        <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('list_quotations') }}">My Quotations</a>
                     {% endif %}
+
+                    {% if current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                        <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                        <a href="{{ url_for('buyer_accounts') }}">Buyers</a>
+                        <a href="{{ url_for('list_suppliers') }}">Suppliers</a>
+                        <a href="{{ url_for('create_quotation') }}">Quotations</a>
+                    {% endif %}
+
+                    <form action="{{ url_for('logout') }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-outline" type="submit">Log Out</button>
+                    </form>
+
                 {% else %}
                     <a href="{{ url_for('login') }}">Log In</a>
-                    <a href="{{ url_for('register') }}">Register</a>
+                    <a class="btn btn-green" href="{{ url_for('register') }}">Get Started</a>
                 {% endif %}
             </nav>
         </div>
+    </header>
 
-        <div class="footer-bottom">
-            <p class="footer-note">
-                Product availability, supplier prices, delivery costs and timelines
-                must be confirmed for each order. Review your quotation and terms
-                before approving a purchase.
-            </p>
-            © {{ now.year if now is defined else 2026 }} Universal Marketplace. All rights reserved.
+    <main>
+
+        <!-- HERO -->
+        <section class="hero">
+            <div class="container hero-container">
+                <div class="hero-content">
+
+                    <div class="hero-label">
+                        <span class="dot"></span>
+                        Your regional sourcing partner
+                    </div>
+
+                    <h1>
+                        From Lesotho to South Africa,
+                        <span>business moves forward.</span>
+                    </h1>
+
+                    <p>
+                        Find products, connect with suppliers and request
+                        quotations through one marketplace built to help
+                        businesses and individuals source what they need
+                        across Lesotho and South Africa.
+                    </p>
+
+                    <div class="hero-buttons">
+                        {% if current_user.is_authenticated and current_user.role == 'buyer' %}
+                            <a class="btn btn-green" href="{{ url_for('request_product') }}">
+                                Request a Product <span>→</span>
+                            </a>
+                            <a class="btn btn-outline-white" href="{{ url_for('my_requests') }}">
+                                View My Requests
+                            </a>
+                        {% else %}
+                            <a class="btn btn-green" href="{{ url_for('register') }}">
+                                Start Sourcing <span>→</span>
+                            </a>
+                            <a class="btn btn-outline-white" href="#how-it-works">
+                                Discover How It Works
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="hero-points">
+                        <span>Cross-border sourcing</span>
+                        <span>Quotation-based purchasing</span>
+                        <span>Buyer-focused service</span>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- TRUST STRIP -->
+        <section class="trust-strip">
+            <div class="container trust-grid">
+
+                <div class="trust-item">
+                    <div class="trust-icon">🌍</div>
+                    <div>
+                        <strong>Two-country marketplace</strong>
+                        <small>Connecting Lesotho and South Africa</small>
+                    </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">📋</div>
+                    <div>
+                        <strong>Request and compare quotations</strong>
+                        <small>Understand your costs before proceeding</small>
+                    </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">🤝</div>
+                    <div>
+                        <strong>People-powered sourcing</strong>
+                        <small>Helping buyers connect with suppliers</small>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CATEGORY PHOTOS -->
+        <section class="section section-light" id="categories">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div class="eyebrow">Explore the marketplace</div>
+                    <h2>What are you looking for?</h2>
+                    <p>
+                        Explore product categories, discover sourcing options
+                        and tell us what you need across Lesotho and South Africa.
+                    </p>
+                </div>
+
+                <div class="category-grid">
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='beauty-personal-care') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/beauty.jpg') }}"
+                                 alt="Beauty, skincare and personal-care products"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">PERSONAL CARE</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Beauty &amp; Personal Care</h3>
+                            <p>Beauty products, skincare, haircare and personal-care supplies.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='automotive-mechanical') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/automotive.jpg') }}"
+                                 alt="Automotive spare parts and mechanical tools"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">AUTO &amp; PARTS</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Automotive &amp; Mechanical</h3>
+                            <p>Vehicle spare parts, workshop equipment, tools and mechanical supplies.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='heavy-machinery') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/machinery.jpg') }}"
+                                 alt="Heavy construction and industrial machinery"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">INDUSTRIAL</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Heavy Machinery</h3>
+                            <p>Construction machinery, industrial equipment and heavy-duty components.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='general-wholesale') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/wholesale.jpg') }}"
+                                 alt="Wholesale cartons and bulk merchandise"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">BULK BUYING</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>General Wholesale</h3>
+                            <p>General merchandise, bulk purchases and supplies for growing businesses.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='medical-equipment-supplies') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/medical.jpg') }}"
+                                 alt="Medical equipment and healthcare supplies"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">HEALTHCARE</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Medical Equipment &amp; Supplies</h3>
+                            <p>Medical equipment and related supplies sourced to your requirements.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='electronics-cameras-phones') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/electronics.jpg') }}"
+                                 alt="Smartphones, cameras and electronic accessories"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">TECHNOLOGY</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Electronics &amp; Phones</h3>
+                            <p>Electronics, phones, cameras, accessories and technology products.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('browse_category', category_name='adult-sexuality-wellness') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/wellness.jpg') }}"
+                                 alt="Personal wellness and self-care products"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">WELLNESS</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Wellness &amp; Personal Products</h3>
+                            <p>Personal wellness and self-care products, subject to applicable laws.</p>
+                            <div class="category-link">Explore category <span>→</span></div>
+                        </div>
+                    </a>
+
+                    <a class="category-card"
+                       href="{{ url_for('request_product') }}">
+                        <div class="category-image-wrap">
+                            <img class="category-image"
+                                 src="{{ url_for('static', filename='uploads/something.jpg') }}"
+                                 alt="Boxes and products prepared for sourcing and delivery"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'">
+                            <span class="category-badge">CUSTOM REQUEST</span>
+                        </div>
+                        <div class="category-content">
+                            <h3>Something Else?</h3>
+                            <p>Can't find your item? Submit a sourcing request describing what you need.</p>
+                            <div class="category-link">Request a product <span>→</span></div>
+                        </div>
+                    </a>
+
+                </div>
+
+                <p class="category-note">
+                    Can't see the product you need? Submit a request so the team
+                    can review your sourcing requirements.
+                </p>
+
+            </div>
+        </section>
+
+        <!-- CROSS-BORDER SECTION -->
+        <section class="section">
+            <div class="container">
+                <div class="cross-border">
+                    <div class="cross-border-content">
+
+                        <div class="cross-border-copy">
+                            <div class="eyebrow" style="color:#8EE6AD;">
+                                Built for regional trade
+                            </div>
+                            <h2>One marketplace. Two countries. More possibilities.</h2>
+                            <p>
+                                Whether your business is in Lesotho or South Africa,
+                                Universal Marketplace helps you organise sourcing
+                                requests, receive quotations and coordinate the next
+                                steps towards getting the products you need.
+                            </p>
+                        </div>
+
+                        <div class="country-flags"
+                             aria-label="Lesotho and South African flags">
+                            <div class="country-flag flag-lesotho" title="Lesotho flag">
+                                <div class="flag-blue"></div>
+                                <div class="flag-black"></div>
+                                <div class="flag-green"></div>
+                            </div>
+
+                            <div style="color:white;font-size:22px;font-weight:900;">↔</div>
+
+                            <div class="country-flag flag-sa" title="South African flag">
+                                <div class="sa-red"></div>
+                                <div class="sa-green"></div>
+                                <div class="sa-blue"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section class="section section-light" id="how-it-works">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div class="eyebrow">Simple sourcing process</div>
+                    <h2>From product request to quotation</h2>
+                    <p>A clear process helps buyers communicate their needs and review available options.</p>
+                </div>
+
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">01</div>
+                        <h3>Create Your Account</h3>
+                        <p>Register so you can submit and manage your product sourcing requests.</p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">02</div>
+                        <h3>Describe Your Product</h3>
+                        <p>Provide the product name, quantity, specifications and destination.</p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">03</div>
+                        <h3>Sourcing and Pricing</h3>
+                        <p>Your request can be reviewed for supplier options and pricing.</p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">04</div>
+                        <h3>Review Your Quotation</h3>
+                        <p>Review proposed costs and terms before deciding whether to proceed.</p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">05</div>
+                        <h3>Confirm Next Steps</h3>
+                        <p>Once terms are agreed, coordinate purchasing and delivery arrangements.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CALL TO ACTION -->
+        <section class="cta-section">
+            <div class="container">
+                <div class="cta-panel">
+                    <h2>Your next product starts with a request.</h2>
+                    <p>
+                        Whether you are buying for personal use, running a small
+                        business or sourcing equipment for a larger operation,
+                        start by telling us what you need.
+                    </p>
+
+                    <div class="cta-buttons">
+                        <a class="btn btn-green" href="{{ url_for('request_product') }}">
+                            Request a Product
+                        </a>
+
+                        {% if current_user.is_authenticated %}
+                            <a class="btn btn-outline-white" href="{{ url_for('list_quotations') }}">
+                                View Quotations
+                            </a>
+                        {% else %}
+                            <a class="btn btn-white" href="{{ url_for('register') }}">
+                                Create an Account
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+
+            <div class="footer-grid">
+                <div class="footer-brand-column">
+                    <a href="{{ url_for('home') }}" class="brand">
+                        <div class="brand-mark">UM</div>
+                        <div>
+                            <div class="brand-name">Universal Marketplace</div>
+                            <span class="brand-tagline">LESOTHO ↔ SOUTH AFRICA</span>
+                        </div>
+                    </a>
+
+                    <p class="footer-description">
+                        A regional sourcing and commerce platform designed
+                        to connect buyers, suppliers and sourcing services
+                        across Lesotho and South Africa.
+                    </p>
+                </div>
+
+                <div>
+                    <h3>Explore</h3>
+                    <div class="footer-links">
+                        <a href="{{ url_for('home') }}">Home</a>
+                        <a href="#categories">Product Categories</a>
+                        <a href="#how-it-works">How It Works</a>
+                        <a href="{{ url_for('request_product') }}">Request a Product</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h3>Your Account</h3>
+                    <div class="footer-links">
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.role == 'buyer' %}
+                                <a href="{{ url_for('my_requests') }}">My Requests</a>
+                                <a href="{{ url_for('list_quotations') }}">My Quotations</a>
+                            {% endif %}
+
+                            {% if current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                                <a href="{{ url_for('company_dashboard') }}">Management Dashboard</a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ url_for('login') }}">Log In</a>
+                            <a href="{{ url_for('register') }}">Create an Account</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <span>
+                    © {{ now.year if now is defined else 2026 }}
+                    <strong>Universal Marketplace.</strong> All rights reserved.
+                </span>
+                <span>Connecting Lesotho and South Africa.</span>
+            </div>
+
         </div>
+    </footer>
 
-    </div>
-</footer>
+    <!-- MOBILE MENU -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const menuToggle = document.getElementById("menuToggle");
+            const navLinks = document.getElementById("navLinks");
 
-<script>
-    (function () {
-        const menuButton = document.querySelector(".menu-toggle");
-        const menu = document.querySelector("#main-navigation");
+            if (!menuToggle || !navLinks) {
+                return;
+            }
 
-        if (!menuButton || !menu) return;
+            menuToggle.addEventListener("click", function () {
+                const isOpen = navLinks.classList.toggle("open");
 
-        menuButton.addEventListener("click", function () {
-            const isOpen = menu.classList.toggle("is-open");
+                menuToggle.setAttribute("aria-expanded", String(isOpen));
+                menuToggle.setAttribute(
+                    "aria-label",
+                    isOpen ? "Close navigation menu" : "Open navigation menu"
+                );
+                menuToggle.textContent = isOpen ? "✕" : "☰";
+            });
 
-            menuButton.setAttribute("aria-expanded", String(isOpen));
-            menuButton.setAttribute(
-                "aria-label",
-                isOpen ? "Close navigation menu" : "Open navigation menu"
-            );
-            menuButton.textContent = isOpen ? "×" : "☰";
-        });
-
-        menu.querySelectorAll("a").forEach(function (link) {
-            link.addEventListener("click", function () {
-                menu.classList.remove("is-open");
-                menuButton.setAttribute("aria-expanded", "false");
-                menuButton.setAttribute("aria-label", "Open navigation menu");
-                menuButton.textContent = "☰";
+            navLinks.querySelectorAll("a").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    navLinks.classList.remove("open");
+                    menuToggle.setAttribute("aria-expanded", "false");
+                    menuToggle.setAttribute("aria-label", "Open navigation menu");
+                    menuToggle.textContent = "☰";
+                });
             });
         });
-    })();
-</script>
+    </script>
 
 </body>
 </html>

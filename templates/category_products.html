@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ category }} | Universal Marketplace</title>
+
+    <meta
+        name="description"
+        content="Explore {{ category }} products on Universal Marketplace, connecting Lesotho and South Africa."
+    >
+
+    <style>
+        :root {
+            --blue: #00209F;
+            --blue-dark: #071744;
+            --green: #009543;
+            --green-dark: #007A36;
+            --light: #F5F7FC;
+            --white: #FFFFFF;
+            --text: #172033;
+            --muted: #657087;
+            --border: #E1E7F0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--light);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        a {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        header {
+            background: var(--white);
+            border-bottom: 4px solid var(--green);
+            padding: 18px 5%;
+        }
+
+        header a {
+            color: var(--blue-dark);
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 17px;
+        }
+
+        main {
+            width: min(1120px, calc(100% - 32px));
+            margin: 30px auto 45px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: var(--blue);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+        .hero {
+            padding: 30px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(7, 23, 68, 0.05);
+            margin-bottom: 28px;
+        }
+
+        .eyebrow {
+            color: var(--green-dark);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--blue-dark);
+        }
+
+        h1 {
+            margin: 8px 0 12px;
+            line-height: 1.2;
+            font-size: clamp(28px, 5vw, 40px);
+            overflow-wrap: anywhere;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            background: var(--green);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+            border: 0;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s ease;
+        }
+
+        .button:hover {
+            background: var(--green-dark);
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 28px 0 18px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(min(100%, 250px), 1fr)
+            );
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .product-card {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 5px 18px rgba(7, 23, 68, 0.05);
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(7, 23, 68, 0.10);
+        }
+
+        /* Product image area */
+        .product-image-wrap {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .product-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            padding: 12px;
+            background: #FFFFFF;
+        }
+
+        /* Fallback for missing or broken images */
+        .image-placeholder {
+            width: 100%;
+            height: 240px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #EDF1F8;
+            color: var(--muted);
+            font-size: 44px;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .image-placeholder span {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .product-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 18px;
+        }
+
+        .product-content h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+        }
+
+        .product-description {
+            color: var(--muted);
+            font-size: 14px;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+
+        .price {
+            color: var(--green-dark);
+            font-size: 21px;
+            font-weight: 800;
+            margin: 14px 0 4px;
+            overflow-wrap: anywhere;
+        }
+
+        .product-meta {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .product-button {
+            display: block;
+            margin-top: auto;
+            padding: 12px 14px;
+            background: var(--blue);
+            color: var(--white);
+            text-align: center;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .product-button:hover {
+            background: var(--blue-dark);
+        }
+
+        .empty-state {
+            padding: 28px;
+            background: var(--white);
+            border: 1px dashed #B9C5D8;
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .request-panel {
+            margin-top: 30px;
+            padding: 25px;
+            background: #EAF5EE;
+            border: 1px solid #C8E3D1;
+            border-radius: 14px;
+        }
+
+        footer {
+            padding: 25px 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 16px;
+            }
+
+            header a {
+                font-size: 15px;
+            }
+
+            main {
+                width: calc(100% - 24px);
+                margin-top: 20px;
+            }
+
+            .hero {
+                padding: 22px;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+
+            .product-image-wrap,
+            .image-placeholder {
+                height: 250px;
+            }
+
+            .product-content {
+                padding: 16px;
+            }
+
+            .request-panel {
+                padding: 20px;
+            }
+
+            .button,
+            .product-button {
+                width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a href="{{ url_for('home') }}">
+            UNIVERSAL MARKETPLACE 🇱🇸 🇿🇦
+        </a>
+    </header>
+
+    <main>
+        <a class="back" href="{{ url_for('home') }}#categories">
+            ← Back to categories
+        </a>
+
+        <section class="hero">
+            <div class="eyebrow">
+                Lesotho 🇱🇸 · South Africa 🇿🇦
+            </div>
+
+            <h1>{{ category }}</h1>
+
+            <p>
+                Discover products and sourcing opportunities across
+                Lesotho and South Africa. Browse available listings
+                or request an item if you cannot find what you need.
+            </p>
+
+            <a class="button" href="{{ url_for('request_product') }}">
+                Request a Product
+            </a>
+        </section>
+
+        <div class="section-heading">
+            <h2>Available Products</h2>
+
+            <span class="muted">
+                {{ products|length }}
+                product{% if products|length != 1 %}s{% endif %}
+            </span>
+        </div>
+
+        {% if products %}
+            <section
+                class="product-grid"
+                aria-label="Available products"
+            >
+                {% for product in products %}
+                    <article class="product-card">
+
+                        {% if product.image_url %}
+                            <div class="product-image-wrap">
+                                <img
+                                    class="product-image"
+                                    src="{{ product.image_url }}"
+                                    alt="{{ product.name }}"
+                                    loading="lazy"
+                                    decoding="async"
+                                    onerror="this.onerror=null; this.parentElement.innerHTML='<div class=&quot;image-placeholder&quot; role=&quot;img&quot; aria-label=&quot;Product image unavailable&quot;><div>📦</div><span>Image unavailable</span></div>';"
+                                >
+                            </div>
+                        {% else %}
+                            <div
+                                class="image-placeholder"
+                                role="img"
+                                aria-label="No product image available"
+                            >
+                                <div>📦</div>
+                                <span>Product image coming soon</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="product-content">
+                            <h3>{{ product.name }}</h3>
+
+                            <div class="product-meta">
+                                {{ product.country }}
+                            </div>
+
+                            <p class="product-description">
+                                {% if product.description %}
+                                    {{ product.description|truncate(150, true, '…') }}
+                                {% else %}
+                                    Contact us to learn more about this product.
+                                {% endif %}
+                            </p>
+
+                            <div class="price">
+                                {{ product.currency }}
+                                {{ "%.2f"|format(product.price) }}
+                            </div>
+
+                            {% if product.stock_quantity > 0 %}
+                                <div class="product-meta">
+                                    Available stock:
+                                    {{ product.stock_quantity }}
+                                </div>
+                            {% else %}
+                                <div class="product-meta">
+                                    Availability confirmed on request
+                                </div>
+                            {% endif %}
+
+                            <a
+                                href="{{ url_for('product_detail', product_id=product.id) }}"
+                                class="product-button"
+                            >
+                                View Product &amp; Enquire
+                            </a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="empty-state">
+                <h2>No products listed yet</h2>
+
+                <p class="muted">
+                    We are building this category. Submit a request and
+                    our team can look for suitable suppliers.
+                </p>
+
+                <a class="button" href="{{ url_for('request_product') }}">
+                    Request This Product
+                </a>
+            </section>
+        {% endif %}
+
+        <section class="request-panel">
+            <h2>Can't find what you're looking for?</h2>
+
+            <p>
+                Tell us what you need, the quantity, and whether you
+                want it sourced from Lesotho or South Africa. Our team
+                can review your request and prepare a quotation.
+            </p>
+
+            <a class="button" href="{{ url_for('request_product') }}">
+                Submit a Sourcing Request
+            </a>
+        </section>
+    </main>
+
+    <footer>
+        Universal Marketplace · Lesotho 🇱🇸 &amp; South Africa 🇿🇦
+    </footer>
+</body>
+</html>

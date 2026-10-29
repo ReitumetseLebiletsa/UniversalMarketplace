@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Enquiries | Universal Marketplace</title>
+
+    <style>
+        :root {
+            --green: #0B6B3A;
+            --dark-green: #064D2A;
+            --blue: #003DA5;
+            --red: #D71920;
+            --light: #F4F7F5;
+            --text: #202820;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--light);
+            color: var(--text);
+        }
+
+        header {
+            background: var(--green);
+            color: white;
+            padding: 20px 5%;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        header p { margin-bottom: 0; }
+
+        main {
+            width: min(1200px, 94%);
+            margin: 28px auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .back {
+            color: var(--dark-green);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .summary {
+            background: white;
+            padding: 18px 22px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            box-shadow: 0 3px 14px #0000000a;
+        }
+
+        .summary strong {
+            font-size: 28px;
+            color: var(--green);
+            display: block;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 14px #0000000a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid #e8ece9;
+        }
+
+        th {
+            background: #edf3ee;
+            color: var(--dark-green);
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        td { font-size: 14px; }
+
+        .status {
+            display: inline-block;
+            background: #e8f0ff;
+            color: var(--blue);
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        select, button {
+            padding: 9px;
+            border: 1px solid #ccd5ce;
+            border-radius: 6px;
+            font: inherit;
+        }
+
+        button {
+            background: var(--green);
+            color: white;
+            border: 0;
+            cursor: pointer;
+            margin-top: 7px;
+        }
+
+        button:hover { background: var(--dark-green); }
+
+        .message {
+            max-width: 260px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .empty {
+            background: white;
+            padding: 35px;
+            text-align: center;
+            border-radius: 12px;
+        }
+
+        .flash {
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #e6f4ea;
+            color: #14532d;
+            border-radius: 7px;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 21px; }
+            main { width: 96%; }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>Universal Marketplace</h1>
+    <p>Company Dashboard · Customer Product Enquiries</p>
+</header>
+
+<main>
+    <div class="topbar">
+        <h2>Customer Enquiries</h2>
+        <a class="back"
+           href="{{ url_for('manage_products') }}">
+            ← Back to Product Manager
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="summary">
+        <strong>{{ enquiries|length }}</strong>
+        Total product enquiries
+    </section>
+
+    {% if enquiries %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Enquiry</th>
+                    <th>Product</th>
+                    <th>Customer</th>
+                    <th>Quantity</th>
+                    <th>Message</th>
+                    <th>Status</th>
+                    <th>Update Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for enquiry in enquiries %}
+                <tr>
+                    <td>
+                        #{{ enquiry.id }}<br>
+                        <small>
+                            {{ enquiry.created_at.strftime('%d %b %Y %H:%M')
+                               if enquiry.created_at else 'Date unavailable' }}
+                        </small>
+                    </td>
+
+                    <td>
+                        <strong>{{ enquiry.product.name }}</strong><br>
+                        {{ enquiry.product.currency }}
+                        {{ "%.2f"|format(enquiry.product.price) }}
+                    </td>
+
+                    <td>
+                        <strong>{{ enquiry.customer_name }}</strong><br>
+                        <a href="mailto:{{ enquiry.customer_email }}">
+                            {{ enquiry.customer_email }}
+                        </a>
+                        {% if enquiry.customer_contact %}
+                            <br>{{ enquiry.customer_contact }}
+                        {% endif %}
+                    </td>
+
+                    <td>{{ enquiry.quantity }}</td>
+
+                    <td class="message">{{ enquiry.message }}</td>
+
+                    <td>
+                        <span class="status">
+                            {{ enquiry.status }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <form method="POST"
+                              action="{{ url_for(
+                                  'update_product_enquiry_status',
+                                  enquiry_id=enquiry.id
+                              ) }}">
+                            <input type="hidden" name="csrf_token"
+                                   value="{{ csrf_token() }}">
+
+                            <select name="status" required>
+                                {% for status in [
+                                    'New',
+                                    'Contacted',
+                                    'Quotation Sent',
+                                    'Completed',
+                                    'Cancelled'
+                                ] %}
+                                    <option value="{{ status }}"
+                                        {% if enquiry.status == status %}
+                                            selected
+                                        {% endif %}>
+                                        {{ status }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+
+                            <button type="submit">Save Status</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <section class="empty">
+            <h3>No product enquiries yet</h3>
+            <p>Customer enquiries will appear here when submitted.</p>
+        </section>
+    {% endif %}
+</main>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} | Universal Marketplace</title>
+    <meta name="description" content="{{ product.description }}">
+    <style>
+        :root {
+            --green: #0B6B3A;
+            --dark-green: #064D2A;
+            --blue: #003DA5;
+            --red: #D71920;
+            --light: #F4F7F5;
+            --text: #202820;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background: var(--light);
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--green);
+            color: white;
+            padding: 18px 5%;
+        }
+
+        .brand {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .brand span { color: #E7F3EA; }
+
+        .container {
+            width: min(1100px, 92%);
+            margin: 28px auto;
+        }
+
+        .back {
+            color: var(--dark-green);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-top: 20px;
+            align-items: start;
+        }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px #0000000d;
+        }
+
+        .product-image {
+            width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #f7f7f7;
+        }
+
+        .placeholder {
+            min-height: 220px;
+            display: grid;
+            place-items: center;
+            background: #e8f0e9;
+            border-radius: 10px;
+            font-size: 60px;
+        }
+
+        .category {
+            color: var(--green);
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        h1 { line-height: 1.25; }
+
+        .price {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--dark-green);
+        }
+
+        .detail {
+            border-bottom: 1px solid #eee;
+            padding: 9px 0;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin: 13px 0 5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccd5ce;
+            border-radius: 7px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 14px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--green);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover { background: var(--dark-green); }
+
+        .notice {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            background: #e6f4ea;
+            color: #14532d;
+        }
+
+        .notice.error {
+            background: #fde8e8;
+            color: #991b1b;
+        }
+
+        .trust {
+            background: #edf3ff;
+            border-left: 4px solid var(--blue);
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 18px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #657066;
+        }
+
+        @media (max-width: 750px) {
+            .layout { grid-template-columns: 1fr; }
+            .panel { padding: 18px; }
+            h1 { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="brand">UNIVERSAL <span>MARKETPLACE</span></div>
+    <div>Connecting Lesotho 🇱🇸 and South Africa 🇿🇦</div>
+</header>
+
+<main class="container">
+    <a class="back" href="{{ url_for('home') }}">
+    ← Back to marketplace
+</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="notice {{ 'error' if category == 'error' else '' }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="layout">
+        <section class="panel">
+            {% if product.image_url %}
+                <img class="product-image"
+                     src="{{ product.image_url }}"
+                     alt="{{ product.name }}"
+                     loading="lazy">
+            {% else %}
+                <div class="placeholder">🛍️</div>
+            {% endif %}
+
+            <p class="category">{{ product.category }}</p>
+            <h1>{{ product.name }}</h1>
+
+            <div class="price">
+                {{ product.currency }} {{ "%.2f"|format(product.price) }}
+            </div>
+
+            <div class="detail">
+                <strong>Source country:</strong>
+                {{ product.country }}
+            </div>
+
+            <div class="detail">
+                <strong>Availability:</strong>
+                {% if product.stock_quantity > 0 %}
+                    In stock
+                {% else %}
+                    Contact us to confirm availability
+                {% endif %}
+            </div>
+
+            <h3>Product description</h3>
+            <p>{{ product.description or "Contact us for more information about this product." }}</p>
+
+            <div class="trust">
+                <strong>Buying across borders?</strong><br>
+                Send an enquiry to discuss pricing, availability,
+                sourcing and delivery between Lesotho and South Africa.
+                Confirm final costs and delivery arrangements before paying.
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Enquire about this product</h2>
+            <p>Complete the form below. You do not need an account.</p>
+
+            <form method="POST"
+                  action="{{ url_for('submit_product_enquiry', product_id=product.id) }}">
+                <input type="hidden" name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <label for="customer_name">Full name *</label>
+                <input id="customer_name" name="customer_name"
+                       maxlength="120" required autocomplete="name">
+
+                <label for="customer_email">Email address *</label>
+                <input id="customer_email" name="customer_email"
+                       type="email" maxlength="254" required
+                       autocomplete="email">
+
+                <label for="customer_contact">Phone / WhatsApp number</label>
+                <input id="customer_contact" name="customer_contact"
+                       maxlength="120" autocomplete="tel">
+
+                <label for="quantity">Quantity required *</label>
+                <input id="quantity" name="quantity"
+                       type="number" min="1" max="1000000"
+                       value="1" required>
+
+                <label for="message">Your message *</label>
+                <textarea id="message" name="message"
+                          maxlength="5000" required
+                          placeholder="Tell us your location, delivery needs or any questions about this product."></textarea>
+
+                <button type="submit">Submit Product Enquiry</button>
+            </form>
+
+            <p style="font-size:13px;color:#68736a;">
+                Your contact details will be used to respond to your enquiry.
+            </p>
+        </section>
+    </div>
+</main>
+
+<footer>
+    Universal Marketplace · Lesotho 🇱🇸 | South Africa 🇿🇦
+</footer>
+</body>
+</html>

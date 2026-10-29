@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if product %}Edit Product{% else %}Add Product{% endif %} | Universal Marketplace</title>
+
+    <style>
+        :root {
+            --blue: #00209F;
+            --dark: #071744;
+            --green: #009543;
+            --light: #F5F7FC;
+            --border: #E1E7F0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            padding: 18px 5%;
+            background: white;
+            border-bottom: 4px solid var(--green);
+        }
+
+        header a {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        main {
+            max-width: 760px;
+            width: calc(100% - 30px);
+            margin: 30px auto;
+        }
+
+        .panel {
+            background: white;
+            padding: 25px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        h1 { margin-top: 0; }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin: 16px 0 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #C8D0DF;
+            border-radius: 7px;
+            font: inherit;
+            background: white;
+            color: var(--dark);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            background: var(--light);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .hint {
+            color: #657087;
+            font-size: 13px;
+        }
+
+        .button {
+            display: inline-block;
+            border: 0;
+            border-radius: 8px;
+            padding: 12px 18px;
+            margin-top: 18px;
+            background: var(--green);
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .secondary { background: var(--blue); }
+
+        .flash {
+            padding: 10px;
+            background: #FFF3CD;
+            border-radius: 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .image-section {
+            margin-top: 20px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #FAFBFE;
+        }
+
+        .image-preview {
+            display: none;
+            width: 100%;
+            max-width: 320px;
+            height: 230px;
+            object-fit: contain;
+            margin-top: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .current-image {
+            width: 100%;
+            max-width: 320px;
+            height: 230px;
+            object-fit: contain;
+            display: block;
+            margin-top: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .image-status {
+            font-size: 13px;
+            color: #657087;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 550px) {
+            .row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .panel { padding: 18px; }
+
+            .button {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <a href="{{ url_for('home') }}">UNIVERSAL MARKETPLACE 🇱🇸 🇿🇦</a>
+</header>
+
+<main>
+    <p>
+        <a href="{{ url_for('manage_products') }}">← Back to products</a>
+    </p>
+
+    <section class="panel">
+        <h1>
+            {% if product %}
+                Edit Product
+            {% else %}
+                Add a Product
+            {% endif %}
+        </h1>
+
+        <p class="hint">
+            {% if product %}
+                Update this product's details, price, image, or stock.
+                Saving changes will update the existing product.
+            {% else %}
+                New products are saved as drafts and remain hidden from
+                public category pages until you publish them.
+            {% endif %}
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category_name, message in messages %}
+                <p class="flash">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            action="{% if product %}{{ url_for('edit_product', product_id=product.id) }}{% else %}{{ url_for('create_product') }}{% endif %}"
+        >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label for="name">Product name *</label>
+            <input
+                id="name"
+                name="name"
+                maxlength="180"
+                value="{{ product.name if product else '' }}"
+                required
+            >
+
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+                <option value="">Choose a category</option>
+
+                {% for item in categories %}
+                    <option
+                        value="{{ item }}"
+                        {% if product and product.category == item %}selected{% endif %}
+                    >
+                        {{ item }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="description">Description *</label>
+            <textarea
+                id="description"
+                name="description"
+                rows="5"
+                maxlength="5000"
+                required
+            >{{ product.description if product else '' }}</textarea>
+
+            <div class="row">
+                <div>
+                    <label for="price">Price *</label>
+                    <input
+                        id="price"
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value="{{ product.price if product else '' }}"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label for="currency">Currency *</label>
+                    <select id="currency" name="currency" required>
+                        <option value="ZAR"
+                            {% if product and product.currency == 'ZAR' %}selected{% endif %}>
+                            ZAR — South African Rand
+                        </option>
+
+                        <option value="LSL"
+                            {% if product and product.currency == 'LSL' %}selected{% endif %}>
+                            LSL — Lesotho Loti
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div>
+                    <label for="country">Product country *</label>
+                    <select id="country" name="country" required>
+                        <option value="Lesotho"
+                            {% if product and product.country == 'Lesotho' %}selected{% endif %}>
+                            Lesotho 🇱🇸
+                        </option>
+
+                        <option value="South Africa"
+                            {% if product and product.country == 'South Africa' %}selected{% endif %}>
+                            South Africa 🇿🇦
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="stock_quantity">Stock quantity *</label>
+                    <input
+                        id="stock_quantity"
+                        name="stock_quantity"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="{{ product.stock_quantity if product else 0 }}"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="image-section">
+                <label for="image_file">Upload product image</label>
+
+                <input
+                    id="image_file"
+                    name="image_file"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+                >
+
+                <p class="hint">
+                    Choose a photo from your phone or computer.
+                    Accepted formats: JPG, JPEG, PNG, WEBP and GIF.
+                    Maximum file size: 5 MB.
+                    Uploading a new photo takes priority over the image URL.
+                </p>
+
+                {% if product and product.image_url %}
+                    <p><strong>Current product image</strong></p>
+
+                    <img
+                        class="current-image"
+                        src="{{ product.image_url }}"
+                        alt="Current image of {{ product.name }}"
+                        onerror="this.style.display='none'; document.getElementById('current-image-error').style.display='block';"
+                    >
+
+                    <p
+                        id="current-image-error"
+                        class="image-status"
+                        style="display:none;"
+                    >
+                        The current image could not be displayed. You can upload a replacement below.
+                    </p>
+                {% endif %}
+
+                <img
+                    id="image-preview"
+                    class="image-preview"
+                    alt="Preview of the selected product image"
+                >
+
+                <p id="image-status" class="image-status" aria-live="polite"></p>
+            </div>
+
+            <label for="image_url">Or use a product image URL</label>
+            <input
+                id="image_url"
+                name="image_url"
+                type="url"
+                value="{{ product.image_url if product and product.image_url else '' }}"
+                placeholder="https://example.com/product-image.jpg"
+            >
+
+            <p class="hint">
+                Optional. Use a direct image URL that you have permission to use.
+                If you upload a photo, the uploaded photo takes priority.
+            </p>
+
+            <button class="button" type="submit">
+                {% if product %}
+                    Save Changes
+                {% else %}
+                    Save Product as Draft
+                {% endif %}
+            </button>
+
+            <a class="button secondary"
+               href="{{ url_for('manage_products') }}">
+                Cancel
+            </a>
+        </form>
+    </section>
+</main>
+
+<script>
+    const imageInput = document.getElementById("image_file");
+    const preview = document.getElementById("image-preview");
+    const status = document.getElementById("image-status");
+
+    let previewUrl = null;
+
+    imageInput.addEventListener("change", function () {
+        const file = this.files && this.files[0];
+
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+        }
+
+        preview.removeAttribute("src");
+        preview.style.display = "none";
+        status.textContent = "";
+
+        if (!file) return;
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            status.textContent = "Please choose a JPG, PNG, WEBP or GIF image.";
+            this.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            status.textContent = "The image is larger than 5 MB. Please choose a smaller file.";
+            this.value = "";
+            return;
+        }
+
+        previewUrl = URL.createObjectURL(file);
+        preview.src = previewUrl;
+        preview.style.display = "block";
+        status.textContent = "Selected: " + file.name;
+
+        preview.onerror = function () {
+            preview.style.display = "none";
+            status.textContent = "This image could not be previewed. Please choose another image.";
+        };
+    });
+</script>
+</body>
+</html>

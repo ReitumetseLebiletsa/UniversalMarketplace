@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Products | Universal Marketplace</title>
+    <style>
+        :root {
+            --blue: #00209F;
+            --dark: #071744;
+            --green: #009543;
+            --light: #F5F7FC;
+            --border: #E1E7F0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        header {
+            padding: 18px 5%;
+            background: white;
+            border-bottom: 4px solid var(--green);
+        }
+        header a {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 800;
+        }
+        main {
+            max-width: 1200px;
+            width: calc(100% - 30px);
+            margin: 30px auto;
+        }
+        .panel {
+            background: white;
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .button {
+            display: inline-block;
+            padding: 9px 12px;
+            border-radius: 7px;
+            background: var(--green);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            border: 0;
+            cursor: pointer;
+            font: inherit;
+            font-size: 14px;
+        }
+        .secondary { background: var(--blue); }
+        .edit { background: #475569; }
+        .table-wrap { overflow-x: auto; margin-top: 20px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 780px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th { background: #F0F3F9; }
+        .status { font-weight: 700; }
+        .published { color: #007A36; }
+        .draft { color: #8A5A00; }
+        .flash {
+            padding: 10px;
+            background: #EAF5EE;
+            border-radius: 6px;
+        }
+        .muted { color: #657087; }
+        .actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+        .actions form { margin: 0; }
+        .product-image {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        .no-image {
+            color: #657087;
+            font-size: 12px;
+        }
+        @media (max-width: 600px) {
+            .panel { padding: 14px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a href="{{ url_for('home') }}">UNIVERSAL MARKETPLACE 🇱🇸 🇿🇦</a>
+</header>
+
+<main>
+    <section class="panel">
+        <div class="top">
+            <div>
+                <h1>Manage Products</h1>
+                <p class="muted">
+                    Edit listings, update stock, and control what customers can see.
+                </p>
+            </div>
+            <a class="button" href="{{ url_for('create_product') }}">
+                + Add Product
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category_name, message in messages %}
+                <p class="flash">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        {% if products %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Country</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>
+                                    {% if product.image_url %}
+                                        <img
+                                            class="product-image"
+                                            src="{{ product.image_url }}"
+                                            alt="{{ product.name }}"
+                                            loading="lazy"
+                                        >
+                                    {% else %}
+                                        <span class="no-image">No photo</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.category }}</td>
+                                <td>
+                                    {{ product.currency }}
+                                    {{ "%.2f"|format(product.price) }}
+                                </td>
+                                <td>{{ product.country }}</td>
+                                <td>{{ product.stock_quantity }}</td>
+                                <td>
+                                    {% if product.published %}
+                                        <span class="status published">Published</span>
+                                    {% else %}
+                                        <span class="status draft">Draft / Hidden</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="actions">
+                                        <a
+                                            class="button edit"
+                                            href="{{ url_for('edit_product', product_id=product.id) }}"
+                                        >
+                                            Edit
+                                        </a>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('toggle_product_published', product_id=product.id) }}"
+                                        >
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
+                                            >
+
+                                            {% if product.published %}
+                                                <button
+                                                    class="button secondary"
+                                                    type="submit"
+                                                >
+                                                    Unpublish
+                                                </button>
+                                            {% else %}
+                                                <button
+                                                    class="button"
+                                                    type="submit"
+                                                >
+                                                    Publish
+                                                </button>
+                                            {% endif %}
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>
+                No products have been added yet. Select
+                <strong>Add Product</strong> to create your first listing.
+            </p>
+        {% endif %}
+
+        <p>
+            <a href="{{ url_for('company_dashboard') }}">
+                ← Back to company dashboard
+            </a>
+        </p>
+    </section>
+</main>
+</body>
+</html>

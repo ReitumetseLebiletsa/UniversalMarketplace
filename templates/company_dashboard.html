@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#071744">
-
     <title>Company Dashboard | Universal Marketplace</title>
 
     <style>
@@ -32,7 +31,6 @@
         }
 
         a { color: inherit; }
-
         button, select { font: inherit; }
 
         a:focus-visible,
@@ -41,8 +39,6 @@
             outline: 3px solid #EABF35;
             outline-offset: 3px;
         }
-
-        /* Header and navigation */
 
         .site-header {
             background: var(--navy);
@@ -118,6 +114,16 @@
             color: white;
         }
 
+        .nav-link-enquiries {
+            background: var(--green);
+            color: white;
+        }
+
+        .nav-link-enquiries:hover {
+            background: var(--green-dark);
+            color: white;
+        }
+
         .logout-form { margin: 0; }
 
         .logout-button {
@@ -132,8 +138,6 @@
         }
 
         .logout-button:hover { background: #482532; }
-
-        /* Main layout */
 
         main {
             max-width: 1500px;
@@ -198,11 +202,7 @@
             background: #EEF2FF;
         }
 
-        /* Flash messages */
-
-        .flash-messages {
-            margin-bottom: 24px;
-        }
+        .flash-messages { margin-bottom: 24px; }
 
         .message {
             margin-bottom: 10px;
@@ -214,8 +214,6 @@
             color: #185B32;
             font-size: 14px;
         }
-
-        /* Statistics */
 
         .stats {
             display: grid;
@@ -257,8 +255,6 @@
             font-size: 11px;
         }
 
-        /* Management cards */
-
         .section-block { margin-bottom: 38px; }
 
         .section-header {
@@ -270,9 +266,7 @@
             margin-bottom: 18px;
         }
 
-        .section-header p {
-            margin-top: 5px;
-        }
+        .section-header p { margin-top: 5px; }
 
         .management-grid {
             display: grid;
@@ -298,6 +292,16 @@
         .management-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 12px 28px rgba(7, 23, 68, .10);
+        }
+
+        .enquiries-card {
+            border-top-color: var(--blue);
+            background: linear-gradient(180deg, #FFFFFF 0%, #F0F4FF 100%);
+        }
+
+        .enquiries-card .card-icon {
+            background: var(--green);
+            color: white;
         }
 
         .card-icon {
@@ -331,8 +335,6 @@
             font-size: 13px;
             font-weight: 800;
         }
-
-        /* Requests panel */
 
         .panel {
             overflow: hidden;
@@ -381,7 +383,6 @@
         }
 
         tbody tr:hover { background: #FAFBFF; }
-
         tbody tr:last-child td { border-bottom: none; }
 
         .reference {
@@ -503,25 +504,15 @@
             }
 
             .nav-link { padding: 8px 9px; }
-
             main { padding: 26px 15px 38px; }
-
             .page-heading { align-items: flex-start; }
-
             .stats { gap: 10px; }
-
             .stat { padding: 16px; }
-
             .stat strong { font-size: 25px; }
-
             .management-grid { gap: 12px; }
-
             .management-card { padding: 17px; }
-
             .management-card h3 { font-size: 14px; }
-
             .management-card p { font-size: 12px; }
-
             .panel-heading { padding: 19px 16px; }
         }
 
@@ -552,6 +543,10 @@
             <a class="nav-link" href="{{ url_for('buyer_accounts') }}">Buyers</a>
             <a class="nav-link" href="{{ url_for('list_suppliers') }}">Suppliers</a>
             <a class="nav-link" href="{{ url_for('list_quotations') }}">Quotations</a>
+            <a class="nav-link nav-link-enquiries"
+               href="{{ url_for('company_product_enquiries') }}">
+                ✉ Product Enquiries
+            </a>
             <a class="nav-link" href="{{ url_for('home') }}">Marketplace</a>
 
             <form class="logout-form" action="{{ url_for('logout') }}" method="POST">
@@ -570,8 +565,8 @@
             <span class="eyebrow">Operations overview</span>
             <h1>Company Dashboard</h1>
             <p class="subtext">
-                Manage sourcing requests, buyers, suppliers and quotations
-                across Lesotho and South Africa.
+                Manage sourcing requests, buyers, suppliers, quotations and product
+                enquiries across Lesotho and South Africa.
             </p>
         </div>
 
@@ -656,6 +651,17 @@
                 <span class="card-link">View quotations →</span>
             </a>
 
+            <a class="management-card enquiries-card"
+               href="{{ url_for('company_product_enquiries') }}">
+                <span class="card-icon">✉</span>
+                <h3>Product Enquiries</h3>
+                <p>
+                    View customer enquiries, requested quantities and messages.
+                    Track enquiries from new contact through to completion.
+                </p>
+                <span class="card-link">Manage enquiries →</span>
+            </a>
+
         </div>
     </section>
 
@@ -699,7 +705,6 @@
                                 </td>
 
                                 <td>{{ item.category }}</td>
-
                                 <td>{{ item.quantity }}</td>
 
                                 <td>
