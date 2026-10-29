@@ -25,6 +25,8 @@ from flask_login import (
 )
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import uuid
 
 
 # --------------------------------------------------
@@ -43,6 +45,13 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + str(BASE_DIR / "marketplace.db")
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Product image upload settings
+UPLOAD_FOLDER = BASE_DIR / "static" / "uploads"
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB maximum
 
 db = SQLAlchemy(app)
 
@@ -160,10 +169,15 @@ class Quotation(db.Model):
     currency = db.Column(db.String(3), nullable=False)
 
     status = db.Column(
-        db.String(30),
-        default="Draft",
-        nullable=False,
-    )
+    db.String(30),
+    default="Draft",
+    nullable=False,
+)
+
+    buyer_decision = db.Column(
+    db.String(20),
+    nullable=True,
+)
 
     buyer_approved_at = db.Column(db.DateTime, nullable=True)
     expires_at = db.Column(db.DateTime, nullable=True)
@@ -172,6 +186,61 @@ class Quotation(db.Model):
     sourcing_request = db.relationship("SourcingRequest")
     supplier = db.relationship("Supplier")
 
+# --------------------------------------------------
+# PUBLIC PRODUCT CATALOGUE MODEL
+# --------------------------------------------------
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.String(180), nullable=False, index=True)
+    category = db.Column(db.String(100), nullable=False, index=True)
+    description = db.Column(db.Text, nullable=False)
+
+    price = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default="ZAR")
+
+    country = db.Column(db.String(50), nullable=False)
+    image_url = db.Column(db.String(500), nullable=True)
+
+    stock_quantity = db.Column(db.Integer, nullable=False, default=0)
+    published = db.Column(db.Boolean, nullable=False, default=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # --------------------------------------------------
+# CUSTOMER PRODUCT ENQUIRY MODEL
+# --------------------------------------------------
+
+class ProductEnquiry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey("product.id"),
+        nullable=False,
+        index=True,
+    )
+
+    customer_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=True,
+        index=True,
+    )
+
+    customer_name = db.Column(db.String(120), nullable=False)
+    customer_email = db.Column(db.String(254), nullable=False)
+    customer_contact = db.Column(db.String(120), nullable=True)
+
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    message = db.Column(db.Text, nullable=False)
+
+    status = db.Column(db.String(30), nullable=False, default="New")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    product = db.relationship("Product")
+    customer_user = db.relationship("User")
 
 # Create missing tables without deleting existing records.
 with app.app_context():
@@ -214,6 +283,57 @@ def admin_required(view_function):
 @app.route("/")
 def home():
     return render_template("index.html")
+
+# --------------------------------------------------
+# CATEGORY BROWSING
+# --------------------------------------------------
+
+MARKETPLACE_CATEGORIES = [
+    "Beauty & Personal Care",
+    "Automotive & Mechanical",
+    "Heavy Machinery",
+    "General Wholesale",
+    "Medical Equipment & Supplies",
+    "Electronics: Cameras & Phones",
+    "Adult Sexuality & Wellness",
+    "Other",
+]
+
+
+@app.route("/categories/<path:category_name>")
+def browse_category(category_name):
+    category_slugs = {
+        "beauty-personal-care": "Beauty & Personal Care",
+        "automotive-mechanical": "Automotive & Mechanical",
+        "heavy-machinery": "Heavy Machinery",
+        "general-wholesale": "General Wholesale",
+        "medical-equipment-supplies": "Medical Equipment & Supplies",
+        "electronics-cameras-phones": "Electronics: Cameras & Phones",
+        "adult-sexuality-wellness": "Adult Sexuality & Wellness",
+        "other": "Other",
+    }
+
+    selected_category = category_slugs.get(
+        category_name.casefold()
+    )
+
+    if selected_category is None:
+        abort(404)
+
+    # Do not expose private buyer sourcing requests as public listings.
+    # Public product listings will be added separately.
+    products = Product.query.filter_by(
+    category=selected_category,
+    published=True,
+).order_by(
+    Product.created_at.desc()
+).all()
+
+    return render_template(
+    "category_products.html",
+    category=selected_category,
+    products=products,
+)
 
 
 # --------------------------------------------------
@@ -701,6 +821,82 @@ def create_quotation():
 
         return redirect(url_for("list_quotations"))
 
+@app.route(
+    "/company/quotations/<int:quotation_id>/decision",
+    methods=["POST"],
+)
+@login_required
+def buyer_quotation_decision(quotation_id):
+    # Only registered buyers can make quotation decisions.
+    if current_user.role != "buyer":
+        abort(403)
+
+    quotation = db.session.get(Quotation, quotation_id)
+
+    if quotation is None:
+        abort(404)
+
+    sourcing_request = db.session.get(
+        SourcingRequest,
+        quotation.sourcing_request_id,
+    )
+
+    # Verify that this quotation belongs to the logged-in buyer.
+    if (
+        sourcing_request is None
+        or sourcing_request.buyer_user_id != current_user.id
+    ):
+        abort(403)
+
+    # Buyers can decide only on quotations that have been sent.
+    if quotation.status != "Sent":
+        flash(
+            "Only sent quotations can be approved or rejected.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    # Do not allow a decision after the quotation expires.
+    if (
+        quotation.expires_at is not None
+        and quotation.expires_at <= datetime.utcnow()
+    ):
+        flash("This quotation has expired.", "error")
+        return redirect(url_for("list_quotations"))
+
+    # Read the buyer's requested decision.
+    decision = request.form.get("decision", "").strip().lower()
+
+    if decision not in ("approve", "reject"):
+        abort(400)
+
+    if quotation.buyer_decision is not None:
+        flash(
+            "You have already made a decision on this quotation.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    if decision == "approve":
+        quotation.buyer_decision = "Approved"
+        quotation.buyer_approved_at = datetime.utcnow()
+        flash("Quotation approved successfully.", "success")
+    else:
+        quotation.buyer_decision = "Rejected"
+        flash("Quotation rejected.", "success")
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Could not save buyer quotation decision")
+        flash(
+            "Your decision could not be saved. Please try again.",
+            "error",
+        )
+
+    return redirect(url_for("list_quotations"))
+
     open_requests = SourcingRequest.query.filter(
         SourcingRequest.status.notin_(["Cancelled", "Delivered"])
     ).order_by(
@@ -744,10 +940,639 @@ def list_quotations():
         abort(403)
 
     return render_template(
-        "quotations.html",
-        quotations=quotations,
+    "quotations.html",
+    quotations=quotations,
+    ADMIN_ROLES=ADMIN_ROLES,
+    now=datetime.utcnow(),
+)
+
+@app.route("/company/quotations/compare/<int:request_id>")
+@login_required
+def compare_suppliers(request_id):
+    sourcing_request = db.session.get(SourcingRequest, request_id)
+
+    if sourcing_request is None:
+        abort(404)
+
+    # Administrators may compare all quotations.
+    # Buyers may only compare quotations for their own requests.
+    if current_user.role in ADMIN_ROLES:
+        pass
+    elif current_user.role == "buyer":
+        if sourcing_request.buyer_user_id != current_user.id:
+            abort(403)
+    else:
+        abort(403)
+
+    quotations = Quotation.query.filter_by(
+        sourcing_request_id=sourcing_request.id
+    ).order_by(
+        Quotation.created_at.desc()
+    ).all()
+
+    # Group by currency so ZAR and LSL are never compared directly.
+    comparisons = {}
+
+    for quotation in quotations:
+        currency = quotation.currency
+        total_cost = (
+            quotation.product_cost
+            + quotation.sourcing_fee
+            + quotation.delivery_cost
+            + quotation.other_costs
+        )
+        estimated_profit = quotation.selling_price - total_cost
+
+        comparisons.setdefault(currency, []).append({
+            "quotation": quotation,
+            "total_cost": total_cost,
+            "estimated_profit": estimated_profit,
+        })
+
+    for currency in comparisons:
+        comparisons[currency].sort(
+            key=lambda item: item["total_cost"]
+        )
+
+    return render_template(
+        "supplier_comparison.html",
+        sourcing_request=sourcing_request,
+        comparisons=comparisons,
     )
 
+# --------------------------------------------------
+# SEND QUOTATION TO BUYER — ADMIN ONLY
+# --------------------------------------------------
+
+@app.route(
+    "/company/quotations/<int:quotation_id>/send",
+    methods=["POST"],
+)
+@admin_required
+def send_quotation_to_buyer(quotation_id):
+    quotation = db.session.get(Quotation, quotation_id)
+
+    if quotation is None:
+        abort(404)
+
+    # Only draft quotations can be sent.
+    if quotation.status != "Draft":
+        flash(
+            "Only draft quotations can be sent to the buyer.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    # The sourcing request must belong to a registered buyer.
+    sourcing_request = db.session.get(
+        SourcingRequest,
+        quotation.sourcing_request_id,
+    )
+
+    if sourcing_request is None or sourcing_request.buyer_user_id is None:
+        flash(
+            "This request is not linked to a registered buyer. "
+            "The quotation has not been sent.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    # Expired quotations must be recreated rather than sent.
+    if (
+        quotation.expires_at is not None
+        and quotation.expires_at <= datetime.utcnow()
+    ):
+        flash(
+            "This quotation has expired. Create a new quotation.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    quotation.status = "Sent"
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Could not send quotation")
+        flash(
+            "The quotation could not be sent. Please try again.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    flash(
+        f"Quotation QT-{quotation.id} is now available "
+        "for the buyer to review.",
+        "success",
+    )
+
+    return redirect(url_for("list_quotations"))
+
+# --------------------------------------------------
+# PRODUCT MANAGEMENT — ADMIN ONLY
+# --------------------------------------------------
+
+@app.route("/company/products")
+@admin_required
+def manage_products():
+    products = Product.query.order_by(
+        Product.created_at.desc()
+    ).all()
+
+    return render_template(
+        "company_products.html",
+        products=products,
+    )
+
+
+@app.route("/company/products/new", methods=["GET", "POST"])
+@admin_required
+def create_product():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        category = request.form.get("category", "").strip()
+        description = request.form.get("description", "").strip()
+        country = request.form.get("country", "").strip()
+        currency = request.form.get("currency", "").strip().upper()
+        image_url = request.form.get("image_url", "").strip()
+        image_file = request.files.get("image_file")
+
+        try:
+            price = float(request.form.get("price", ""))
+            stock_quantity = int(
+                request.form.get("stock_quantity", "0")
+            )
+        except (TypeError, ValueError):
+            flash("Enter a valid price and stock quantity.", "error")
+            return redirect(url_for("create_product"))
+
+        if not name or not description:
+            flash("Product name and description are required.", "error")
+            return redirect(url_for("create_product"))
+
+        if category not in MARKETPLACE_CATEGORIES:
+            flash("Select a valid product category.", "error")
+            return redirect(url_for("create_product"))
+
+        if country not in {"Lesotho", "South Africa"}:
+            flash("Select Lesotho or South Africa.", "error")
+            return redirect(url_for("create_product"))
+
+        if currency not in {"ZAR", "LSL"}:
+            flash("Select ZAR or LSL.", "error")
+            return redirect(url_for("create_product"))
+
+        if not math.isfinite(price) or price < 0 or stock_quantity < 0:
+            flash("Price and stock cannot be negative or invalid.", "error")
+            return redirect(url_for("create_product"))
+
+        if len(name) > 180 or len(description) > 5000:
+            flash("The product name or description is too long.", "error")
+            return redirect(url_for("create_product"))
+
+        if image_url and not (
+            image_url.startswith("https://")
+            or image_url.startswith("http://")
+        ):
+            flash("Image URL must start with http:// or https://.", "error")
+            return redirect(url_for("create_product"))
+
+        # An uploaded image takes priority over an external image URL.
+        if image_file and image_file.filename:
+            original_name = secure_filename(image_file.filename)
+            extension = Path(original_name).suffix.lower()
+            allowed_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+            if not original_name or extension not in allowed_extensions:
+                flash(
+                    "Choose a JPG, JPEG, PNG, WEBP or GIF image.",
+                    "error",
+                )
+                return redirect(url_for("create_product"))
+
+            # Read the actual file contents to check the image format.
+            image_file.stream.seek(0)
+            file_header = image_file.stream.read(12)
+            image_file.stream.seek(0)
+
+            valid_image = (
+                file_header.startswith(b"\xff\xd8\xff")
+                if extension in {".jpg", ".jpeg"}
+                else file_header.startswith(b"\x89PNG\r\n\x1a\n")
+                if extension == ".png"
+                else file_header.startswith(b"RIFF")
+                and file_header[8:12] == b"WEBP"
+                if extension == ".webp"
+                else file_header.startswith((b"GIF87a", b"GIF89a"))
+                if extension == ".gif"
+                else False
+            )
+
+            if not valid_image:
+                flash(
+                    "The uploaded file does not match its image extension.",
+                    "error",
+                )
+                return redirect(url_for("create_product"))
+
+            filename = f"{uuid.uuid4().hex}{extension}"
+            image_path = Path(app.config["UPLOAD_FOLDER"]) / filename
+            image_file.save(image_path)
+
+            # Store a path that works with the existing image src attributes.
+            image_url = url_for(
+                "static",
+                filename=f"uploads/{filename}",
+            )
+
+        product = Product(
+            name=name,
+            category=category,
+            description=description,
+            country=country,
+            currency=currency,
+            price=price,
+            stock_quantity=stock_quantity,
+            image_url=image_url or None,
+            published=False,
+        )
+
+        db.session.add(product)
+        db.session.commit()
+
+        flash(
+            f"Product '{product.name}' saved as a draft. "
+            "Publish it when it is ready for customers.",
+            "success",
+        )
+        return redirect(url_for("manage_products"))
+
+    return render_template(
+        "product_form.html",
+        categories=MARKETPLACE_CATEGORIES,
+    )
+
+@app.route(
+    "/company/products/<int:product_id>/edit",
+    methods=["GET", "POST"],
+)
+@app.route(
+    "/company/products/<int:product_id>/edit",
+    methods=["GET", "POST"],
+)
+@admin_required
+def edit_product(product_id):
+    product = db.session.get(Product, product_id)
+
+    if product is None:
+        abort(404)
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        category = request.form.get("category", "").strip()
+        description = request.form.get("description", "").strip()
+        country = request.form.get("country", "").strip()
+        currency = request.form.get("currency", "").strip().upper()
+        image_url = request.form.get("image_url", "").strip()
+        image_file = request.files.get("image_file")
+
+        try:
+            price = float(request.form.get("price", ""))
+            stock_quantity = int(
+                request.form.get("stock_quantity", "")
+            )
+        except (TypeError, ValueError):
+            flash("Enter a valid price and stock quantity.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if not name or not description:
+            flash("Product name and description are required.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if category not in MARKETPLACE_CATEGORIES:
+            flash("Select a valid product category.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if country not in {"Lesotho", "South Africa"}:
+            flash("Select Lesotho or South Africa.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if currency not in {"ZAR", "LSL"}:
+            flash("Select ZAR or LSL.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if (
+            not math.isfinite(price)
+            or price < 0
+            or stock_quantity < 0
+        ):
+            flash("Price and stock cannot be negative or invalid.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if len(name) > 180 or len(description) > 5000:
+            flash("The product name or description is too long.", "error")
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        if image_url and not (
+            image_url.startswith("https://")
+            or image_url.startswith("http://")
+        ):
+            flash(
+                "Image URL must start with http:// or https://.",
+                "error",
+            )
+            return redirect(
+                url_for("edit_product", product_id=product.id)
+            )
+
+        # Keep the current image unless a new URL or uploaded file is supplied.
+        new_image_url = image_url or product.image_url
+
+        if image_file and image_file.filename:
+            original_name = secure_filename(image_file.filename)
+            extension = Path(original_name).suffix.lower()
+            allowed_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+            if not original_name or extension not in allowed_extensions:
+                flash(
+                    "Choose a JPG, JPEG, PNG, WEBP or GIF image.",
+                    "error",
+                )
+                return redirect(
+                    url_for("edit_product", product_id=product.id)
+                )
+
+            image_file.stream.seek(0)
+            file_header = image_file.stream.read(12)
+            image_file.stream.seek(0)
+
+            valid_image = (
+                file_header.startswith(b"\xff\xd8\xff")
+                if extension in {".jpg", ".jpeg"}
+                else file_header.startswith(b"\x89PNG\r\n\x1a\n")
+                if extension == ".png"
+                else file_header.startswith(b"RIFF")
+                and file_header[8:12] == b"WEBP"
+                if extension == ".webp"
+                else file_header.startswith((b"GIF87a", b"GIF89a"))
+                if extension == ".gif"
+                else False
+            )
+
+            if not valid_image:
+                flash(
+                    "The uploaded file does not match its image extension.",
+                    "error",
+                )
+                return redirect(
+                    url_for("edit_product", product_id=product.id)
+                )
+
+            filename = f"{uuid.uuid4().hex}{extension}"
+            image_path = Path(app.config["UPLOAD_FOLDER"]) / filename
+            image_file.save(image_path)
+
+            new_image_url = url_for(
+                "static",
+                filename=f"uploads/{filename}",
+            )
+
+        product.name = name
+        product.category = category
+        product.description = description
+        product.country = country
+        product.currency = currency
+        product.price = price
+        product.stock_quantity = stock_quantity
+        product.image_url = new_image_url or None
+
+        db.session.commit()
+
+        flash(f"Product '{product.name}' updated successfully.", "success")
+        return redirect(url_for("manage_products"))
+
+    return render_template(
+        "product_form.html",
+        product=product,
+        categories=MARKETPLACE_CATEGORIES,
+    )
+
+
+@app.route(
+    "/company/products/<int:product_id>/publish",
+    methods=["POST"],
+)
+@admin_required
+def toggle_product_published(product_id):
+    product = db.session.get(Product, product_id)
+
+    if product is None:
+        abort(404)
+
+    product.published = not product.published
+    db.session.commit()
+
+    state = "published" if product.published else "unpublished"
+    flash(f"Product '{product.name}' is now {state}.", "success")
+
+    return redirect(url_for("manage_products"))
+
+# --------------------------------------------------
+# PUBLIC PRODUCT DETAIL PAGE
+# --------------------------------------------------
+
+@app.route("/products/<int:product_id>")
+def product_detail(product_id):
+    product = Product.query.filter_by(
+        id=product_id,
+        published=True
+    ).first_or_404()
+
+    return render_template("product_detail.html", product=product)
+
+
+# --------------------------------------------------
+# CUSTOMER PRODUCT ENQUIRY SUBMISSION
+# --------------------------------------------------
+
+@app.route(
+    "/products/<int:product_id>/enquire",
+    methods=["POST"]
+)
+def submit_product_enquiry(product_id):
+    product = Product.query.filter_by(
+        id=product_id,
+        published=True
+    ).first_or_404()
+
+    customer_name = request.form.get(
+        "customer_name", ""
+    ).strip()
+
+    customer_email = request.form.get(
+        "customer_email", ""
+    ).strip().lower()
+
+    customer_contact = request.form.get(
+        "customer_contact", ""
+    ).strip()
+
+    message = request.form.get(
+        "message", ""
+    ).strip()
+
+    try:
+        quantity = int(request.form.get("quantity", "1"))
+    except (TypeError, ValueError):
+        quantity = 0
+
+    if not customer_name or len(customer_name) > 120:
+        flash("Please enter a valid name.", "error")
+        return redirect(url_for(
+            "product_detail", product_id=product.id
+        ))
+
+    if (
+        not customer_email
+        or len(customer_email) > 254
+        or "@" not in customer_email
+        or "." not in customer_email.rsplit("@", 1)[-1]
+    ):
+        flash("Please enter a valid email address.", "error")
+        return redirect(url_for(
+            "product_detail", product_id=product.id
+        ))
+
+    if len(customer_contact) > 120:
+        flash("Your contact details are too long.", "error")
+        return redirect(url_for(
+            "product_detail", product_id=product.id
+        ))
+
+    if quantity < 1 or quantity > 1000000:
+        flash("Please enter a valid quantity.", "error")
+        return redirect(url_for(
+            "product_detail", product_id=product.id
+        ))
+
+    if not message or len(message) > 5000:
+        flash(
+            "Please enter a message of up to 5,000 characters.",
+            "error"
+        )
+        return redirect(url_for(
+            "product_detail", product_id=product.id
+        ))
+
+    enquiry = ProductEnquiry(
+        product_id=product.id,
+        customer_user_id=(
+            current_user.id
+            if current_user.is_authenticated
+            and current_user.role == "buyer"
+            else None
+        ),
+        customer_name=customer_name,
+        customer_email=customer_email,
+        customer_contact=customer_contact or None,
+        quantity=quantity,
+        message=message,
+    )
+
+    try:
+        db.session.add(enquiry)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Could not save product enquiry")
+        flash(
+            "We could not submit your enquiry. Please try again.",
+            "error"
+        )
+        return redirect(url_for(
+            "product_detail", product_id=product.id
+        ))
+
+    flash(
+        "Your enquiry has been submitted successfully!",
+        "success"
+    )
+    return redirect(url_for(
+        "product_detail", product_id=product.id
+    ))
+
+# --------------------------------------------------
+# COMPANY PRODUCT ENQUIRY DASHBOARD
+# --------------------------------------------------
+
+@app.route("/company/product-enquiries")
+@admin_required
+def company_product_enquiries():
+    enquiries = (
+        ProductEnquiry.query
+        .join(Product)
+        .order_by(ProductEnquiry.created_at.desc())
+        .all()
+    )
+
+    return render_template(
+        "company_product_enquiries.html",
+        enquiries=enquiries,
+    )
+
+# --------------------------------------------------
+# UPDATE PRODUCT ENQUIRY STATUS
+# --------------------------------------------------
+
+@app.route(
+    "/company/product-enquiries/<int:enquiry_id>/status",
+    methods=["POST"]
+)
+@admin_required
+def update_product_enquiry_status(enquiry_id):
+    enquiry = db.session.get(ProductEnquiry, enquiry_id)
+
+    if enquiry is None:
+        abort(404)
+
+    allowed_statuses = {
+        "New",
+        "Contacted",
+        "Quotation Sent",
+        "Completed",
+        "Cancelled",
+    }
+
+    new_status = request.form.get("status", "").strip()
+
+    if new_status not in allowed_statuses:
+        flash("Invalid enquiry status.", "error")
+        return redirect(url_for("company_product_enquiries"))
+
+    enquiry.status = new_status
+    db.session.commit()
+
+    flash(
+        f"Enquiry #{enquiry.id} updated to {new_status}.",
+        "success",
+    )
+
+    return redirect(url_for("company_product_enquiries"))
 
 # --------------------------------------------------
 # HEALTH CHECK
@@ -766,4 +1591,24 @@ def health():
 # --------------------------------------------------
 
 if __name__ == "__main__":
+    with app.app_context():
+        inspector = db.inspect(db.engine)
+
+        quotation_columns = [
+            column["name"]
+            for column in inspector.get_columns("quotation")
+        ]
+
+        if "buyer_decision" not in quotation_columns:
+            with db.engine.begin() as connection:
+                connection.execute(
+                    db.text(
+                        "ALTER TABLE quotation "
+                        "ADD COLUMN buyer_decision VARCHAR(20)"
+                    )
+                )
+            print("Added buyer_decision column successfully.")
+        else:
+            print("buyer_decision column already exists.")
+
     app.run(debug=True)
