@@ -1,7 +1,7 @@
 from app import app, db, SourcingRequest
 
 with app.app_context():
-    print("\n=== UNIVERSAL MARKETPLACE DATABASE TEST ===")
+    print("\n=== Universal Runner Marketplace DATABASE TEST ===")
 
     print("Database tables:", db.metadata.tables.keys())
 

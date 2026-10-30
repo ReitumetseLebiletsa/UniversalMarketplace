@@ -3,68 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% if product %}Edit Product{% else %}Add Product{% endif %} | Universal Marketplace</title>
+
+    <title>
+        {% if product %}Edit Product{% else %}Add Product{% endif %}
+        | Universal Runner Marketplace
+    </title>
+
+    <meta name="description" content="Manage products, prices, stock and supplier sourcing information on Universal Runner Marketplace.">
+    <meta name="theme-color" content="#00209F">
 
     <style>
         :root {
             --blue: #00209F;
             --dark: #071744;
             --green: #009543;
+            --dark-green: #087337;
             --light: #F5F7FC;
             --border: #E1E7F0;
+            --muted: #64748B;
+            --white: #FFFFFF;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             background: var(--light);
             color: var(--dark);
             line-height: 1.6;
         }
 
-        header {
-            padding: 18px 5%;
-            background: white;
-            border-bottom: 4px solid var(--green);
+        a {
+            text-decoration: none;
+            color: inherit;
         }
 
-        header a {
-            color: var(--dark);
-            text-decoration: none;
-            font-weight: 800;
+        /* NAVIGATION */
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: white;
+            border-bottom: 3px solid var(--green);
+            box-shadow: 0 3px 12px rgba(0,0,0,.04);
         }
+
+        .nav-container {
+            max-width: 1350px;
+            width: 94%;
+            min-height: 75px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            flex-shrink: 0;
+        }
+
+        .brand-mark {
+            width: 45px;
+            height: 45px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: var(--blue);
+            border-bottom: 4px solid var(--green);
+            color: white;
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .brand-name {
+            color: var(--dark);
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.3;
+        }
+
+        .brand-tagline {
+            display: block;
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: .7px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nav-links > a:not(.nav-button) {
+            color: #334155;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .nav-links > a:not(.nav-button):hover {
+            color: var(--green);
+        }
+
+        .nav-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 13px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .nav-button.green {
+            color: white;
+            background: var(--green);
+        }
+
+        .nav-button.blue {
+            color: white;
+            background: var(--blue);
+        }
+
+        .nav-button.outline {
+            color: var(--blue);
+            border-color: var(--blue);
+            background: white;
+        }
+
+        .nav-links form {
+            margin: 0;
+        }
+
+        .menu-toggle {
+            display: none;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* MAIN */
 
         main {
-            max-width: 760px;
+            max-width: 850px;
             width: calc(100% - 30px);
-            margin: 30px auto;
+            margin: 32px auto 55px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .breadcrumb a {
+            color: var(--blue);
+            font-weight: bold;
         }
 
         .panel {
             background: white;
-            padding: 25px;
+            padding: 28px;
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(15,23,42,.045);
         }
 
-        h1 { margin-top: 0; }
+        h1 {
+            margin-top: 0;
+            color: var(--dark);
+            font-size: 27px;
+            line-height: 1.3;
+        }
+
+        .intro {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        /* FORM */
 
         label {
             display: block;
             font-weight: 700;
+            font-size: 13px;
             margin: 16px 0 6px;
         }
 
-        input, select, textarea {
+        input,
+        select,
+        textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #C8D0DF;
-            border-radius: 7px;
+            border-radius: 8px;
             font: inherit;
+            font-size: 14px;
             background: white;
             color: var(--dark);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid rgba(0,32,159,.13);
+            border-color: var(--blue);
         }
 
         input[type="file"] {
@@ -73,108 +235,322 @@
         }
 
         textarea {
-            min-height: 120px;
+            min-height: 125px;
             resize: vertical;
         }
 
         .hint {
             color: #657087;
+            font-size: 12px;
+            line-height: 1.7;
+            margin-top: 6px;
+        }
+
+        .required {
+            color: #B91C1C;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* NOTICES */
+
+        .flash {
+            padding: 12px 14px;
+            background: #FFF3CD;
+            color: #854D0E;
+            border-radius: 7px;
+            margin: 12px 0;
             font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .flash.success {
+            background: #E6F4EA;
+            color: #14532D;
+        }
+
+        .flash.error {
+            background: #FDE8E8;
+            color: #991B1B;
+        }
+
+        /* IMAGE SECTION */
+
+        .image-section {
+            margin-top: 22px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: #FAFBFE;
+        }
+
+        .image-section h3 {
+            margin-top: 0;
+            color: var(--dark);
+            font-size: 16px;
+        }
+
+        .image-preview,
+        .current-image {
+            display: block;
+            width: 100%;
+            max-width: 340px;
+            height: 230px;
+            object-fit: contain;
+            margin-top: 13px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .image-preview {
+            display: none;
+        }
+
+        .image-status {
+            font-size: 12px;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        /* BUTTONS */
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         .button {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: 0;
             border-radius: 8px;
-            padding: 12px 18px;
-            margin-top: 18px;
+            padding: 12px 19px;
             background: var(--green);
             color: white;
             font-weight: 700;
             text-decoration: none;
             cursor: pointer;
             font-size: 14px;
+            font-family: inherit;
         }
 
-        .secondary { background: var(--blue); }
-
-        .flash {
-            padding: 10px;
-            background: #FFF3CD;
-            border-radius: 6px;
-            overflow-wrap: anywhere;
+        .button:hover {
+            background: var(--dark-green);
         }
 
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        .secondary {
+            background: var(--blue);
         }
 
-        .image-section {
-            margin-top: 20px;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #FAFBFE;
+        .secondary:hover {
+            background: #001875;
         }
 
-        .image-preview {
-            display: none;
-            width: 100%;
-            max-width: 320px;
-            height: 230px;
-            object-fit: contain;
-            margin-top: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: white;
+        .cancel {
+            background: #E8EDF5;
+            color: var(--dark);
         }
 
-        .current-image {
-            width: 100%;
-            max-width: 320px;
-            height: 230px;
-            object-fit: contain;
-            display: block;
-            margin-top: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: white;
+        .cancel:hover {
+            background: #DCE3EE;
         }
 
-        .image-status {
-            font-size: 13px;
-            color: #657087;
-            overflow-wrap: anywhere;
+        /* FOOTER */
+
+        footer {
+            background: #071126;
+            color: #CBD5E1;
+            padding: 27px 5%;
+            text-align: center;
+            font-size: 12px;
         }
 
-        @media (max-width: 550px) {
+        footer strong {
+            color: white;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 17px;
+            margin-bottom: 14px;
+        }
+
+        .footer-links a:hover {
+            color: #8EE6AD;
+        }
+
+        /* RESPONSIVE */
+
+        @media(max-width: 1050px) {
+            .nav-links {
+                gap: 9px;
+            }
+
+            .nav-links > a:not(.nav-button) {
+                font-size: 11px;
+            }
+        }
+
+        @media(max-width: 850px) {
+            .menu-toggle {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 75px;
+                left: 0;
+                right: 0;
+                padding: 16px 5%;
+                background: white;
+                border-bottom: 1px solid var(--border);
+                box-shadow: 0 10px 20px rgba(0,0,0,.08);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .nav-links > a {
+                padding: 12px 5px;
+            }
+
+            .nav-links .nav-button {
+                margin-top: 8px;
+            }
+
+            .nav-links form {
+                padding-top: 8px;
+            }
+        }
+
+        @media(max-width: 550px) {
             .row {
                 grid-template-columns: 1fr;
                 gap: 0;
             }
 
-            .panel { padding: 18px; }
+            .panel {
+                padding: 19px;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
 
             .button {
+                width: 100%;
                 text-align: center;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .brand-name {
+                font-size: 13px;
+            }
+
+            .brand-tagline {
+                font-size: 8px;
             }
         }
     </style>
 </head>
 
 <body>
-<header>
-    <a href="{{ url_for('home') }}">UNIVERSAL MARKETPLACE 🇱🇸 🇿🇦</a>
+
+<!-- NAVIGATION -->
+<header class="navbar">
+    <div class="nav-container">
+
+        <a href="{{ url_for('home') }}" class="brand">
+            <div class="brand-mark">URM</div>
+            <div>
+                <div class="brand-name">Universal Runner Marketplace</div>
+                <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
+            </div>
+        </a>
+
+        <button
+            type="button"
+            class="menu-toggle"
+            id="menuToggle"
+            aria-label="Open navigation"
+            aria-expanded="false"
+            aria-controls="navLinks">
+            ☰
+        </button>
+
+        <nav class="nav-links" id="navLinks">
+
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('home') }}#categories">Categories</a>
+
+            {% if current_user.is_authenticated %}
+
+                {% if current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                    <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('manage_products') }}">Products</a>
+                    <a href="{{ url_for('list_suppliers') }}">Suppliers</a>
+                    <a href="{{ url_for('buyer_accounts') }}">Buyers</a>
+                    <a href="{{ url_for('list_quotations') }}">Quotations</a>
+                {% endif %}
+
+                {% if current_user.role == 'buyer' %}
+                    <a href="{{ url_for('request_product') }}">Request Product</a>
+                    <a href="{{ url_for('my_requests') }}">My Requests</a>
+                    <a href="{{ url_for('list_quotations') }}">My Quotations</a>
+                {% endif %}
+
+                <form action="{{ url_for('logout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="nav-button outline" type="submit">
+                        Log Out
+                    </button>
+                </form>
+
+            {% else %}
+
+                <a href="{{ url_for('login') }}">Log In</a>
+                <a class="nav-button green" href="{{ url_for('register') }}">
+                    Register
+                </a>
+
+            {% endif %}
+
+        </nav>
+    </div>
 </header>
 
 <main>
-    <p>
-        <a href="{{ url_for('manage_products') }}">← Back to products</a>
-    </p>
+
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">Marketplace</a>
+        <span>›</span>
+        <a href="{{ url_for('manage_products') }}">Products</a>
+        <span>›</span>
+        <span>{% if product %}Edit Product{% else %}Add Product{% endif %}</span>
+    </div>
 
     <section class="panel">
+
         <h1>
             {% if product %}
                 Edit Product
@@ -183,19 +559,25 @@
             {% endif %}
         </h1>
 
-        <p class="hint">
+        <p class="intro">
             {% if product %}
-                Update this product's details, price, image, or stock.
-                Saving changes will update the existing product.
+                Update this product's details, price, image, source country
+                or stock. Saving changes will update the existing product.
             {% else %}
-                New products are saved as drafts and remain hidden from
-                public category pages until you publish them.
+                Add a product to your marketplace catalogue. New products
+                are saved as drafts and remain hidden from public category
+                pages until you publish them.
             {% endif %}
         </p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category_name, message in messages %}
-                <p class="flash">{{ message }}</p>
+                <p class="flash
+                    {% if category_name == 'success' %}success
+                    {% elif category_name == 'error' %}error
+                    {% endif %}">
+                    {{ message }}
+                </p>
             {% endfor %}
         {% endwith %}
 
@@ -204,18 +586,26 @@
             enctype="multipart/form-data"
             action="{% if product %}{{ url_for('edit_product', product_id=product.id) }}{% else %}{{ url_for('create_product') }}{% endif %}"
         >
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <label for="name">Product name *</label>
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}">
+
+            <!-- PRODUCT NAME -->
+            <label for="name">Product name <span class="required">*</span></label>
+
             <input
                 id="name"
                 name="name"
                 maxlength="180"
                 value="{{ product.name if product else '' }}"
-                required
-            >
+                placeholder="Enter the product name"
+                required>
 
-            <label for="category">Category *</label>
+            <!-- CATEGORY -->
+            <label for="category">Category <span class="required">*</span></label>
+
             <select id="category" name="category" required>
                 <option value="">Choose a category</option>
 
@@ -229,18 +619,25 @@
                 {% endfor %}
             </select>
 
-            <label for="description">Description *</label>
+            <!-- DESCRIPTION -->
+            <label for="description">
+                Product description <span class="required">*</span>
+            </label>
+
             <textarea
                 id="description"
                 name="description"
                 rows="5"
                 maxlength="5000"
-                required
-            >{{ product.description if product else '' }}</textarea>
+                placeholder="Describe the product, specifications, features and condition."
+                required>{{ product.description if product else '' }}</textarea>
 
+            <!-- PRICE AND CURRENCY -->
             <div class="row">
+
                 <div>
-                    <label for="price">Price *</label>
+                    <label for="price">Product price <span class="required">*</span></label>
+
                     <input
                         id="price"
                         name="price"
@@ -248,44 +645,92 @@
                         step="0.01"
                         min="0"
                         value="{{ product.price if product else '' }}"
-                        required
-                    >
+                        placeholder="0.00"
+                        required>
                 </div>
 
                 <div>
-                    <label for="currency">Currency *</label>
-                    <select id="currency" name="currency" required>
-                        <option value="ZAR"
-                            {% if product and product.currency == 'ZAR' %}selected{% endif %}>
-                            ZAR — South African Rand
-                        </option>
+                    <label for="currency">Price currency <span class="required">*</span></label>
 
-                        <option value="LSL"
-                            {% if product and product.currency == 'LSL' %}selected{% endif %}>
-                            LSL — Lesotho Loti
-                        </option>
+                    <select id="currency" name="currency" required>
+                        {% set selected_currency = product.currency if product else 'USD' %}
+
+                        <option value="USD" {% if selected_currency == 'USD' %}selected{% endif %}>USD — US Dollar</option>
+                        <option value="EUR" {% if selected_currency == 'EUR' %}selected{% endif %}>EUR — Euro</option>
+                        <option value="GBP" {% if selected_currency == 'GBP' %}selected{% endif %}>GBP — British Pound</option>
+                        <option value="LSL" {% if selected_currency == 'LSL' %}selected{% endif %}>LSL — Lesotho Loti</option>
+                        <option value="ZAR" {% if selected_currency == 'ZAR' %}selected{% endif %}>ZAR — South African Rand</option>
+                        <option value="CNY" {% if selected_currency == 'CNY' %}selected{% endif %}>CNY — Chinese Yuan</option>
+                        <option value="AED" {% if selected_currency == 'AED' %}selected{% endif %}>AED — UAE Dirham</option>
+                        <option value="INR" {% if selected_currency == 'INR' %}selected{% endif %}>INR — Indian Rupee</option>
+                        <option value="JPY" {% if selected_currency == 'JPY' %}selected{% endif %}>JPY — Japanese Yen</option>
+                        <option value="AUD" {% if selected_currency == 'AUD' %}selected{% endif %}>AUD — Australian Dollar</option>
+                        <option value="CAD" {% if selected_currency == 'CAD' %}selected{% endif %}>CAD — Canadian Dollar</option>
                     </select>
+
+                    <p class="hint">
+                        Select the currency in which the supplier or product price is quoted.
+                    </p>
                 </div>
+
             </div>
 
+            <!-- SOURCE COUNTRY AND STOCK -->
             <div class="row">
-                <div>
-                    <label for="country">Product country *</label>
-                    <select id="country" name="country" required>
-                        <option value="Lesotho"
-                            {% if product and product.country == 'Lesotho' %}selected{% endif %}>
-                            Lesotho 🇱🇸
-                        </option>
 
-                        <option value="South Africa"
-                            {% if product and product.country == 'South Africa' %}selected{% endif %}>
-                            South Africa 🇿🇦
-                        </option>
+                <div>
+                    <label for="country">
+                        Product source country <span class="required">*</span>
+                    </label>
+
+                    <select id="country" name="country" required>
+                        <option value="">Select source country</option>
+
+                        {% set selected_country = product.country if product else '' %}
+
+                        {% for country_name in [
+                            'Afghanistan', 'Albania', 'Algeria', 'Andorra',
+                            'Angola', 'Argentina', 'Australia', 'Austria',
+                            'Bangladesh', 'Belgium', 'Botswana', 'Brazil',
+                            'Cambodia', 'Cameroon', 'Canada', 'Chile',
+                            'China', 'Colombia', 'Denmark', 'Egypt',
+                            'Ethiopia', 'Finland', 'France', 'Germany',
+                            'Ghana', 'Greece', 'Hong Kong', 'India',
+                            'Indonesia', 'Ireland', 'Israel', 'Italy',
+                            'Japan', 'Kenya', 'Malaysia', 'Mexico',
+                            'Morocco', 'Mozambique', 'Namibia',
+                            'Netherlands', 'New Zealand', 'Nigeria',
+                            'Norway', 'Pakistan', 'Philippines',
+                            'Poland', 'Portugal', 'Qatar', 'Russia',
+                            'Rwanda', 'Saudi Arabia', 'Singapore',
+                            'South Africa', 'South Korea', 'Spain',
+                            'Sweden', 'Switzerland', 'Tanzania',
+                            'Thailand', 'Turkey', 'Uganda',
+                            'United Arab Emirates', 'United Kingdom',
+                            'United States', 'Vietnam', 'Zambia',
+                            'Zimbabwe', 'Lesotho'
+                        ] | sort %}
+
+                            <option
+                                value="{{ country_name }}"
+                                {% if selected_country == country_name %}selected{% endif %}
+                            >
+                                {{ country_name }}
+                            </option>
+
+                        {% endfor %}
                     </select>
+
+                    <p class="hint">
+                        Select the country where the product is located or sourced.
+                    </p>
                 </div>
 
                 <div>
-                    <label for="stock_quantity">Stock quantity *</label>
+                    <label for="stock_quantity">
+                        Stock quantity <span class="required">*</span>
+                    </label>
+
                     <input
                         id="stock_quantity"
                         name="stock_quantity"
@@ -293,86 +738,136 @@
                         min="0"
                         step="1"
                         value="{{ product.stock_quantity if product else 0 }}"
-                        required
-                    >
+                        required>
+
+                    <p class="hint">
+                        Enter 0 if stock availability must be confirmed.
+                    </p>
                 </div>
+
             </div>
 
+            <!-- PRODUCT IMAGE -->
             <div class="image-section">
+
+                <h3>Product image</h3>
+
                 <label for="image_file">Upload product image</label>
 
                 <input
                     id="image_file"
                     name="image_file"
                     type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
-                >
+                    accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
 
                 <p class="hint">
                     Choose a photo from your phone or computer.
                     Accepted formats: JPG, JPEG, PNG, WEBP and GIF.
                     Maximum file size: 5 MB.
-                    Uploading a new photo takes priority over the image URL.
+                    An uploaded photo takes priority over the image URL.
                 </p>
 
                 {% if product and product.image_url %}
+
                     <p><strong>Current product image</strong></p>
 
                     <img
                         class="current-image"
                         src="{{ product.image_url }}"
                         alt="Current image of {{ product.name }}"
-                        onerror="this.style.display='none'; document.getElementById('current-image-error').style.display='block';"
-                    >
+                        onerror="this.style.display='none'; document.getElementById('current-image-error').style.display='block';">
 
                     <p
                         id="current-image-error"
                         class="image-status"
-                        style="display:none;"
-                    >
-                        The current image could not be displayed. You can upload a replacement below.
+                        style="display:none;">
+                        The current image could not be displayed.
+                        You can upload a replacement below.
                     </p>
+
                 {% endif %}
 
                 <img
                     id="image-preview"
                     class="image-preview"
-                    alt="Preview of the selected product image"
-                >
+                    alt="Preview of selected product image">
 
-                <p id="image-status" class="image-status" aria-live="polite"></p>
+                <p
+                    id="image-status"
+                    class="image-status"
+                    aria-live="polite">
+                </p>
+
             </div>
 
+            <!-- IMAGE URL -->
             <label for="image_url">Or use a product image URL</label>
+
             <input
                 id="image_url"
                 name="image_url"
                 type="url"
                 value="{{ product.image_url if product and product.image_url else '' }}"
-                placeholder="https://example.com/product-image.jpg"
-            >
+                placeholder="https://example.com/product-image.jpg">
 
             <p class="hint">
                 Optional. Use a direct image URL that you have permission to use.
                 If you upload a photo, the uploaded photo takes priority.
             </p>
 
-            <button class="button" type="submit">
-                {% if product %}
-                    Save Changes
-                {% else %}
-                    Save Product as Draft
-                {% endif %}
-            </button>
+            <!-- ACTIONS -->
+            <div class="actions">
 
-            <a class="button secondary"
-               href="{{ url_for('manage_products') }}">
-                Cancel
-            </a>
+                <button class="button" type="submit">
+                    {% if product %}
+                        Save Product Changes
+                    {% else %}
+                        Save Product as Draft
+                    {% endif %}
+                </button>
+
+                <a class="button secondary"
+                   href="{{ url_for('manage_products') }}">
+                    Cancel
+                </a>
+
+                <a class="button cancel"
+                   href="{{ url_for('home') }}">
+                    View Marketplace
+                </a>
+
+            </div>
+
         </form>
+
     </section>
+
 </main>
 
+<!-- FOOTER -->
+<footer>
+
+    <div class="footer-links">
+        <a href="{{ url_for('home') }}">Marketplace Home</a>
+        <a href="{{ url_for('manage_products') }}">Manage Products</a>
+
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('list_suppliers') }}">Suppliers</a>
+            <a href="{{ url_for('list_quotations') }}">Quotations</a>
+        {% endif %}
+    </div>
+
+    <p>
+        © 2026 <strong>Universal Runner Marketplace</strong>.
+        All rights reserved.
+    </p>
+
+    <p>Global sourcing. Worldwide delivery.</p>
+
+</footer>
+
+<!-- IMAGE PREVIEW AND MOBILE MENU -->
 <script>
     const imageInput = document.getElementById("image_file");
     const preview = document.getElementById("image-preview");
@@ -381,6 +876,7 @@
     let previewUrl = null;
 
     imageInput.addEventListener("change", function () {
+
         const file = this.files && this.files[0];
 
         if (previewUrl) {
@@ -392,7 +888,9 @@
         preview.style.display = "none";
         status.textContent = "";
 
-        if (!file) return;
+        if (!file) {
+            return;
+        }
 
         const allowedTypes = [
             "image/jpeg",
@@ -402,27 +900,72 @@
         ];
 
         if (!allowedTypes.includes(file.type)) {
-            status.textContent = "Please choose a JPG, PNG, WEBP or GIF image.";
+            status.textContent =
+                "Please choose a JPG, PNG, WEBP or GIF image.";
             this.value = "";
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) {
-            status.textContent = "The image is larger than 5 MB. Please choose a smaller file.";
+            status.textContent =
+                "The image is larger than 5 MB. Please choose a smaller file.";
             this.value = "";
             return;
         }
 
         previewUrl = URL.createObjectURL(file);
+
         preview.src = previewUrl;
         preview.style.display = "block";
+
         status.textContent = "Selected: " + file.name;
 
         preview.onerror = function () {
             preview.style.display = "none";
-            status.textContent = "This image could not be previewed. Please choose another image.";
+            status.textContent =
+                "This image could not be previewed. Please choose another image.";
         };
+
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const menuToggle = document.getElementById("menuToggle");
+        const navLinks = document.getElementById("navLinks");
+
+        if (!menuToggle || !navLinks) {
+            return;
+        }
+
+        menuToggle.addEventListener("click", function () {
+
+            const isOpen = navLinks.classList.toggle("open");
+
+            menuToggle.setAttribute(
+                "aria-expanded",
+                String(isOpen)
+            );
+
+            menuToggle.textContent = isOpen ? "✕" : "☰";
+
+        });
+
+        navLinks.querySelectorAll("a").forEach(function (link) {
+
+            link.addEventListener("click", function () {
+
+                navLinks.classList.remove("open");
+
+                menuToggle.setAttribute("aria-expanded", "false");
+
+                menuToggle.textContent = "☰";
+
+            });
+
+        });
+
     });
 </script>
+
 </body>
 </html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URM Pricing Settings</title>
+    <style>
+        :root {
+            --navy: #071744;
+            --blue: #00209F;
+            --green: #009543;
+            --light: #f4f7fb;
+            --border: #dce3ee;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px 14px;
+            font-family: Arial, sans-serif;
+            background: var(--light);
+            color: #18243a;
+        }
+
+        main {
+            max-width: 780px;
+            margin: auto;
+        }
+
+        header {
+            background: var(--navy);
+            color: white;
+            padding: 24px;
+            border-radius: 14px;
+            margin-bottom: 22px;
+        }
+
+        header h1 { margin: 0 0 8px; }
+        header p { margin: 0; line-height: 1.5; }
+
+        form {
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+        }
+
+        section {
+            margin-bottom: 26px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 { font-size: 19px; }
+
+        label {
+            display: block;
+            margin: 15px 0 7px;
+            font-weight: 700;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #bdc9d9;
+            border-radius: 8px;
+            background: white;
+            font-size: 16px;
+        }
+
+        .check {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .check input {
+            width: auto;
+            margin-top: 4px;
+        }
+
+        .note {
+            color: #56647a;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .flash {
+            padding: 13px;
+            border-radius: 8px;
+            background: #e8f5ed;
+            margin-bottom: 12px;
+        }
+
+        button {
+            width: 100%;
+            border: 0;
+            padding: 14px;
+            border-radius: 9px;
+            background: var(--green);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        @media (min-width: 600px) {
+            .two-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Universal Runner Marketplace</h1>
+        <p>Global pricing and shipping configuration</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <section>
+            <h2>Product markup</h2>
+            <p class="note">
+                This is URM's markup on the supplier's product cost.
+                It is separate from the service fee.
+            </p>
+
+            <div class="two-col">
+                <div>
+                    <label for="markup_type">Markup type</label>
+                    <select id="markup_type" name="markup_type">
+                        <option value="percentage"
+                            {% if pricing.markup_type == "percentage" %}selected{% endif %}>
+                            Percentage
+                        </option>
+                        <option value="fixed"
+                            {% if pricing.markup_type == "fixed" %}selected{% endif %}>
+                            Fixed amount
+                        </option>
+                    </select>
+                </div>
+                <div>
+                    <label for="markup_value">Markup value</label>
+                    <input id="markup_value" name="markup_value"
+                           type="number" min="0" step="0.01"
+                           required value="{{ pricing.markup_value }}">
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>URM service fee</h2>
+            <p class="note">
+                This is a separate sourcing or handling fee charged by URM.
+            </p>
+
+            <div class="two-col">
+                <div>
+                    <label for="service_fee_type">Fee type</label>
+                    <select id="service_fee_type" name="service_fee_type">
+                        <option value="fixed"
+                            {% if pricing.service_fee_type == "fixed" %}selected{% endif %}>
+                            Fixed amount
+                        </option>
+                        <option value="percentage"
+                            {% if pricing.service_fee_type == "percentage" %}selected{% endif %}>
+                            Percentage
+                        </option>
+                    </select>
+                </div>
+                <div>
+                    <label for="service_fee_value">Fee value</label>
+                    <input id="service_fee_value" name="service_fee_value"
+                           type="number" min="0" step="0.01"
+                           required value="{{ pricing.service_fee_value }}">
+                </div>
+            </div>
+
+            <label for="service_fee_currency">Service fee currency</label>
+            <select id="service_fee_currency" name="service_fee_currency">
+                {% for currency in supported_currencies %}
+                    <option value="{{ currency }}"
+                        {% if pricing.service_fee_currency == currency %}selected{% endif %}>
+                        {{ currency }}
+                    </option>
+                {% endfor %}
+            </select>
+        </section>
+
+        <section>
+            <h2>Currency preference</h2>
+            <label for="default_currency">Default display currency</label>
+            <select id="default_currency" name="default_currency">
+                {% for currency in supported_currencies %}
+                    <option value="{{ currency }}"
+                        {% if pricing.default_currency == currency %}selected{% endif %}>
+                        {{ currency }}
+                    </option>
+                {% endfor %}
+            </select>
+            <p class="note">
+                Choosing a currency does not convert prices. Exchange rates
+                and currency conversion must be implemented separately.
+            </p>
+        </section>
+
+        <section>
+            <h2>Shipping settings</h2>
+
+            <label class="check">
+                <input type="checkbox" name="shipping_estimates_enabled"
+                    {% if pricing.shipping_estimates_enabled %}checked{% endif %}>
+                Enable indicative shipping estimates.
+            </label>
+
+            <label class="check">
+                <input type="checkbox" name="require_shipping_confirmation"
+                    {% if pricing.require_shipping_confirmation %}checked{% endif %}>
+                Require shipping confirmation before treating a shipping
+                price as final.
+            </label>
+
+            <p class="note">
+                Estimates are not confirmed freight quotes. Actual charges
+                may depend on destination, weight, dimensions, shipping
+                method, customs and carrier pricing.
+            </p>
+        </section>
+
+        <button type="submit">Save pricing settings</button>
+    </form>
+</main>
+</body>
+</html>

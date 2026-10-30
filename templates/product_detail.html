@@ -3,183 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ product.name }} | Universal Marketplace</title>
-    <meta name="description" content="{{ product.description }}">
+
+    <title>{{ product.name }} | Universal Runner Marketplace</title>
+    <meta name="description" content="{{ product.description or 'Discover products and request international sourcing through Universal Runner Marketplace.' }}">
+    <meta name="theme-color" content="#00209F">
+
     <style>
         :root {
-            --green: #0B6B3A;
-            --dark-green: #064D2A;
-            --blue: #003DA5;
-            --red: #D71920;
-            --light: #F4F7F5;
+            --green: #009543;
+            --dark-green: #087337;
+            --blue: #00209F;
+            --dark-blue: #071746;
+            --light: #F4F7FC;
             --text: #202820;
+            --muted: #64748B;
+            --border: #E2E8F0;
+            --white: #FFFFFF;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
 
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             color: var(--text);
             background: var(--light);
             line-height: 1.6;
         }
 
-        header {
-            background: var(--green);
-            color: white;
-            padding: 18px 5%;
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* NAVIGATION */
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,.98);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 3px 12px rgba(0,0,0,.04);
+        }
+
+        .nav-container {
+            width: min(1250px, 94%);
+            min-height: 76px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
         }
 
         .brand {
-            font-size: 22px;
-            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            flex-shrink: 0;
         }
 
-        .brand span { color: #E7F3EA; }
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            background: var(--blue);
+            color: white;
+            font-weight: 900;
+            font-size: 15px;
+            border-radius: 12px;
+            border-bottom: 4px solid var(--green);
+        }
+
+        .brand-name {
+            color: var(--dark-blue);
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.3;
+        }
+
+        .brand-tagline {
+            display: block;
+            color: var(--muted);
+            font-size: 9px;
+            letter-spacing: .8px;
+            font-weight: bold;
+            margin-top: 3px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-links > a:not(.nav-button) {
+            font-size: 12px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .nav-links > a:not(.nav-button):hover {
+            color: var(--green);
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: .2s;
+            border: 1px solid transparent;
+        }
+
+        .nav-button.green {
+            color: white;
+            background: var(--green);
+        }
+
+        .nav-button.green:hover {
+            background: var(--dark-green);
+        }
+
+        .nav-button.outline {
+            color: var(--blue);
+            border-color: var(--blue);
+            background: white;
+        }
+
+        .nav-button.outline:hover {
+            background: #EEF2FF;
+        }
+
+        .nav-button.logout {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .nav-links form {
+            margin: 0;
+        }
+
+        .menu-toggle {
+            display: none;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: white;
+            padding: 8px 12px;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* MAIN CONTENT */
 
         .container {
-            width: min(1100px, 92%);
-            margin: 28px auto;
+            width: min(1150px, 92%);
+            margin: 28px auto 55px;
         }
 
-        .back {
-            color: var(--dark-green);
-            text-decoration: none;
+        .breadcrumb {
+            margin-bottom: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .breadcrumb a {
+            color: var(--blue);
             font-weight: bold;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--green);
         }
 
         .layout {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 28px;
-            margin-top: 20px;
+            grid-template-columns: 1.05fr .95fr;
+            gap: 26px;
             align-items: start;
         }
 
         .panel {
+            min-width: 0;
             background: white;
-            padding: 24px;
-            border-radius: 14px;
-            box-shadow: 0 3px 14px #0000000d;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 5px 20px rgba(15,23,42,.045);
         }
 
+        /* PRODUCT IMAGE */
+
         .product-image {
+            display: block;
             width: 100%;
-            max-height: 380px;
+            max-height: 420px;
+            min-height: 260px;
             object-fit: contain;
-            border-radius: 10px;
-            background: #f7f7f7;
+            border-radius: 12px;
+            background: #F7F9FC;
         }
 
         .placeholder {
-            min-height: 220px;
+            min-height: 300px;
             display: grid;
             place-items: center;
-            background: #e8f0e9;
-            border-radius: 10px;
-            font-size: 60px;
+            background: linear-gradient(135deg,#EAF0FF,#E6F4EA);
+            border-radius: 12px;
+            font-size: 75px;
         }
 
         .category {
+            display: inline-block;
             color: var(--green);
+            background: #E8F6EE;
+            padding: 6px 11px;
+            border-radius: 30px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
+            margin-top: 18px;
         }
 
-        h1 { line-height: 1.25; }
+        h1 {
+            line-height: 1.25;
+            font-size: 30px;
+            color: var(--dark-blue);
+            margin: 12px 0;
+        }
+
+        h2 {
+            color: var(--dark-blue);
+            font-size: 22px;
+            line-height: 1.3;
+        }
 
         .price {
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 29px;
+            font-weight: 900;
             color: var(--dark-green);
+            margin: 12px 0 18px;
         }
 
         .detail {
-            border-bottom: 1px solid #eee;
-            padding: 9px 0;
+            border-bottom: 1px solid #EDF0F3;
+            padding: 11px 0;
+            font-size: 14px;
+        }
+
+        .detail strong {
+            color: var(--dark-blue);
+        }
+
+        .availability {
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .unavailable {
+            color: #B45309;
+            font-weight: bold;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.85;
+            margin-top: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        /* NOTICES */
+
+        .notice {
+            padding: 13px 16px;
+            border-radius: 9px;
+            margin: 15px 0;
+            background: #E6F4EA;
+            color: #14532D;
+            font-size: 13px;
+        }
+
+        .notice.error {
+            background: #FDE8E8;
+            color: #991B1B;
+        }
+
+        .notice.warning {
+            background: #FFF7E6;
+            color: #854D0E;
+        }
+
+        /* TRUST INFORMATION */
+
+        .trust {
+            background: #EEF2FF;
+            border-left: 4px solid var(--blue);
+            padding: 15px;
+            border-radius: 7px;
+            font-size: 13px;
+            margin-top: 22px;
+            color: #334155;
+        }
+
+        .trust strong {
+            color: var(--dark-blue);
+        }
+
+        /* ENQUIRY FORM */
+
+        .form-intro {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 17px;
         }
 
         label {
             display: block;
             font-weight: bold;
-            margin: 13px 0 5px;
+            font-size: 13px;
+            margin: 15px 0 6px;
+            color: var(--dark-blue);
         }
 
-        input, textarea {
+        input,
+        textarea {
             width: 100%;
             padding: 12px;
-            border: 1px solid #ccd5ce;
-            border-radius: 7px;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
             font: inherit;
+            font-size: 14px;
+            background: white;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: 2px solid rgba(0,61,165,.15);
+            border-color: var(--blue);
         }
 
         textarea {
-            min-height: 120px;
+            min-height: 125px;
             resize: vertical;
         }
 
-        button {
+        .submit-button {
             width: 100%;
-            margin-top: 18px;
+            margin-top: 20px;
             padding: 14px;
             border: 0;
-            border-radius: 8px;
+            border-radius: 9px;
             background: var(--green);
             color: white;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
+            transition: .2s;
         }
 
-        button:hover { background: var(--dark-green); }
-
-        .notice {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            background: #e6f4ea;
-            color: #14532d;
+        .submit-button:hover {
+            background: var(--dark-green);
         }
 
-        .notice.error {
-            background: #fde8e8;
-            color: #991b1b;
+        .privacy {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 14px;
         }
 
-        .trust {
-            background: #edf3ff;
-            border-left: 4px solid var(--blue);
-            padding: 12px;
-            border-radius: 5px;
-            font-size: 14px;
-            margin-top: 18px;
+        .required-note {
+            color: #B91C1C;
+            font-size: 12px;
         }
+
+        /* FOOTER */
 
         footer {
+            background: #071126;
+            color: #CBD5E1;
+            padding: 28px 5%;
             text-align: center;
-            padding: 24px;
-            color: #657066;
+            font-size: 12px;
         }
 
-        @media (max-width: 750px) {
-            .layout { grid-template-columns: 1fr; }
-            .panel { padding: 18px; }
-            h1 { font-size: 26px; }
+        footer strong {
+            color: white;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 18px;
+            margin-bottom: 15px;
+        }
+
+        .footer-links a:hover {
+            color: #8EE6AD;
+        }
+
+        /* RESPONSIVE */
+
+        @media(max-width: 1050px) {
+            .nav-links {
+                gap: 10px;
+            }
+
+            .nav-links > a:not(.nav-button) {
+                font-size: 11px;
+            }
+
+            .nav-button {
+                padding: 9px 11px;
+            }
+        }
+
+        @media(max-width: 850px) {
+            .menu-toggle {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 76px;
+                left: 0;
+                right: 0;
+                padding: 15px 5%;
+                background: white;
+                border-bottom: 1px solid var(--border);
+                box-shadow: 0 10px 20px rgba(0,0,0,.08);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .nav-links > a {
+                padding: 12px 5px;
+            }
+
+            .nav-links .nav-button {
+                margin-top: 8px;
+                text-align: center;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media(max-width: 500px) {
+            .brand-name {
+                font-size: 13px;
+            }
+
+            .brand-tagline {
+                font-size: 8px;
+            }
+
+            .brand-mark {
+                width: 40px;
+                height: 40px;
+                font-size: 13px;
+            }
+
+            .container {
+                width: 94%;
+                margin-top: 20px;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+
+            h1 {
+                font-size: 25px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .price {
+                font-size: 25px;
+            }
+
+            .product-image {
+                min-height: 220px;
+            }
+
+            .placeholder {
+                min-height: 220px;
+            }
         }
     </style>
 </head>
+
 <body>
-<header>
-    <div class="brand">UNIVERSAL <span>MARKETPLACE</span></div>
-    <div>Connecting Lesotho 🇱🇸 and South Africa 🇿🇦</div>
+
+<!-- NAVIGATION -->
+<header class="navbar">
+    <div class="nav-container">
+
+        <a href="{{ url_for('home') }}" class="brand">
+            <div class="brand-mark">URM</div>
+            <div>
+                <div class="brand-name">Universal Runner Marketplace</div>
+                <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
+            </div>
+        </a>
+
+        <button
+            type="button"
+            class="menu-toggle"
+            id="menuToggle"
+            aria-label="Open navigation"
+            aria-expanded="false"
+            aria-controls="navLinks">
+            ☰
+        </button>
+
+        <nav class="nav-links" id="navLinks">
+
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('home') }}#categories">Categories</a>
+            <a href="{{ url_for('home') }}#how-it-works">How It Works</a>
+
+            {% if current_user.is_authenticated %}
+
+                {% if current_user.role == 'buyer' %}
+                    <a href="{{ url_for('request_product') }}">Request Product</a>
+                    <a href="{{ url_for('my_requests') }}">My Requests</a>
+                    <a href="{{ url_for('list_quotations') }}">My Quotations</a>
+                {% endif %}
+
+                {% if current_user.role in ['admin', 'super_admin', 'company_admin'] %}
+                    <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('list_suppliers') }}">Suppliers</a>
+                    <a href="{{ url_for('buyer_accounts') }}">Buyers</a>
+                    <a href="{{ url_for('list_quotations') }}">Quotations</a>
+                {% endif %}
+
+                <form action="{{ url_for('logout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="nav-button outline logout" type="submit">
+                        Log Out
+                    </button>
+                </form>
+
+            {% else %}
+
+                <a href="{{ url_for('login') }}">Log In</a>
+                <a class="nav-button green" href="{{ url_for('register') }}">
+                    Register
+                </a>
+
+            {% endif %}
+
+        </nav>
+    </div>
 </header>
 
 <main class="container">
-    <a class="back" href="{{ url_for('home') }}">
-    ← Back to marketplace
-</a>
 
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">Marketplace</a>
+        <span>›</span>
+        <span>{{ product.category }}</span>
+        <span>›</span>
+        <span>{{ product.name }}</span>
+    </div>
+
+    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             <div class="notice {{ 'error' if category == 'error' else '' }}">
@@ -189,17 +603,29 @@
     {% endwith %}
 
     <div class="layout">
+
+        <!-- PRODUCT INFORMATION -->
         <section class="panel">
+
             {% if product.image_url %}
-                <img class="product-image"
-                     src="{{ product.image_url }}"
-                     alt="{{ product.name }}"
-                     loading="lazy">
+                <img
+                    class="product-image"
+                    src="{{ product.image_url }}"
+                    alt="{{ product.name }}"
+                    loading="lazy"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+
+                <div class="placeholder" style="display:none;">
+                    🛍️
+                </div>
             {% else %}
                 <div class="placeholder">🛍️</div>
             {% endif %}
 
-            <p class="category">{{ product.category }}</p>
+            <div class="category">
+                {{ product.category }}
+            </div>
+
             <h1>{{ product.name }}</h1>
 
             <div class="price">
@@ -208,73 +634,206 @@
 
             <div class="detail">
                 <strong>Source country:</strong>
-                {{ product.country }}
+                {{ product.country or "To be confirmed" }}
             </div>
 
             <div class="detail">
                 <strong>Availability:</strong>
+
                 {% if product.stock_quantity > 0 %}
-                    In stock
+                    <span class="availability">In stock</span>
                 {% else %}
-                    Contact us to confirm availability
+                    <span class="unavailable">
+                        Contact us to confirm availability
+                    </span>
                 {% endif %}
             </div>
 
             <h3>Product description</h3>
-            <p>{{ product.description or "Contact us for more information about this product." }}</p>
+
+            <p class="description">
+                {{ product.description or "Contact us for more information about this product." }}
+            </p>
 
             <div class="trust">
-                <strong>Buying across borders?</strong><br>
-                Send an enquiry to discuss pricing, availability,
-                sourcing and delivery between Lesotho and South Africa.
-                Confirm final costs and delivery arrangements before paying.
+                <strong>🌍 International sourcing and delivery</strong>
+                <br><br>
+                Interested in this product? Send an enquiry to discuss
+                availability, supplier details, sourcing, shipping and
+                delivery to your destination.
+                <br><br>
+                The displayed product price may not include sourcing fees,
+                international shipping, taxes, customs charges or other
+                applicable costs. A quotation will clarify the applicable
+                charges before you confirm your purchase.
             </div>
+
         </section>
 
+        <!-- PRODUCT ENQUIRY -->
         <section class="panel">
-            <h2>Enquire about this product</h2>
-            <p>Complete the form below. You do not need an account.</p>
 
-            <form method="POST"
-                  action="{{ url_for('submit_product_enquiry', product_id=product.id) }}">
-                <input type="hidden" name="csrf_token"
-                       value="{{ csrf_token() }}">
+            <h2>Enquire about this product</h2>
+
+            <p class="form-intro">
+                Tell us what you need. Our team can review your enquiry
+                and respond with the next steps.
+            </p>
+
+            <p class="required-note">* Required fields</p>
+
+            <form
+                method="POST"
+                action="{{ url_for('submit_product_enquiry', product_id=product.id) }}">
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}">
 
                 <label for="customer_name">Full name *</label>
-                <input id="customer_name" name="customer_name"
-                       maxlength="120" required autocomplete="name">
+                <input
+                    id="customer_name"
+                    name="customer_name"
+                    type="text"
+                    maxlength="120"
+                    required
+                    autocomplete="name"
+                    placeholder="Enter your full name">
 
                 <label for="customer_email">Email address *</label>
-                <input id="customer_email" name="customer_email"
-                       type="email" maxlength="254" required
-                       autocomplete="email">
+                <input
+                    id="customer_email"
+                    name="customer_email"
+                    type="email"
+                    maxlength="254"
+                    required
+                    autocomplete="email"
+                    placeholder="you@example.com">
 
                 <label for="customer_contact">Phone / WhatsApp number</label>
-                <input id="customer_contact" name="customer_contact"
-                       maxlength="120" autocomplete="tel">
+                <input
+                    id="customer_contact"
+                    name="customer_contact"
+                    type="tel"
+                    maxlength="120"
+                    autocomplete="tel"
+                    placeholder="Include your country calling code">
 
                 <label for="quantity">Quantity required *</label>
-                <input id="quantity" name="quantity"
-                       type="number" min="1" max="1000000"
-                       value="1" required>
+                <input
+                    id="quantity"
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    max="1000000"
+                    value="1"
+                    required>
 
                 <label for="message">Your message *</label>
-                <textarea id="message" name="message"
-                          maxlength="5000" required
-                          placeholder="Tell us your location, delivery needs or any questions about this product."></textarea>
+                <textarea
+                    id="message"
+                    name="message"
+                    maxlength="5000"
+                    required
+                    placeholder="Tell us your country, delivery destination, required specifications and any questions about this product."></textarea>
 
-                <button type="submit">Submit Product Enquiry</button>
+                <button class="submit-button" type="submit">
+                    Submit Product Enquiry →
+                </button>
+
             </form>
 
-            <p style="font-size:13px;color:#68736a;">
-                Your contact details will be used to respond to your enquiry.
+            <p class="privacy">
+                🔒 Your contact information will be used to respond
+                to your enquiry and manage your request.
             </p>
+
         </section>
+
     </div>
+
 </main>
 
+<!-- FOOTER -->
 <footer>
-    Universal Marketplace · Lesotho 🇱🇸 | South Africa 🇿🇦
+
+    <div class="footer-links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('home') }}#categories">Categories</a>
+        <a href="{{ url_for('home') }}#how-it-works">How It Works</a>
+        <a href="{{ url_for('request_product') }}">Request a Product</a>
+
+        {% if current_user.is_authenticated %}
+            {% if current_user.role == 'buyer' %}
+                <a href="{{ url_for('my_requests') }}">My Requests</a>
+                <a href="{{ url_for('list_quotations') }}">My Quotations</a>
+            {% endif %}
+        {% else %}
+            <a href="{{ url_for('login') }}">Log In</a>
+            <a href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+    </div>
+
+    <p>
+        © 2026 <strong>Universal Runner Marketplace</strong>.
+        All rights reserved.
+    </p>
+
+    <p>
+        Connecting buyers and suppliers worldwide.
+    </p>
+
 </footer>
+
+<!-- MOBILE NAVIGATION SCRIPT -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const menuToggle = document.getElementById("menuToggle");
+        const navLinks = document.getElementById("navLinks");
+
+        if (!menuToggle || !navLinks) {
+            return;
+        }
+
+        menuToggle.addEventListener("click", function () {
+
+            const isOpen = navLinks.classList.toggle("open");
+
+            menuToggle.setAttribute(
+                "aria-expanded",
+                String(isOpen)
+            );
+
+            menuToggle.setAttribute(
+                "aria-label",
+                isOpen ? "Close navigation" : "Open navigation"
+            );
+
+            menuToggle.textContent = isOpen ? "✕" : "☰";
+        });
+
+        navLinks.querySelectorAll("a").forEach(function (link) {
+
+            link.addEventListener("click", function () {
+
+                navLinks.classList.remove("open");
+
+                menuToggle.setAttribute("aria-expanded", "false");
+
+                menuToggle.setAttribute(
+                    "aria-label",
+                    "Open navigation"
+                );
+
+                menuToggle.textContent = "☰";
+            });
+
+        });
+
+    });
+</script>
+
 </body>
 </html>

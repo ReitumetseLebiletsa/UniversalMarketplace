@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Universal Marketplace | Lesotho & South Africa</title>
+    <title>Universal Runner Marketplace | Global Sourcing</title>
 
-    <meta name="description" content="Connect buyers, suppliers and independent sourcing runners across Lesotho and South Africa. Request products, compare quotations and arrange delivery.">
+    <meta name="description" content="Universal Runner Marketplace connects buyers with international suppliers and sourcing runners worldwide. Request products, compare quotations and coordinate international procurement and delivery.">
+
+    <meta name="theme-color" content="#00209F">
 
     <style>
         :root {
@@ -91,7 +93,7 @@
             border-radius: 14px;
             background: var(--blue);
             color: white;
-            font-size: 19px;
+            font-size: 17px;
             font-weight: 900;
             border-bottom: 5px solid var(--green);
         }
@@ -108,7 +110,7 @@
             margin-top: 4px;
             color: var(--muted);
             font-size: 10px;
-            letter-spacing: 1.2px;
+            letter-spacing: 1px;
             font-weight: 700;
         }
 
@@ -401,7 +403,7 @@
             line-height: 1.8;
         }
 
-        /* CATEGORY CARDS WITH PHOTOS */
+        /* CATEGORY CARDS */
 
         .category-grid {
             display: grid;
@@ -522,7 +524,7 @@
             font-size: 12px;
         }
 
-        /* CROSS-BORDER BANNER */
+        /* GLOBAL SOURCING SECTION */
 
         .cross-border {
             position: relative;
@@ -555,7 +557,7 @@
         }
 
         .cross-border-copy {
-            max-width: 650px;
+            max-width: 750px;
         }
 
         .cross-border h2 {
@@ -570,67 +572,9 @@
             line-height: 1.8;
         }
 
-        .country-flags {
-            display: flex;
-            align-items: center;
-            gap: 14px;
+        .global-icon {
+            font-size: 85px;
             flex-shrink: 0;
-        }
-
-        .country-flag {
-            width: 85px;
-            height: 62px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            border-radius: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.75);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-        }
-
-        .flag-lesotho {
-            justify-content: center;
-            gap: 5px;
-            background: white;
-        }
-
-        .flag-lesotho .flag-blue {
-            height: 15px;
-            background: #00209F;
-        }
-
-        .flag-lesotho .flag-green {
-            height: 15px;
-            background: #009543;
-        }
-
-        .flag-lesotho .flag-black {
-            width: 25px;
-            height: 5px;
-            align-self: center;
-            background: #111111;
-        }
-
-        .flag-sa {
-            justify-content: center;
-            background: #FFFFFF;
-        }
-
-        .flag-sa .sa-red {
-            height: 17px;
-            background: #DE3831;
-        }
-
-        .flag-sa .sa-green {
-            height: 15px;
-            background: #007A4D;
-            border-top: 3px solid white;
-            border-bottom: 3px solid white;
-        }
-
-        .flag-sa .sa-blue {
-            height: 17px;
-            background: #002395;
         }
 
         /* HOW IT WORKS */
@@ -876,6 +820,10 @@
                 flex-direction: column;
             }
 
+            .global-icon {
+                font-size: 65px;
+            }
+
             .steps-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
@@ -903,7 +851,7 @@
             .brand-mark {
                 width: 42px;
                 height: 42px;
-                font-size: 16px;
+                font-size: 14px;
             }
 
             .brand-name {
@@ -911,8 +859,8 @@
             }
 
             .brand-tagline {
-                font-size: 9px;
-                letter-spacing: 0.7px;
+                font-size: 8px;
+                letter-spacing: 0.5px;
             }
 
             .hero-container {
@@ -945,11 +893,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .country-flag {
-                width: 75px;
-                height: 53px;
-            }
-
             .footer-grid {
                 grid-template-columns: 1fr;
             }
@@ -980,10 +923,10 @@
         <div class="container nav-inner">
 
             <a href="{{ url_for('home') }}" class="brand">
-                <div class="brand-mark">UM</div>
+                <div class="brand-mark">URM</div>
                 <div>
-                    <div class="brand-name">Universal Marketplace</div>
-                    <span class="brand-tagline">LESOTHO ↔ SOUTH AFRICA</span>
+                    <div class="brand-name">Universal Runner Marketplace</div>
+                    <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
                 </div>
             </a>
 
@@ -1039,19 +982,20 @@
 
                     <div class="hero-label">
                         <span class="dot"></span>
-                        Your regional sourcing partner
+                        Your global sourcing partner
                     </div>
 
                     <h1>
-                        From Lesotho to South Africa,
-                        <span>business moves forward.</span>
+                        Source from anywhere.
+                        <span>Get it moving everywhere.</span>
                     </h1>
 
                     <p>
-                        Find products, connect with suppliers and request
-                        quotations through one marketplace built to help
-                        businesses and individuals source what they need
-                        across Lesotho and South Africa.
+                        Discover products, connect with international suppliers
+                        and request quotations through Universal Runner Marketplace.
+                        We help individuals and businesses source products from
+                        different countries, coordinate procurement and organise
+                        delivery to their destinations.
                     </p>
 
                     <div class="hero-buttons">
@@ -1073,9 +1017,9 @@
                     </div>
 
                     <div class="hero-points">
-                        <span>Cross-border sourcing</span>
+                        <span>International sourcing</span>
                         <span>Quotation-based purchasing</span>
-                        <span>Buyer-focused service</span>
+                        <span>Worldwide supplier network</span>
                     </div>
 
                 </div>
@@ -1089,15 +1033,15 @@
                 <div class="trust-item">
                     <div class="trust-icon">🌍</div>
                     <div>
-                        <strong>Two-country marketplace</strong>
-                        <small>Connecting Lesotho and South Africa</small>
+                        <strong>Worldwide Marketplace</strong>
+                        <small>Connecting buyers and suppliers across countries</small>
                     </div>
                 </div>
 
                 <div class="trust-item">
                     <div class="trust-icon">📋</div>
                     <div>
-                        <strong>Request and compare quotations</strong>
+                        <strong>Request and Compare Quotations</strong>
                         <small>Understand your costs before proceeding</small>
                     </div>
                 </div>
@@ -1105,8 +1049,8 @@
                 <div class="trust-item">
                     <div class="trust-icon">🤝</div>
                     <div>
-                        <strong>People-powered sourcing</strong>
-                        <small>Helping buyers connect with suppliers</small>
+                        <strong>People-Powered Sourcing</strong>
+                        <small>Helping buyers source products internationally</small>
                     </div>
                 </div>
 
@@ -1121,8 +1065,9 @@
                     <div class="eyebrow">Explore the marketplace</div>
                     <h2>What are you looking for?</h2>
                     <p>
-                        Explore product categories, discover sourcing options
-                        and tell us what you need across Lesotho and South Africa.
+                        Explore product categories, discover international
+                        sourcing options and tell us what products you need
+                        from anywhere in the world.
                     </p>
                 </div>
 
@@ -1252,7 +1197,7 @@
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/something.jpg') }}"
-                                 alt="Boxes and products prepared for sourcing and delivery"
+                                 alt="Products prepared for sourcing and delivery"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
                             <span class="category-badge">CUSTOM REQUEST</span>
@@ -1274,7 +1219,7 @@
             </div>
         </section>
 
-        <!-- CROSS-BORDER SECTION -->
+        <!-- GLOBAL SOURCING SECTION -->
         <section class="section">
             <div class="container">
                 <div class="cross-border">
@@ -1282,32 +1227,22 @@
 
                         <div class="cross-border-copy">
                             <div class="eyebrow" style="color:#8EE6AD;">
-                                Built for regional trade
+                                Connecting markets worldwide
                             </div>
-                            <h2>One marketplace. Two countries. More possibilities.</h2>
+
+                            <h2>One marketplace. Worldwide sourcing. More possibilities.</h2>
+
                             <p>
-                                Whether your business is in Lesotho or South Africa,
-                                Universal Marketplace helps you organise sourcing
-                                requests, receive quotations and coordinate the next
-                                steps towards getting the products you need.
+                                Find the products you need from international markets.
+                                Universal Runner Marketplace helps individuals and
+                                businesses connect with suppliers, compare sourcing
+                                options, review quotations and coordinate purchasing
+                                and delivery across international destinations.
                             </p>
                         </div>
 
-                        <div class="country-flags"
-                             aria-label="Lesotho and South African flags">
-                            <div class="country-flag flag-lesotho" title="Lesotho flag">
-                                <div class="flag-blue"></div>
-                                <div class="flag-black"></div>
-                                <div class="flag-green"></div>
-                            </div>
-
-                            <div style="color:white;font-size:22px;font-weight:900;">↔</div>
-
-                            <div class="country-flag flag-sa" title="South African flag">
-                                <div class="sa-red"></div>
-                                <div class="sa-green"></div>
-                                <div class="sa-blue"></div>
-                            </div>
+                        <div class="global-icon" aria-label="Global trade">
+                            🌍
                         </div>
 
                     </div>
@@ -1321,11 +1256,15 @@
 
                 <div class="section-heading">
                     <div class="eyebrow">Simple sourcing process</div>
-                    <h2>From product request to quotation</h2>
-                    <p>A clear process helps buyers communicate their needs and review available options.</p>
+                    <h2>From product request to delivery</h2>
+                    <p>
+                        A clear process helps buyers communicate their needs,
+                        review available options and coordinate international purchases.
+                    </p>
                 </div>
 
                 <div class="steps-grid">
+
                     <div class="step-card">
                         <div class="step-number">01</div>
                         <h3>Create Your Account</h3>
@@ -1335,26 +1274,27 @@
                     <div class="step-card">
                         <div class="step-number">02</div>
                         <h3>Describe Your Product</h3>
-                        <p>Provide the product name, quantity, specifications and destination.</p>
+                        <p>Provide the product name, quantity, specifications and delivery destination.</p>
                     </div>
 
                     <div class="step-card">
                         <div class="step-number">03</div>
-                        <h3>Sourcing and Pricing</h3>
-                        <p>Your request can be reviewed for supplier options and pricing.</p>
+                        <h3>International Sourcing</h3>
+                        <p>Your request can be reviewed for international supplier options and pricing.</p>
                     </div>
 
                     <div class="step-card">
                         <div class="step-number">04</div>
                         <h3>Review Your Quotation</h3>
-                        <p>Review proposed costs and terms before deciding whether to proceed.</p>
+                        <p>Review proposed product costs, service fees, shipping and other terms before proceeding.</p>
                     </div>
 
                     <div class="step-card">
                         <div class="step-number">05</div>
-                        <h3>Confirm Next Steps</h3>
+                        <h3>Confirm Your Order</h3>
                         <p>Once terms are agreed, coordinate purchasing and delivery arrangements.</p>
                     </div>
+
                 </div>
 
             </div>
@@ -1364,7 +1304,9 @@
         <section class="cta-section">
             <div class="container">
                 <div class="cta-panel">
+
                     <h2>Your next product starts with a request.</h2>
+
                     <p>
                         Whether you are buying for personal use, running a small
                         business or sourcing equipment for a larger operation,
@@ -1372,6 +1314,7 @@
                     </p>
 
                     <div class="cta-buttons">
+
                         <a class="btn btn-green" href="{{ url_for('request_product') }}">
                             Request a Product
                         </a>
@@ -1385,6 +1328,7 @@
                                 Create an Account
                             </a>
                         {% endif %}
+
                     </div>
                 </div>
             </div>
@@ -1397,24 +1341,29 @@
         <div class="container">
 
             <div class="footer-grid">
+
                 <div class="footer-brand-column">
+
                     <a href="{{ url_for('home') }}" class="brand">
-                        <div class="brand-mark">UM</div>
+                        <div class="brand-mark">URM</div>
+
                         <div>
-                            <div class="brand-name">Universal Marketplace</div>
-                            <span class="brand-tagline">LESOTHO ↔ SOUTH AFRICA</span>
+                            <div class="brand-name">Universal Runner Marketplace</div>
+                            <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
                         </div>
                     </a>
 
                     <p class="footer-description">
-                        A regional sourcing and commerce platform designed
-                        to connect buyers, suppliers and sourcing services
-                        across Lesotho and South Africa.
+                        A global sourcing and procurement platform designed
+                        to connect buyers, international suppliers and sourcing
+                        runners across markets worldwide.
                     </p>
+
                 </div>
 
                 <div>
                     <h3>Explore</h3>
+
                     <div class="footer-links">
                         <a href="{{ url_for('home') }}">Home</a>
                         <a href="#categories">Product Categories</a>
@@ -1425,8 +1374,11 @@
 
                 <div>
                     <h3>Your Account</h3>
+
                     <div class="footer-links">
+
                         {% if current_user.is_authenticated %}
+
                             {% if current_user.role == 'buyer' %}
                                 <a href="{{ url_for('my_requests') }}">My Requests</a>
                                 <a href="{{ url_for('list_quotations') }}">My Quotations</a>
@@ -1435,20 +1387,28 @@
                             {% if current_user.role in ['admin', 'super_admin', 'company_admin'] %}
                                 <a href="{{ url_for('company_dashboard') }}">Management Dashboard</a>
                             {% endif %}
+
                         {% else %}
+
                             <a href="{{ url_for('login') }}">Log In</a>
                             <a href="{{ url_for('register') }}">Create an Account</a>
+
                         {% endif %}
+
                     </div>
                 </div>
+
             </div>
 
             <div class="footer-bottom">
+
                 <span>
                     © {{ now.year if now is defined else 2026 }}
-                    <strong>Universal Marketplace.</strong> All rights reserved.
+                    <strong>Universal Runner Marketplace.</strong> All rights reserved.
                 </span>
-                <span>Connecting Lesotho and South Africa.</span>
+
+                <span>Connecting buyers and suppliers worldwide.</span>
+
             </div>
 
         </div>
@@ -1457,6 +1417,7 @@
     <!-- MOBILE MENU -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+
             const menuToggle = document.getElementById("menuToggle");
             const navLinks = document.getElementById("navLinks");
 
@@ -1465,24 +1426,37 @@
             }
 
             menuToggle.addEventListener("click", function () {
+
                 const isOpen = navLinks.classList.toggle("open");
 
                 menuToggle.setAttribute("aria-expanded", String(isOpen));
+
                 menuToggle.setAttribute(
                     "aria-label",
                     isOpen ? "Close navigation menu" : "Open navigation menu"
                 );
+
                 menuToggle.textContent = isOpen ? "✕" : "☰";
             });
 
             navLinks.querySelectorAll("a").forEach(function (link) {
+
                 link.addEventListener("click", function () {
+
                     navLinks.classList.remove("open");
+
                     menuToggle.setAttribute("aria-expanded", "false");
-                    menuToggle.setAttribute("aria-label", "Open navigation menu");
+
+                    menuToggle.setAttribute(
+                        "aria-label",
+                        "Open navigation menu"
+                    );
+
                     menuToggle.textContent = "☰";
                 });
+
             });
+
         });
     </script>
 

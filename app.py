@@ -13,7 +13,9 @@ from flask import (
     flash,
     abort,
     session,
+    current_app,
 )
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager,
@@ -74,6 +76,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(30), nullable=False, default="buyer")
     active = db.Column(db.Boolean, nullable=False, default=True)
+    country = db.Column(db.String(100), nullable=False, default="Lesotho")
+    preferred_currency = db.Column(db.String(3), nullable=False, default="LSL")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -136,6 +140,7 @@ class Supplier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     country = db.Column(db.String(50), nullable=False)
+    default_currency = db.Column(db.String(3), nullable=False, default="USD")
     contact_name = db.Column(db.String(120), nullable=True)
     contact_details = db.Column(db.String(150), nullable=False)
     notes = db.Column(db.Text, nullable=True)
@@ -162,22 +167,121 @@ class Quotation(db.Model):
     )
 
     product_cost = db.Column(db.Float, nullable=False)
+    # Original supplier pricing
+    supplier_original_cost = db.Column(db.Float, nullable=True)
+    supplier_original_currency = db.Column(db.String(3), nullable=True)
+
+    # Internal accounting in Lesotho Loti
+    accounting_cost_lsl = db.Column(db.Float, nullable=True)
+
+    # Original shipping estimate, before currency conversion
+    shipping_estimated_original_cost = db.Column(
+        db.Float,
+        nullable=True,
+    )
+    shipping_estimated_currency = db.Column(
+        db.String(3),
+        nullable=True,
+    )
+
+    # Original other costs, before currency conversion
+    other_costs_original = db.Column(
+        db.Float,
+        nullable=True,
+    )
+    other_costs_currency = db.Column(
+        db.String(3),
+        nullable=True,
+    )
+
+    # Internal accounting breakdown in LSL
+    product_cost_lsl = db.Column(db.Float, nullable=True)
+    sourcing_fee_lsl = db.Column(db.Float, nullable=True)
+    shipping_cost_lsl = db.Column(db.Float, nullable=True)
+    other_costs_lsl = db.Column(db.Float, nullable=True)
+    profit_amount_lsl = db.Column(db.Float, nullable=True)
+    discount_amount_lsl = db.Column(db.Float, nullable=True)
+    selling_price_lsl = db.Column(db.Float, nullable=True)
+
+    # Exchange rate used for this quotation
+    exchange_rate_to_lsl = db.Column(db.Float, nullable=True)
+    exchange_rate_date = db.Column(db.Date, nullable=True)
+    exchange_rate_provider = db.Column(db.String(100), nullable=True)
     sourcing_fee = db.Column(db.Float, default=0, nullable=False)
     delivery_cost = db.Column(db.Float, default=0, nullable=False)
     other_costs = db.Column(db.Float, default=0, nullable=False)
+    profit_amount = db.Column(db.Float, default=0, nullable=False)
+
+    # Delivery and payment terms
+    delivery_distance = db.Column(db.Float, default=0, nullable=False)
+    payment_plan = db.Column(
+        db.String(20),
+        default="standard",
+        nullable=False,
+    )
+    deposit_percent = db.Column(db.Float, default=0, nullable=False)
+    discount_amount = db.Column(db.Float, default=0, nullable=False)
+
     selling_price = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(3), nullable=False)
 
+    # Shipping estimate and confirmation
+    shipping_status = db.Column(
+        db.String(20),
+        default="Estimated",
+        nullable=False,
+    )
+
+    # Preserve the original estimate when a confirmed cost is entered.
+    shipping_estimated_cost = db.Column(
+        db.Float,
+        default=0,
+        nullable=False,
+    )
+
+    shipping_confirmed_cost = db.Column(
+        db.Float,
+        nullable=True,
+    )
+
+    shipping_currency = db.Column(
+        db.String(3),
+        nullable=True,
+    )
+
+    freight_provider = db.Column(
+        db.String(150),
+        nullable=True,
+    )
+
+    shipping_reference = db.Column(
+        db.String(150),
+        nullable=True,
+    )
+
+    shipping_confirmed_at = db.Column(
+        db.DateTime,
+        nullable=True,
+    )
+
+    # Indicates whether the quotation total has been recalculated
+    # using the confirmed shipping cost.
+    shipping_total_recalculated = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False,
+    )
+
     status = db.Column(
-    db.String(30),
-    default="Draft",
-    nullable=False,
-)
+        db.String(30),
+        default="Draft",
+        nullable=False,
+    )
 
     buyer_decision = db.Column(
-    db.String(20),
-    nullable=True,
-)
+        db.String(20),
+        nullable=True,
+    )
 
     buyer_approved_at = db.Column(db.DateTime, nullable=True)
     expires_at = db.Column(db.DateTime, nullable=True)
@@ -185,6 +289,43 @@ class Quotation(db.Model):
 
     sourcing_request = db.relationship("SourcingRequest")
     supplier = db.relationship("Supplier")
+
+# --------------------------------------------------
+# QUOTATION EXCHANGE RATE MODEL
+# --------------------------------------------------
+
+class QuotationExchangeRate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    quotation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("quotation.id"),
+        nullable=False,
+    )
+
+    from_currency = db.Column(db.String(3), nullable=False)
+    to_currency = db.Column(db.String(3), nullable=False)
+
+    # Number of target currency units for one source currency unit.
+    rate = db.Column(db.Float, nullable=False)
+
+    rate_date = db.Column(db.Date, nullable=False)
+    provider = db.Column(db.String(100), nullable=False)
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    quotation = db.relationship(
+        "Quotation",
+        backref=db.backref(
+            "exchange_rates",
+            lazy=True,
+            cascade="all, delete-orphan",
+        ),
+    )
 
 # --------------------------------------------------
 # PUBLIC PRODUCT CATALOGUE MODEL
@@ -242,10 +383,164 @@ class ProductEnquiry(db.Model):
     product = db.relationship("Product")
     customer_user = db.relationship("User")
 
+    # --------------------------------------------------
+# UNIVERSAL RUNNER MARKETPLACE PRICING SETTINGS
+# --------------------------------------------------
+
+class PricingSetting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Pricing configuration name, e.g. "default"
+    name = db.Column(
+        db.String(80),
+        unique=True,
+        nullable=False,
+        default="default",
+    )
+
+    # Product markup configuration
+    markup_type = db.Column(
+        db.String(20),
+        nullable=False,
+        default="percentage",
+    )
+    markup_value = db.Column(
+        db.Float,
+        nullable=False,
+        default=0,
+    )
+
+    # Separate URM service fee
+    service_fee_type = db.Column(
+        db.String(20),
+        nullable=False,
+        default="fixed",
+    )
+    service_fee_value = db.Column(
+        db.Float,
+        nullable=False,
+        default=0,
+    )
+    service_fee_currency = db.Column(
+        db.String(3),
+        nullable=False,
+        default="USD",
+    )
+
+    # Currency used to display the default configuration.
+    # This does not convert other currencies.
+    default_currency = db.Column(
+        db.String(3),
+        nullable=False,
+        default="USD",
+    )
+
+    accounting_currency = db.Column(
+    db.String(3),
+    nullable=False,
+    default="LSL"
+    )
+
+    # Default shipping estimate settings
+    shipping_estimates_enabled = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    # Shipment prices must be confirmed separately when needed.
+    require_shipping_confirmation = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
 # Create missing tables without deleting existing records.
 with app.app_context():
     db.create_all()
 
+# Safely add missing quotation columns.
+# Existing tables, quotations and records are preserved.
+with app.app_context():
+    db.create_all()
+
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+
+    if "quotation" in inspector.get_table_names():
+        existing_columns = {
+            column["name"]
+            for column in inspector.get_columns("quotation")
+        }
+
+        new_columns = {
+            "profit_amount": "FLOAT NOT NULL DEFAULT 0",
+            "delivery_distance": "FLOAT NOT NULL DEFAULT 0",
+            "payment_plan": "VARCHAR(20) NOT NULL DEFAULT 'standard'",
+            "deposit_percent": "FLOAT NOT NULL DEFAULT 0",
+            "discount_amount": "FLOAT NOT NULL DEFAULT 0",
+
+            # Shipping estimate and confirmation
+            "shipping_status": "VARCHAR(20) NOT NULL DEFAULT 'Estimated'",
+            "shipping_estimated_cost": "FLOAT NOT NULL DEFAULT 0",
+            "shipping_confirmed_cost": "FLOAT",
+            "shipping_currency": "VARCHAR(3)",
+            "freight_provider": "VARCHAR(150)",
+            "shipping_reference": "VARCHAR(150)",
+            "shipping_confirmed_at": "DATETIME",
+            "shipping_total_recalculated": "BOOLEAN NOT NULL DEFAULT 0",
+        }
+
+        with db.engine.begin() as connection:
+            for column_name, column_definition in new_columns.items():
+                if column_name not in existing_columns:
+                    connection.execute(
+                        text(
+                            f'ALTER TABLE quotation ADD COLUMN '
+                            f'"{column_name}" {column_definition}'
+                        )
+                    )
+
+                    print(f"Added quotation column: {column_name}")
+
+    print("Database tables and quotation columns checked.")
+
+# --------------------------------------------------
+# INITIALIZE DEFAULT URM PRICING SETTINGS
+# --------------------------------------------------
+
+with app.app_context():
+    default_pricing = PricingSetting.query.filter_by(
+        name="default"
+    ).first()
+
+    if default_pricing is None:
+        default_pricing = PricingSetting(
+            name="default",
+            markup_type="percentage",
+            markup_value=0,
+            service_fee_type="fixed",
+            service_fee_value=0,
+            service_fee_currency="USD",
+            default_currency="USD",
+            shipping_estimates_enabled=True,
+            require_shipping_confirmation=True,
+        )
+
+        db.session.add(default_pricing)
+        db.session.commit()
+
+        print("Created default URM pricing settings.")
+    else:
+        print("URM pricing settings already exist.")
 
 # --------------------------------------------------
 # CONSTANTS AND ACCESS CONTROL
@@ -704,9 +999,31 @@ def update_request_status(request_id):
     "/company/quotations/new",
     methods=["GET", "POST"],
 )
+@app.route(
+    "/company/quotations/new",
+    methods=["GET", "POST"],
+)
 @admin_required
 def create_quotation():
+    full_payment_discount_rate = 0.05
+    deposit_discount_rate = 0.02
+
+    pricing = PricingSetting.query.filter_by(name="default").first()
+
+    if pricing is None:
+        flash(
+            "URM pricing settings are missing. Configure them first.",
+            "error",
+        )
+        return redirect(url_for("pricing_settings"))
+
+    supported_currencies = {
+        "USD", "EUR", "GBP", "ZAR", "LSL",
+        "CNY", "AED", "INR", "JPY", "AUD", "CAD",
+    }
+
     if request.method == "POST":
+
         try:
             sourcing_request_id = int(
                 request.form.get("sourcing_request_id", "")
@@ -715,34 +1032,46 @@ def create_quotation():
                 request.form.get("supplier_id", "")
             )
 
-            product_cost = float(
+            supplier_original_cost = float(
                 request.form.get("product_cost", "")
             )
-            sourcing_fee = float(
-                request.form.get("sourcing_fee", "0")
+
+            delivery_distance = float(
+                request.form.get("delivery_distance", "0")
             )
-            delivery_cost = float(
+
+            shipping_original_cost = float(
                 request.form.get("delivery_cost", "0")
             )
-            other_costs = float(
+
+            other_costs_original = float(
                 request.form.get("other_costs", "0")
             )
-            profit_amount = float(
-                request.form.get("profit_amount", "0")
+
+            deposit_percent = float(
+                request.form.get("deposit_percent", "0")
             )
+
             expires_days = int(
                 request.form.get("expires_days", "3")
             )
 
         except (TypeError, ValueError):
-            flash("Please enter valid quotation details.", "error")
+            flash(
+                "Please enter valid quotation details.",
+                "error",
+            )
             return redirect(url_for("create_quotation"))
 
         sourcing_request = db.session.get(
             SourcingRequest,
             sourcing_request_id,
         )
-        supplier = db.session.get(Supplier, supplier_id)
+
+        supplier = db.session.get(
+            Supplier,
+            supplier_id,
+        )
 
         if sourcing_request is None or supplier is None:
             flash(
@@ -751,23 +1080,106 @@ def create_quotation():
             )
             return redirect(url_for("create_quotation"))
 
-        amounts = [
-            product_cost,
-            sourcing_fee,
-            delivery_cost,
-            other_costs,
-            profit_amount,
+        # Buyer quotation currency.
+        buyer_currency = (sourcing_request.currency or "").strip().upper()
+
+        # Always trust the supplier's saved currency, not the browser.
+        supplier_currency = (
+            supplier.default_currency or ""
+        ).strip().upper()
+
+        # Independent shipping and other-cost currencies.
+        shipping_currency = request.form.get(
+            "shipping_currency",
+            "",
+        ).strip().upper()
+
+        other_costs_currency = request.form.get(
+            "other_costs_currency",
+            "",
+        ).strip().upper()
+
+        currencies = [
+            currency,
+            supplier_currency,
+            shipping_currency,
+            other_costs_currency,
+            pricing.service_fee_currency.strip().upper(),
+            pricing.default_currency.strip().upper(),
+            pricing.accounting_currency.strip().upper(),
         ]
 
-        if any(
-            amount < 0 or not math.isfinite(amount)
-            for amount in amounts
-        ):
+        if any(code not in supported_currencies for code in currencies):
             flash(
-                "Costs and profit must be valid non-negative amounts.",
+                "One or more currencies are unsupported. "
+                "Check the supplier and pricing settings.",
                 "error",
             )
             return redirect(url_for("create_quotation"))
+
+        if pricing.accounting_currency != "LSL":
+            flash(
+                "Internal accounting must use LSL. "
+                "Please check Pricing Settings.",
+                "error",
+            )
+            return redirect(url_for("pricing_settings"))
+
+        if (
+            supplier_original_cost != supplier_original_cost
+            or shipping_original_cost != shipping_original_cost
+            or other_costs_original != other_costs_original
+        ):
+            flash("Invalid cost amounts.", "error")
+            return redirect(url_for("create_quotation"))
+
+        amounts = [
+            supplier_original_cost,
+            delivery_distance,
+            shipping_original_cost,
+            other_costs_original,
+            deposit_percent,
+        ]
+
+        if any(
+            not isfinite(value) or value < 0
+            for value in amounts
+        ):
+            flash(
+                "Costs, distance and deposit must be valid "
+                "non-negative amounts.",
+                "error",
+            )
+            return redirect(url_for("create_quotation"))
+
+        if deposit_percent > 100:
+            flash(
+                "Deposit percentage cannot exceed 100%.",
+                "error",
+            )
+            return redirect(url_for("create_quotation"))
+
+        payment_plan = request.form.get(
+            "payment_plan",
+            "standard",
+        ).strip().lower()
+
+        if payment_plan not in {"standard", "full", "deposit"}:
+            flash(
+                "Select a valid payment plan.",
+                "error",
+            )
+            return redirect(url_for("create_quotation"))
+
+        if payment_plan == "deposit" and deposit_percent < 50:
+            flash(
+                "A deposit discount requires a deposit of at least 50%.",
+                "error",
+            )
+            return redirect(url_for("create_quotation"))
+
+        if payment_plan != "deposit":
+            deposit_percent = 0
 
         if expires_days not in {1, 3, 7, 14}:
             flash(
@@ -776,50 +1188,535 @@ def create_quotation():
             )
             return redirect(url_for("create_quotation"))
 
-        currency = request.form.get("currency", "").strip().upper()
-
-        if currency not in {"ZAR", "LSL"}:
+        if delivery_distance > 0 and shipping_original_cost == 0:
             flash(
-                "Select ZAR or LSL as the quotation currency.",
+                "Enter an estimated shipping cost. Distance alone "
+                "cannot determine international shipping costs.",
                 "error",
             )
             return redirect(url_for("create_quotation"))
 
-        selling_price = (
-            product_cost
-            + sourcing_fee
-            + delivery_cost
-            + other_costs
-            + profit_amount
-        )
+        if pricing.markup_type not in {"percentage", "fixed"}:
+            flash(
+                "Invalid product markup configuration.",
+                "error",
+            )
+            return redirect(url_for("pricing_settings"))
 
-        if not math.isfinite(selling_price):
-            flash("The total quotation amount is too large.", "error")
+        if pricing.service_fee_type not in {"percentage", "fixed"}:
+            flash(
+                "Invalid service fee configuration.",
+                "error",
+            )
+            return redirect(url_for("pricing_settings"))
+
+        if (
+            not isfinite(float(pricing.markup_value))
+            or float(pricing.markup_value) < 0
+            or not isfinite(float(pricing.service_fee_value))
+            or float(pricing.service_fee_value) < 0
+        ):
+            flash(
+                "Your pricing settings contain invalid amounts.",
+                "error",
+            )
+            return redirect(url_for("pricing_settings"))
+
+        # --------------------------------------------------
+        # EXCHANGE-RATE RETRIEVAL AND RECORDING
+        # --------------------------------------------------
+
+        rate_cache = {}
+
+        def get_saved_rate(base_currency, target_currency):
+            pair = (base_currency, target_currency)
+
+            if pair in rate_cache:
+                return rate_cache[pair]
+
+            details = get_exchange_rate(
+                base_currency,
+                target_currency,
+            )
+
+            if (
+                not isfinite(details["rate"])
+                or details["rate"] <= 0
+            ):
+                raise CurrencyServiceError(
+                    "The exchange-rate provider returned an invalid rate."
+                )
+
+            rate_record = QuotationExchangeRate(
+                from_currency=base_currency,
+                to_currency=target_currency,
+                rate=details["rate"],
+                rate_date=details["date"],
+                provider=details["provider"],
+            )
+
+            rate_cache[pair] = {
+                "details": details,
+                "record": rate_record,
+            }
+
+            return rate_cache[pair]
+
+        def convert_amount(amount, base_currency, target_currency):
+            rate_info = get_saved_rate(
+                base_currency,
+                target_currency,
+            )
+
+            converted = amount * rate_info["details"]["rate"]
+
+            if not isfinite(converted) or converted < 0:
+                raise CurrencyServiceError(
+                    "A currency conversion produced an invalid amount."
+                )
+
+            return round(converted, 2)
+
+        try:
+            # Supplier product price.
+            product_cost = convert_amount(
+                supplier_original_cost,
+                supplier_currency,
+                currency,
+            )
+
+            product_cost_lsl = convert_amount(
+                supplier_original_cost,
+                supplier_currency,
+                "LSL",
+            )
+
+            # Shipping estimate.
+            estimated_shipping = convert_amount(
+                shipping_original_cost,
+                shipping_currency,
+                currency,
+            )
+
+            shipping_cost_lsl = convert_amount(
+                shipping_original_cost,
+                shipping_currency,
+                "LSL",
+            )
+
+            # Other costs.
+            other_costs = convert_amount(
+                other_costs_original,
+                other_costs_currency,
+                currency,
+            )
+
+            other_costs_lsl = convert_amount(
+                other_costs_original,
+                other_costs_currency,
+                "LSL",
+            )
+
+            # Service fee.
+            if pricing.service_fee_type == "percentage":
+                sourcing_fee = round(
+                    product_cost * float(pricing.service_fee_value) / 100,
+                    2,
+                )
+
+                sourcing_fee_lsl = round(
+                    product_cost_lsl * float(pricing.service_fee_value) / 100,
+                    2,
+                )
+
+            else:
+                sourcing_fee = convert_amount(
+                    float(pricing.service_fee_value),
+                    pricing.service_fee_currency.upper(),
+                    currency,
+                )
+
+                sourcing_fee_lsl = convert_amount(
+                    float(pricing.service_fee_value),
+                    pricing.service_fee_currency.upper(),
+                    "LSL",
+                )
+
+            # Product markup.
+            if pricing.markup_type == "percentage":
+                profit_amount = round(
+                    product_cost * float(pricing.markup_value) / 100,
+                    2,
+                )
+
+                profit_amount_lsl = round(
+                    product_cost_lsl * float(pricing.markup_value) / 100,
+                    2,
+                )
+
+            else:
+                profit_amount = convert_amount(
+                    float(pricing.markup_value),
+                    pricing.default_currency.upper(),
+                    currency,
+                )
+
+                profit_amount_lsl = convert_amount(
+                    float(pricing.markup_value),
+                    pricing.default_currency.upper(),
+                    "LSL",
+                )
+
+            # Discount applies only to product and shipping.
+            if payment_plan == "full":
+                discount_rate = full_payment_discount_rate
+
+            elif payment_plan == "deposit":
+                discount_rate = deposit_discount_rate
+
+            else:
+                discount_rate = 0.0
+
+            discount_amount = round(
+                (product_cost + estimated_shipping) * discount_rate,
+                2,
+            )
+
+            discount_amount_lsl = round(
+                (product_cost_lsl + shipping_cost_lsl) * discount_rate,
+                2,
+            )
+
+            # Buyer-facing provisional quotation.
+            provisional_total = round(
+                product_cost
+                + sourcing_fee
+                + estimated_shipping
+                + other_costs
+                + profit_amount
+                - discount_amount,
+                2,
+            )
+
+            # Internal accounting total.
+            selling_price_lsl = round(
+                product_cost_lsl
+                + sourcing_fee_lsl
+                + shipping_cost_lsl
+                + other_costs_lsl
+                + profit_amount_lsl
+                - discount_amount_lsl,
+                2,
+            )
+
+            calculated_amounts = [
+                product_cost,
+                product_cost_lsl,
+                sourcing_fee,
+                sourcing_fee_lsl,
+                estimated_shipping,
+                shipping_cost_lsl,
+                other_costs,
+                other_costs_lsl,
+                profit_amount,
+                profit_amount_lsl,
+                discount_amount,
+                discount_amount_lsl,
+                provisional_total,
+                selling_price_lsl,
+            ]
+
+            if any(
+                not isfinite(value) or value < 0
+                for value in calculated_amounts
+            ):
+                raise CurrencyServiceError(
+                    "The quotation calculation produced an invalid amount."
+                )
+
+            # Save the supplier-to-LSL rate in the legacy snapshot fields.
+            supplier_lsl_rate = get_saved_rate(
+                supplier_currency,
+                "LSL",
+            )["details"]
+
+        except CurrencyServiceError as error:
+            db.session.rollback()
+
+            flash(
+                f"Currency conversion failed: {error}",
+                "error",
+            )
             return redirect(url_for("create_quotation"))
+
+        except Exception:
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Unexpected error during quotation currency conversion"
+            )
+
+            flash(
+                "The quotation could not be calculated. "
+                "Please try again.",
+                "error",
+            )
+            return redirect(url_for("create_quotation"))
+
+        # --------------------------------------------------
+        # CREATE THE QUOTATION
+        # --------------------------------------------------
 
         quotation = Quotation(
             sourcing_request_id=sourcing_request.id,
             supplier_id=supplier.id,
+
+            # Buyer-facing converted amounts.
             product_cost=product_cost,
             sourcing_fee=sourcing_fee,
-            delivery_cost=delivery_cost,
+            delivery_cost=estimated_shipping,
+            shipping_estimated_cost=estimated_shipping,
+            shipping_confirmed_cost=None,
+            shipping_status="Estimated",
+            shipping_currency=shipping_currency,
+            shipping_confirmed_at=None,
+            shipping_total_recalculated=False,
+
             other_costs=other_costs,
-            selling_price=selling_price,
+            profit_amount=profit_amount,
+
+            # Original supplier amount.
+            supplier_original_cost=supplier_original_cost,
+            supplier_original_currency=supplier_currency,
+
+            # Original shipping amount.
+            shipping_estimated_original_cost=shipping_original_cost,
+            shipping_estimated_currency=shipping_currency,
+
+            # Original other costs.
+            other_costs_original=other_costs_original,
+            other_costs_currency=other_costs_currency,
+
+            # Internal LSL accounting.
+            accounting_cost_lsl=product_cost_lsl,
+            product_cost_lsl=product_cost_lsl,
+            sourcing_fee_lsl=sourcing_fee_lsl,
+            shipping_cost_lsl=shipping_cost_lsl,
+            other_costs_lsl=other_costs_lsl,
+            profit_amount_lsl=profit_amount_lsl,
+            discount_amount_lsl=discount_amount_lsl,
+            selling_price_lsl=selling_price_lsl,
+
+            # Supplier exchange-rate snapshot.
+            exchange_rate_to_lsl=supplier_lsl_rate["rate"],
+            exchange_rate_date=supplier_lsl_rate["date"],
+            exchange_rate_provider=supplier_lsl_rate["provider"],
+
+            delivery_distance=delivery_distance,
+            payment_plan=payment_plan,
+            deposit_percent=deposit_percent,
+            discount_amount=discount_amount,
+            selling_price=provisional_total,
             currency=currency,
+
             status="Draft",
             expires_at=datetime.utcnow() + timedelta(days=expires_days),
         )
 
-        db.session.add(quotation)
-        db.session.commit()
+        try:
+            db.session.add(quotation)
+
+            # Flush obtains the quotation ID without committing.
+            db.session.flush()
+
+            # Attach every exchange-rate record to this quotation.
+            for rate_info in rate_cache.values():
+                rate_record = rate_info["record"]
+                rate_record.quotation_id = quotation.id
+                db.session.add(rate_record)
+
+            db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Failed to save marketplace quotation and exchange rates"
+            )
+
+            flash(
+                "Could not save the quotation. Please try again.",
+                "error",
+            )
+
+            return redirect(url_for("create_quotation"))
 
         flash(
             f"Draft quotation QT-{quotation.id} saved. "
-            "It has not been sent or approved by the buyer.",
+            f"Estimated buyer total: {provisional_total:.2f} {currency}. "
+            f"Internal accounting total: {selling_price_lsl:.2f} LSL. "
+            "Shipping must still be confirmed before the quotation can be sent.",
             "success",
         )
 
         return redirect(url_for("list_quotations"))
+
+    # --------------------------------------------------
+    # DISPLAY THE FORM
+    # --------------------------------------------------
+
+    requests = SourcingRequest.query.order_by(
+        SourcingRequest.id.desc()
+    ).all()
+
+    suppliers = Supplier.query.order_by(
+        Supplier.id.desc()
+    ).all()
+
+    return render_template(
+        "quotation_form.html",
+        requests=requests,
+        suppliers=suppliers,
+        pricing=pricing,
+        supported_currencies=sorted(supported_currencies),
+    )
+# --------------------------------------------------
+# URM ADMIN PRICING SETTINGS
+# --------------------------------------------------
+
+@app.route("/admin/pricing-settings", methods=["GET", "POST"])
+@admin_required
+def pricing_settings():
+    pricing = PricingSetting.query.filter_by(
+        name="default"
+    ).first()
+
+    # Recover safely if the default record is missing.
+    if pricing is None:
+        pricing = PricingSetting(
+            name="default",
+            markup_type="percentage",
+            markup_value=0,
+            service_fee_type="fixed",
+            service_fee_value=0,
+            service_fee_currency="USD",
+            default_currency="USD",
+            shipping_estimates_enabled=True,
+            require_shipping_confirmation=True,
+        )
+        db.session.add(pricing)
+        db.session.commit()
+
+    supported_currencies = [
+        "USD", "EUR", "GBP", "ZAR", "LSL",
+        "CNY", "AED", "INR", "JPY", "AUD", "CAD",
+    ]
+
+    if request.method == "POST":
+        try:
+            markup_type = request.form.get(
+                "markup_type", ""
+            ).strip().lower()
+
+            markup_value = float(
+                request.form.get("markup_value", "")
+            )
+
+            service_fee_type = request.form.get(
+                "service_fee_type", ""
+            ).strip().lower()
+
+            service_fee_value = float(
+                request.form.get("service_fee_value", "")
+            )
+
+            default_currency = request.form.get(
+                "default_currency", ""
+            ).strip().upper()
+
+            service_fee_currency = request.form.get(
+                "service_fee_currency", ""
+            ).strip().upper()
+
+            shipping_estimates_enabled = (
+                request.form.get("shipping_estimates_enabled") == "on"
+            )
+
+            require_shipping_confirmation = (
+                request.form.get("require_shipping_confirmation") == "on"
+            )
+
+        except (TypeError, ValueError):
+            flash("Enter valid numeric pricing values.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if markup_type not in {"percentage", "fixed"}:
+            flash("Select a valid product markup type.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if service_fee_type not in {"percentage", "fixed"}:
+            flash("Select a valid service fee type.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if (
+            not math.isfinite(markup_value)
+            or not math.isfinite(service_fee_value)
+            or markup_value < 0
+            or service_fee_value < 0
+        ):
+            flash("Pricing values must be finite and non-negative.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if markup_type == "percentage" and markup_value > 100:
+            flash("Markup percentage cannot exceed 100%.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if (
+            service_fee_type == "percentage"
+            and service_fee_value > 100
+        ):
+            flash("Service fee percentage cannot exceed 100%.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if default_currency not in supported_currencies:
+            flash("Select a supported default currency.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        if service_fee_currency not in supported_currencies:
+            flash("Select a supported service fee currency.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        pricing.markup_type = markup_type
+        pricing.markup_value = markup_value
+        pricing.service_fee_type = service_fee_type
+        pricing.service_fee_value = service_fee_value
+        pricing.default_currency = default_currency
+        pricing.service_fee_currency = service_fee_currency
+        pricing.shipping_estimates_enabled = (
+            shipping_estimates_enabled
+        )
+        pricing.require_shipping_confirmation = (
+            require_shipping_confirmation
+        )
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception(
+                "Failed to update URM pricing settings"
+            )
+            flash("Could not save pricing settings.", "error")
+            return redirect(url_for("pricing_settings"))
+
+        flash("URM pricing settings saved successfully.", "success")
+        return redirect(url_for("pricing_settings"))
+
+    return render_template(
+        "pricing_settings.html",
+        pricing=pricing,
+        supported_currencies=supported_currencies,
+    )
 
 @app.route(
     "/company/quotations/<int:quotation_id>/decision",
@@ -1008,8 +1905,319 @@ def compare_suppliers(request_id):
     "/company/quotations/<int:quotation_id>/send",
     methods=["POST"],
 )
+
+# --------------------------------------------------
+# CONFIRM SHIPPING COST — ADMIN ONLY
+# --------------------------------------------------
+
+@app.route(
+    "/company/quotations/<int:quotation_id>/confirm-shipping",
+    methods=["GET", "POST"],
+)
+@admin_required
+def confirm_quotation_shipping(quotation_id):
+
+    quotation = db.session.get(Quotation, quotation_id)
+
+    if quotation is None:
+        abort(404)
+
+    supported_currencies = {
+        "USD", "EUR", "GBP", "ZAR", "LSL",
+        "CNY", "AED", "INR", "JPY", "AUD", "CAD",
+    }
+
+    if request.method == "POST":
+
+        if quotation.status != "Draft":
+            flash(
+                "Shipping can only be confirmed for draft quotations.",
+                "error",
+            )
+            return redirect(url_for("list_quotations"))
+
+        if quotation.shipping_status == "Confirmed":
+            flash(
+                "Shipping has already been confirmed.",
+                "error",
+            )
+            return redirect(url_for("list_quotations"))
+
+        try:
+            confirmed_cost = float(
+                request.form.get("confirmed_cost", "")
+            )
+        except (TypeError, ValueError):
+            flash("Enter a valid confirmed shipping cost.", "error")
+            return redirect(
+                url_for(
+                    "confirm_quotation_shipping",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        shipping_currency = request.form.get(
+            "shipping_currency", ""
+        ).strip().upper()
+
+        freight_provider = request.form.get(
+            "freight_provider", ""
+        ).strip()
+
+        shipping_reference = request.form.get(
+            "shipping_reference", ""
+        ).strip()
+
+        if not math.isfinite(confirmed_cost) or confirmed_cost < 0:
+            flash(
+                "Shipping cost must be a valid non-negative amount.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "confirm_quotation_shipping",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        if shipping_currency not in supported_currencies:
+            flash("Select a supported shipping currency.", "error")
+            return redirect(
+                url_for(
+                    "confirm_quotation_shipping",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        if not freight_provider or not shipping_reference:
+            flash(
+                "Enter both the freight provider and shipping reference.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "confirm_quotation_shipping",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        if len(freight_provider) > 150 or len(shipping_reference) > 150:
+            flash("Freight details are too long.", "error")
+            return redirect(
+                url_for(
+                    "confirm_quotation_shipping",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        try:
+            # Convert actual shipping cost into the buyer's currency.
+            buyer_rate = get_exchange_rate(
+                shipping_currency,
+                quotation.currency,
+            )
+
+            buyer_shipping_cost = round(
+                confirmed_cost * buyer_rate["rate"],
+                2,
+            )
+
+            # Convert actual shipping cost into internal LSL accounting.
+            lsl_rate = get_exchange_rate(
+                shipping_currency,
+                "LSL",
+            )
+
+            shipping_cost_lsl = round(
+                confirmed_cost * lsl_rate["rate"],
+                2,
+            )
+
+            # Calculate the revised buyer quotation.
+            product_cost = float(quotation.product_cost)
+            sourcing_fee = float(quotation.sourcing_fee)
+            other_costs = float(quotation.other_costs)
+            profit_amount = float(quotation.profit_amount)
+
+            if quotation.payment_plan == "full":
+                discount_rate = 0.05
+            elif quotation.payment_plan == "deposit":
+                discount_rate = 0.02
+            else:
+                discount_rate = 0.0
+
+            discountable_amount = (
+                product_cost + buyer_shipping_cost
+            )
+
+            discount_amount = round(
+                discountable_amount * discount_rate,
+                2,
+            )
+
+            selling_price = round(
+                product_cost
+                + sourcing_fee
+                + buyer_shipping_cost
+                + other_costs
+                + profit_amount
+                - discount_amount,
+                2,
+            )
+
+            # Recalculate the internal LSL accounting breakdown.
+            product_cost_lsl = float(
+                quotation.product_cost_lsl or 0
+            )
+
+            sourcing_fee_lsl = float(
+                quotation.sourcing_fee_lsl or 0
+            )
+
+            other_costs_lsl = float(
+                quotation.other_costs_lsl or 0
+            )
+
+            profit_amount_lsl = float(
+                quotation.profit_amount_lsl or 0
+            )
+
+            discountable_amount_lsl = (
+                product_cost_lsl + shipping_cost_lsl
+            )
+
+            discount_amount_lsl = round(
+                discountable_amount_lsl * discount_rate,
+                2,
+            )
+
+            selling_price_lsl = round(
+                product_cost_lsl
+                + sourcing_fee_lsl
+                + shipping_cost_lsl
+                + other_costs_lsl
+                + profit_amount_lsl
+                - discount_amount_lsl,
+                2,
+            )
+
+            values_to_check = [
+                buyer_shipping_cost,
+                shipping_cost_lsl,
+                discount_amount,
+                selling_price,
+                discount_amount_lsl,
+                selling_price_lsl,
+            ]
+
+            if not all(
+                math.isfinite(value) and value >= 0
+                for value in values_to_check
+            ):
+                raise CurrencyServiceError(
+                    "A converted shipping or quotation amount is invalid."
+                )
+
+            # Save the original confirmed shipping amount and currency.
+            quotation.shipping_confirmed_cost = confirmed_cost
+            quotation.shipping_currency = shipping_currency
+
+            # Save the converted amount used in the buyer's quotation.
+            quotation.delivery_cost = buyer_shipping_cost
+
+            # Update internal LSL accounting.
+            quotation.shipping_cost_lsl = shipping_cost_lsl
+            quotation.discount_amount_lsl = discount_amount_lsl
+            quotation.selling_price_lsl = selling_price_lsl
+
+            # Update buyer-facing quotation amounts.
+            quotation.discount_amount = discount_amount
+            quotation.selling_price = selling_price
+
+            quotation.freight_provider = freight_provider
+            quotation.shipping_reference = shipping_reference
+            quotation.shipping_status = "Confirmed"
+            quotation.shipping_confirmed_at = datetime.utcnow()
+            quotation.shipping_total_recalculated = True
+
+            # Save fresh exchange-rate records for the confirmed shipping.
+            db.session.add(
+                QuotationExchangeRate(
+                    quotation_id=quotation.id,
+                    from_currency=shipping_currency,
+                    to_currency=quotation.currency,
+                    rate=buyer_rate["rate"],
+                    rate_date=buyer_rate["date"],
+                    provider=buyer_rate["provider"],
+                )
+            )
+
+            db.session.add(
+                QuotationExchangeRate(
+                    quotation_id=quotation.id,
+                    from_currency=shipping_currency,
+                    to_currency="LSL",
+                    rate=lsl_rate["rate"],
+                    rate_date=lsl_rate["date"],
+                    provider=lsl_rate["provider"],
+                )
+            )
+
+            db.session.commit()
+
+        except CurrencyServiceError as error:
+            db.session.rollback()
+            current_app.logger.exception(
+                "Currency conversion failed during shipping confirmation"
+            )
+            flash(
+                f"Could not confirm shipping because currency conversion "
+                f"failed: {error}",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "confirm_quotation_shipping",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception(
+                "Failed to confirm quotation shipping"
+            )
+            flash(
+                "Shipping confirmation failed. Please try again.",
+                "error",
+            )
+            return redirect(url_for("list_quotations"))
+
+        flash(
+            f"Shipping confirmed for QT-{quotation.id}. "
+            f"Updated quotation total: {selling_price:.2f} "
+            f"{quotation.currency}.",
+            "success",
+        )
+
+        return redirect(url_for("list_quotations"))
+
+    return render_template(
+        "confirm_shipping.html",
+        quotation=quotation,
+        supported_currencies=sorted(supported_currencies),
+    )
+# --------------------------------------------------
+# SEND QUOTATION TO BUYER — ADMIN ONLY
+# --------------------------------------------------
+
+@app.route(
+    "/company/quotations/<int:quotation_id>/send",
+    methods=["POST"],
+)
 @admin_required
 def send_quotation_to_buyer(quotation_id):
+
     quotation = db.session.get(Quotation, quotation_id)
 
     if quotation is None:
@@ -1023,7 +2231,21 @@ def send_quotation_to_buyer(quotation_id):
         )
         return redirect(url_for("list_quotations"))
 
-    # The sourcing request must belong to a registered buyer.
+    # SHIPPING CONFIRMATION IS COMPULSORY.
+    if (
+        quotation.shipping_status != "Confirmed"
+        or quotation.shipping_confirmed_cost is None
+        or quotation.shipping_total_recalculated is not True
+        or quotation.shipping_confirmed_at is None
+    ):
+        flash(
+            "This quotation cannot be sent yet. "
+            "Confirm shipping costs and recalculate the quotation first.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    # Confirm that the request belongs to a registered buyer.
     sourcing_request = db.session.get(
         SourcingRequest,
         quotation.sourcing_request_id,
@@ -1037,7 +2259,7 @@ def send_quotation_to_buyer(quotation_id):
         )
         return redirect(url_for("list_quotations"))
 
-    # Expired quotations must be recreated rather than sent.
+    # Do not send expired quotations.
     if (
         quotation.expires_at is not None
         and quotation.expires_at <= datetime.utcnow()
@@ -1054,7 +2276,9 @@ def send_quotation_to_buyer(quotation_id):
         db.session.commit()
     except Exception:
         db.session.rollback()
-        app.logger.exception("Could not send quotation")
+        current_app.logger.exception(
+            "Could not send quotation"
+        )
         flash(
             "The quotation could not be sent. Please try again.",
             "error",
@@ -1062,8 +2286,8 @@ def send_quotation_to_buyer(quotation_id):
         return redirect(url_for("list_quotations"))
 
     flash(
-        f"Quotation QT-{quotation.id} is now available "
-        "for the buyer to review.",
+        f"Quotation QT-{quotation.id} has been sent to the buyer "
+        "with confirmed shipping costs.",
         "success",
     )
 
@@ -1582,7 +2806,7 @@ def update_product_enquiry_status(enquiry_id):
 def health():
     return {
         "status": "healthy",
-        "application": "Universal Marketplace",
+        "application": "Universal Runner Marketplace",
     }
 
 

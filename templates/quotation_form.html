@@ -2,948 +2,987 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#071744">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Create Quotation | Universal Marketplace</title>
+    <title>Create Quotation | Universal Runner Marketplace</title>
 
     <style>
         :root {
-            --blue: #00209F;
-            --navy: #071744;
+            --navy: #071b49;
+            --blue: #00209f;
             --green: #009543;
-            --green-dark: #007A36;
-            --background: #F4F7FC;
-            --white: #FFFFFF;
-            --text: #172033;
-            --muted: #657087;
-            --border: #DFE6F0;
-            --shadow: 0 12px 35px rgba(7, 23, 68, .07);
+            --light-green: #eaf7ef;
+            --orange: #ffb612;
+            --white: #ffffff;
+            --light: #f4f7fb;
+            --border: #dce3ed;
+            --text: #1e293b;
+            --muted: #64748b;
+            --danger: #b42318;
+            --success: #067647;
+            --shadow: 0 8px 25px rgba(7, 27, 73, 0.08);
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--background);
+            background: var(--light);
             color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
             line-height: 1.6;
         }
 
-        a {
-            color: inherit;
-        }
-
-        button,
-        input,
-        select {
-            font: inherit;
-        }
-
-        a:focus-visible,
-        button:focus-visible,
-        input:focus-visible,
-        select:focus-visible {
-            outline: 3px solid #E8BE36;
-            outline-offset: 3px;
-        }
-
-        /* Header */
-
-        .site-header {
-            background: var(--navy);
+        header {
+            background: linear-gradient(120deg, var(--navy), var(--blue));
             color: var(--white);
-            border-bottom: 4px solid var(--green);
+            padding: 24px 18px;
+            border-bottom: 5px solid var(--green);
+        }
+
+        .header-inner, .container {
+            width: min(1100px, 94%);
+            margin: 0 auto;
         }
 
         .header-inner {
-            max-width: 1150px;
-            margin: auto;
-            padding: 17px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 18px;
             flex-wrap: wrap;
+            gap: 14px;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .brand-icon {
-            width: 45px;
-            height: 45px;
-            display: grid;
-            place-items: center;
-            border-radius: 11px;
-            background: white;
-            color: var(--blue);
-            font-size: 24px;
-            font-weight: 900;
-        }
-
-        .brand-name {
-            display: block;
-            font-size: 15px;
-            font-weight: 800;
-            letter-spacing: .3px;
-        }
-
-        .brand-subtitle {
-            display: block;
-            margin-top: 3px;
-            color: #CDD8F7;
-            font-size: 10px;
-            letter-spacing: .7px;
-        }
-
-        .header-link {
-            color: #E4EAFE;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .header-link:hover {
-            color: #9BE8B5;
-        }
-
-        /* Page introduction */
-
-        .page-container {
-            max-width: 850px;
-            margin: auto;
-            padding: 38px 20px 55px;
-        }
-
-        .breadcrumb {
-            margin-bottom: 22px;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .breadcrumb a {
-            color: var(--blue);
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .page-heading {
-            margin-bottom: 25px;
-        }
-
-        .eyebrow {
-            color: var(--green-dark);
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 1.4px;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            margin: 8px 0 10px;
-            color: var(--navy);
-            font-size: clamp(28px, 5vw, 38px);
-            line-height: 1.2;
-            letter-spacing: -.8px;
-        }
-
-        .intro {
-            max-width: 650px;
+        .brand h1 {
+            font-size: 23px;
             margin: 0;
-            color: var(--muted);
-            font-size: 15px;
-            line-height: 1.8;
+            letter-spacing: 0.5px;
         }
 
-        /* Approval notice */
+        .brand p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.45);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        nav a:hover { background: rgba(255,255,255,0.12); }
+
+        .container { padding: 28px 0 45px; }
+
+        .page-heading { margin-bottom: 22px; }
+
+        .page-heading h2 {
+            margin: 0 0 6px;
+            color: var(--navy);
+            font-size: 27px;
+        }
+
+        .page-heading p { margin: 0; color: var(--muted); }
 
         .notice {
-            display: flex;
-            align-items: flex-start;
-            gap: 13px;
-            margin-bottom: 24px;
-            padding: 17px 19px;
-            border: 1px solid #F0D99B;
-            border-left: 5px solid #D49B14;
             border-radius: 10px;
-            background: #FFF9E9;
-        }
-
-        .notice-icon {
-            font-size: 21px;
-            line-height: 1.3;
-        }
-
-        .notice strong {
-            display: block;
-            margin-bottom: 4px;
-            color: #75500B;
+            padding: 13px 16px;
+            margin-bottom: 16px;
             font-size: 14px;
         }
 
-        .notice p {
-            margin: 0;
-            color: #745E35;
-            font-size: 13px;
-            line-height: 1.7;
+        .notice.info {
+            background: #eaf1ff;
+            border-left: 5px solid var(--blue);
         }
 
-        /* Form card */
-
-        .form-card {
-            overflow: hidden;
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            background: var(--white);
-            box-shadow: var(--shadow);
+        .notice.warning {
+            background: #fff7e5;
+            border-left: 5px solid var(--orange);
         }
 
-        .form-card-header {
-            padding: 23px 28px;
-            border-bottom: 1px solid var(--border);
-            background: #FBFCFF;
+        .notice.error {
+            background: #fef3f2;
+            border-left: 5px solid var(--danger);
+            color: var(--danger);
         }
 
-        .form-card-header h2 {
-            margin: 0 0 5px;
-            color: var(--navy);
-            font-size: 19px;
+        .notice.success {
+            background: var(--light-green);
+            border-left: 5px solid var(--green);
+            color: var(--success);
         }
 
-        .form-card-header p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        form {
-            padding: 28px;
-        }
-
-        .form-section {
-            margin-bottom: 31px;
-        }
-
-        .section-heading {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-
-        .section-number {
-            width: 34px;
-            height: 34px;
-            flex-shrink: 0;
+        .layout {
             display: grid;
-            place-items: center;
-            border-radius: 9px;
-            background: #EEF2FF;
-            color: var(--blue);
-            font-size: 14px;
-            font-weight: 800;
+            grid-template-columns: minmax(0, 1.5fr) minmax(290px, 0.9fr);
+            gap: 22px;
+            align-items: start;
         }
 
-        .section-heading h3 {
-            margin: 0;
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            margin: 0 0 17px;
             color: var(--navy);
-            font-size: 16px;
+            font-size: 18px;
         }
 
-        .section-heading p {
-            margin: 3px 0 0;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .field-grid {
+        .form-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 19px 17px;
+            gap: 16px;
         }
 
-        .field {
-            min-width: 0;
-        }
-
-        .field-full {
-            grid-column: 1 / -1;
-        }
+        .field { margin-bottom: 15px; min-width: 0; }
+        .field.full { grid-column: 1 / -1; }
 
         label {
             display: block;
-            margin-bottom: 7px;
-            color: #27334A;
+            margin-bottom: 6px;
             font-size: 13px;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        input, select {
+            width: 100%;
+            min-height: 43px;
+            padding: 10px 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid rgba(0, 149, 67, 0.2);
+            border-color: var(--green);
+        }
+
+        input[readonly] {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .help {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .supplier-currency {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 7px 11px;
+            background: #eaf1ff;
+            color: var(--navy);
+            border-radius: 7px;
+            font-size: 12px;
             font-weight: 700;
         }
 
-        .required {
-            color: #C03636;
+        .pricing-settings {
+            padding: 14px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 13px;
         }
 
-        input,
-        select {
-            display: block;
-            width: 100%;
-            min-height: 47px;
-            padding: 11px 12px;
-            border: 1px solid #CCD5E4;
-            border-radius: 8px;
-            background: white;
-            color: var(--text);
+        .pricing-settings strong { color: #166534; }
+
+        .preview-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 10px 0;
+            border-bottom: 1px solid #edf0f5;
             font-size: 14px;
-            transition: border-color .2s, box-shadow .2s;
         }
 
-        input:hover,
-        select:hover {
-            border-color: #9CAAC3;
+        .preview-row span:first-child { color: #475569; }
+
+        .preview-row strong {
+            text-align: right;
+            overflow-wrap: anywhere;
         }
 
-        input:focus,
-        select:focus {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 3px rgba(0, 32, 159, .09);
-            outline: none;
+        .preview-row.discount strong { color: var(--green); }
+
+        .preview-row.total {
+            margin-top: 9px;
+            padding-top: 17px;
+            border-top: 2px solid var(--navy);
+            border-bottom: 0;
+            font-size: 18px;
+            font-weight: 700;
         }
 
-        input::placeholder {
-            color: #9AA4B6;
-        }
+        .preview-row.total span,
+        .preview-row.total strong { color: var(--navy); }
 
-        .hint {
-            margin: 7px 0 0;
+        .preview-note {
+            margin-top: 14px;
+            font-size: 12px;
             color: var(--muted);
-            font-size: 12px;
-            line-height: 1.65;
         }
 
-        .currency-note {
-            margin-top: 16px;
-            padding: 13px 15px;
-            border: 1px solid #DCE5FA;
+        .preview-error, .preview-warning {
+            display: none;
+            margin-top: 13px;
+            padding: 12px;
             border-radius: 8px;
-            background: #F4F7FF;
-            color: #3C4C73;
-            font-size: 12px;
-            line-height: 1.7;
-        }
-
-        /* Price preview */
-
-        .price-preview {
-            margin-top: 24px;
-            padding: 22px;
-            border: 1px solid #D5E8DB;
-            border-radius: 12px;
-            background: #F2FAF4;
-        }
-
-        .price-preview-title {
-            margin: 0 0 5px;
-            color: #155A30;
-            font-size: 16px;
-        }
-
-        .price-preview-description {
-            margin: 0 0 18px;
-            color: #50705A;
-            font-size: 12px;
-        }
-
-        .price-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding: 9px 0;
-            border-bottom: 1px solid #DCEBDD;
-            color: #405749;
             font-size: 13px;
         }
 
-        .price-row strong {
-            color: #244B31;
-            text-align: right;
-            overflow-wrap: anywhere;
+        .preview-error {
+            background: #fef3f2;
+            color: var(--danger);
         }
 
-        .price-total {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 16px;
-            border-top: 2px solid #C5E1CC;
+        .preview-warning {
+            background: #fff7e5;
+            color: #854d0e;
         }
 
-        .price-total-label {
-            color: #155A30;
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .price-total-value {
-            color: #155A30;
-            font-size: clamp(23px, 4vw, 30px);
-            font-weight: 900;
-            line-height: 1.2;
-            text-align: right;
-            overflow-wrap: anywhere;
-        }
-
-        .preview-disclaimer {
-            margin: 14px 0 0;
-            color: #617466;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        /* Form actions */
-
-        .form-actions {
+        .btn-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            padding-top: 23px;
-            border-top: 1px solid var(--border);
+            gap: 10px;
+            margin-top: 20px;
         }
 
-        .button {
-            min-height: 47px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 19px;
-            border: 1px solid transparent;
+        .btn {
+            display: inline-block;
+            border: 0;
             border-radius: 8px;
+            padding: 12px 18px;
             text-decoration: none;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 800;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background .2s, transform .2s;
-        }
-
-        .button:hover {
-            transform: translateY(-1px);
-        }
-
-        .button-primary {
-            background: var(--green);
-            color: white;
-        }
-
-        .button-primary:hover {
-            background: var(--green-dark);
-        }
-
-        .button-secondary {
-            border-color: var(--border);
-            background: white;
-            color: var(--blue);
-        }
-
-        .button-secondary:hover {
-            background: #F1F4FC;
-        }
-
-        .footer-note {
-            margin: 20px 0 0;
-            color: var(--muted);
-            font-size: 12px;
             text-align: center;
         }
 
-        .site-footer {
-            padding: 22px 15px;
-            border-top: 1px solid var(--border);
-            background: white;
-            color: var(--muted);
+        .btn-primary { color: #fff; background: var(--green); }
+        .btn-primary:hover { background: #007a36; }
+        .btn-secondary { color: var(--navy); background: #e8edf5; }
+
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .draft-label {
+            display: inline-block;
+            color: #854d0e;
+            background: #fff7e5;
+            border: 1px solid #fde68a;
+            padding: 4px 9px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        footer {
             text-align: center;
+            color: var(--muted);
+            padding: 22px 12px;
             font-size: 12px;
         }
 
-        @media (max-width: 600px) {
-            .header-inner {
-                padding: 15px 17px;
-            }
-
-            .page-container {
-                padding: 27px 12px 35px;
-            }
-
-            .form-card-header {
-                padding: 20px;
-            }
-
-            form {
-                padding: 21px 17px;
-            }
-
-            .field-grid {
-                grid-template-columns: 1fr;
-                gap: 17px;
-            }
-
-            .field-full {
-                grid-column: auto;
-            }
-
-            .notice {
-                padding: 14px;
-            }
-
-            .price-preview {
-                padding: 17px;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .form-actions .button {
-                width: 100%;
-            }
+        @media (max-width: 800px) {
+            .layout { grid-template-columns: 1fr; }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            html { scroll-behavior: auto; }
-
-            *,
-            *::before,
-            *::after {
-                transition: none !important;
-            }
+        @media (max-width: 520px) {
+            .form-grid { grid-template-columns: 1fr; gap: 0; }
+            .field.full { grid-column: auto; }
+            .card { padding: 16px; }
+            .page-heading h2 { font-size: 23px; }
+            .btn-row .btn { width: 100%; }
         }
     </style>
 </head>
 
 <body>
-
-<header class="site-header">
+<header>
     <div class="header-inner">
+        <div class="brand">
+            <h1>Universal Runner Marketplace</h1>
+            <p>GLOBAL SOURCING · PROCUREMENT · WORLDWIDE DELIVERY</p>
+        </div>
 
-        <a class="brand" href="{{ url_for('home') }}">
-            <span class="brand-icon">U</span>
-            <span>
-                <span class="brand-name">UNIVERSAL MARKETPLACE</span>
-                <span class="brand-subtitle">LESOTHO 🇱🇸 · SOUTH AFRICA 🇿🇦</span>
-            </span>
-        </a>
-
-        <a class="header-link" href="{{ url_for('company_dashboard') }}">
-            ← Company Dashboard
-        </a>
-
+        <nav>
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
+        </nav>
     </div>
 </header>
 
-<main class="page-container">
-
-    <div class="breadcrumb">
-        <a href="{{ url_for('company_dashboard') }}">Dashboard</a>
-        &nbsp; / &nbsp; Create Quotation
+<main class="container">
+    <div class="page-heading">
+        <h2>Create a Quotation</h2>
+        <p>Prepare a transparent price proposal for a customer's sourcing request.</p>
     </div>
 
-    <section class="page-heading">
-        <span class="eyebrow">Sourcing & commercial operations</span>
-        <h1>Create a Quotation</h1>
-        <p class="intro">
-            Prepare a clear, itemised offer for a buyer. Select the sourcing
-            request and supplier, enter your costs, and review the proposed
-            selling price before saving the draft.
-        </p>
-    </section>
-
-    <aside class="notice">
-        <span class="notice-icon" aria-hidden="true">⚠️</span>
-        <div>
-            <strong>Important: approval comes first</strong>
-            <p>
-                Saving a draft does not mean the buyer has approved the order.
-                Confirm the quotation terms and wait for the buyer's approval
-                before purchasing the product.
-            </p>
-        </div>
-    </aside>
-
-    <section class="form-card">
-
-        <div class="form-card-header">
-            <h2>Quotation details</h2>
-            <p>Fields marked with <span class="required">*</span> are required.</p>
-        </div>
-
-        <form method="POST" action="{{ url_for('create_quotation') }}" id="quotation-form">
-
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <section class="form-section">
-                <div class="section-heading">
-                    <span class="section-number">1</span>
-                    <div>
-                        <h3>Request and supplier</h3>
-                        <p>Identify the buyer's request and your supplier.</p>
-                    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="notice {{ category if category in ['success', 'error', 'warning', 'info'] else 'info' }}">
+                    {{ message }}
                 </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-                <div class="field-grid">
+    <div class="notice info">
+        <strong>Draft workflow:</strong>
+        Saving this form creates a draft quotation only. It does not send the
+        quotation to the buyer, approve it, or confirm shipping.
+    </div>
 
-                    <div class="field field-full">
-                        <label for="sourcing_request_id">
-                            Buyer sourcing request <span class="required">*</span>
-                        </label>
+    <div class="notice warning">
+        <strong>Currency conversion:</strong>
+        Each cost now has its own currency. The backend conversion and saved
+        exchange-rate calculations must be completed before creating a new
+        quotation. Do not submit a new quotation until that update is complete.
+    </div>
+
+    <div class="notice warning">
+        <strong>Shipping:</strong>
+        Enter a reasonable shipping estimate. International shipping may include
+        freight, handling, customs and other charges. Final shipping costs must be
+        confirmed separately before the quotation can be sent to the buyer.
+    </div>
+
+    <div class="layout">
+        <section class="card">
+            <h3>Quotation Details</h3>
+
+            <div class="pricing-settings">
+                <strong>Current pricing settings</strong><br>
+                Product markup:
+                {{ pricing.markup_value|round(2) }}%
+                of product cost.<br>
+                Service fee:
+                {{ pricing.service_fee_currency }}
+                {{ "%.2f"|format(pricing.service_fee_value) }}
+                fixed fee.<br>
+                Full-payment discount: 5% of product cost plus delivery.<br>
+                Qualifying deposit discount: 2% of product cost plus delivery.
+            </div>
+
+            <form
+                id="quotationForm"
+                method="POST"
+                action="{{ url_for('create_quotation') }}"
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-grid">
+
+                    <div class="field full">
+                        <label for="sourcing_request_id">Sourcing Request *</label>
                         <select id="sourcing_request_id" name="sourcing_request_id" required>
-                            <option value="">Choose a sourcing request</option>
+                            <option value="">Select a sourcing request</option>
                             {% for item in requests %}
-                            <option value="{{ item.id }}">
-                                UM-{{ item.id }} — {{ item.product_name }}
-                                ({{ item.quantity }} requested)
-                            </option>
+                                <option
+                                    value="{{ item.id }}"
+                                    data-currency="{{ item.currency }}"
+                                >
+                                    Request #{{ item.id }}
+                                    {% if item.product_name is defined and item.product_name %}
+                                        — {{ item.product_name }}
+                                    {% elif item.title is defined and item.title %}
+                                        — {{ item.title }}
+                                    {% endif %}
+                                    ({{ item.currency }})
+                                </option>
                             {% endfor %}
                         </select>
-                        <p class="hint">
-                            Select the request this quotation is intended to fulfil.
-                        </p>
+                        <small class="help">
+                            Choose the buyer request. Its registered currency will
+                            be used as the buyer's quotation currency.
+                        </small>
                     </div>
 
-                    <div class="field field-full">
-                        <label for="supplier_id">
-                            Supplier <span class="required">*</span>
-                        </label>
+                    <div class="field full">
+                        <label for="supplier_id">Supplier *</label>
                         <select id="supplier_id" name="supplier_id" required>
-                            <option value="">Choose a supplier</option>
+                            <option value="">Select a supplier</option>
                             {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}">
-                                {{ supplier.name }} — {{ supplier.country }}
-                            </option>
+                                <option
+                                    value="{{ supplier.id }}"
+                                    data-currency="{{ supplier.default_currency }}"
+                                >
+                                    Supplier #{{ supplier.id }}
+                                    {% if supplier.name %}
+                                        — {{ supplier.name }}
+                                    {% endif %}
+                                    ({{ supplier.default_currency }})
+                                </option>
                             {% endfor %}
                         </select>
-                        <p class="hint">
-                            Choose the supplier whose product or offer you are quoting.
-                        </p>
-                    </div>
 
-                </div>
-            </section>
-
-            <section class="form-section">
-                <div class="section-heading">
-                    <span class="section-number">2</span>
-                    <div>
-                        <h3>Cost breakdown</h3>
-                        <p>Enter the amounts for the complete requested order.</p>
-                    </div>
-                </div>
-
-                <div class="field-grid">
-
-                    <div class="field field-full">
-                        <label for="product_cost">
-                            Total product cost <span class="required">*</span>
-                        </label>
                         <input
+                            type="hidden"
+                            id="supplier_original_currency"
+                            name="supplier_original_currency"
+                            value=""
+                        >
+
+                        <span class="supplier-currency" id="supplier_currency_display">
+                            Supplier currency: Not selected
+                        </span>
+
+                        <small class="help">
+                            The supplier's registered currency is used for the
+                            original product price.
+                        </small>
+                    </div>
+
+                   <div class="mb-3">
+    <label for="currency" class="form-label">Buyer Quotation Currency</label>
+    <input
+        type="text"
+        class="form-control"
+        id="currency"
+        name="currency"
+        value="{{ request_obj.currency if request_obj else '' }}"
+        readonly
+    >
+    <small class="form-text text-muted">
+        This currency follows the buyer's sourcing request and cannot be changed here.
+    </small>
+</div>
+
+                    <div class="field">
+                        <label for="product_cost">Original Supplier Product Cost *</label>
+                        <input
+                            type="number"
                             id="product_cost"
                             name="product_cost"
-                            type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 2500.00"
-                            inputmode="decimal"
                             required
+                            placeholder="0.00"
                         >
-                        <p class="hint">
-                            Enter the total supplier cost for the full requested quantity,
-                            not the cost of one unit.
-                        </p>
+                        <small class="help">
+                            <span id="supplier_currency_help">
+                                Select a supplier to see their registered currency.
+                            </span>
+                            Enter the amount exactly as quoted by the supplier.
+                        </small>
                     </div>
 
                     <div class="field">
-                        <label for="sourcing_fee">Sourcing / service fee</label>
+                        <label for="sourcing_fee">Service Fee</label>
                         <input
+                            type="text"
                             id="sourcing_fee"
-                            name="sourcing_fee"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value="0"
-                            inputmode="decimal"
-                            required
+                            value="{{ pricing.service_fee_currency }} {{ '%.2f'|format(pricing.service_fee_value) }}"
+                            readonly
                         >
+                        <small class="help">
+                            Calculated using saved Pricing Settings. The service
+                            fee currency is {{ pricing.service_fee_currency }}.
+                        </small>
                     </div>
 
                     <div class="field">
-                        <label for="delivery_cost">Delivery cost</label>
+                        <label for="profit_amount">Product Markup</label>
                         <input
+                            type="text"
+                            id="profit_amount"
+                            value="Calculated by server"
+                            readonly
+                        >
+                        <small class="help">
+                            Calculated automatically using your saved markup setting.
+                        </small>
+                    </div>
+
+                    <div class="field">
+                        <label for="delivery_distance">Delivery Distance (km)</label>
+                        <input
+                            type="number"
+                            id="delivery_distance"
+                            name="delivery_distance"
+                            value="0"
+                            min="0"
+                            step="0.1"
+                        >
+                        <small class="help">
+                            Optional reference distance. It does not calculate
+                            international shipping by itself.
+                        </small>
+                    </div>
+
+                    <div class="field">
+                        <label for="delivery_cost">Estimated Shipping Cost *</label>
+                        <input
+                            type="number"
                             id="delivery_cost"
                             name="delivery_cost"
-                            type="number"
+                            value="0"
                             min="0"
                             step="0.01"
-                            value="0"
-                            inputmode="decimal"
                             required
                         >
+                        <small class="help">
+                            Enter the estimated amount charged by the shipping provider.
+                        </small>
                     </div>
 
                     <div class="field">
-                        <label for="other_costs">Other costs</label>
+                        <label for="shipping_currency">Shipping Currency *</label>
+                        <select id="shipping_currency" name="shipping_currency" required>
+                            {% for code in supported_currencies %}
+                                <option value="{{ code }}"
+                                    {% if code == pricing.default_currency %}selected{% endif %}>
+                                    {{ code }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="help">
+                            Select the currency in which the shipping provider charges you.
+                        </small>
+                    </div>
+
+                    <div class="field">
+                        <label for="other_costs">Other Costs</label>
                         <input
+                            type="number"
                             id="other_costs"
                             name="other_costs"
-                            type="number"
+                            value="0"
                             min="0"
                             step="0.01"
-                            value="0"
-                            inputmode="decimal"
-                            required
                         >
-                        <p class="hint">Include any additional applicable order costs.</p>
+                        <small class="help">
+                            Customs, packaging, handling and miscellaneous expenses.
+                        </small>
                     </div>
 
                     <div class="field">
-                        <label for="profit_amount">Desired business profit</label>
-                        <input
-                            id="profit_amount"
-                            name="profit_amount"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value="0"
-                            inputmode="decimal"
-                            required
-                        >
-                        <p class="hint">The profit amount you want this order to earn.</p>
+                        <label for="other_costs_currency">Other Costs Currency *</label>
+                        <select id="other_costs_currency" name="other_costs_currency" required>
+                            {% for code in supported_currencies %}
+                                <option value="{{ code }}"
+                                    {% if code == pricing.default_currency %}selected{% endif %}>
+                                    {{ code }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="help">
+                            Select the currency used for these additional expenses.
+                        </small>
                     </div>
-
-                </div>
-
-                <div class="currency-note">
-                    <strong>Currency consistency:</strong>
-                    all costs and profit must use the selected quotation currency.
-                    Convert supplier costs first when necessary and use an agreed
-                    exchange rate. Allow for any applicable taxes or fees in the
-                    appropriate cost fields.
-                </div>
-            </section>
-
-            <section class="form-section">
-                <div class="section-heading">
-                    <span class="section-number">3</span>
-                    <div>
-                        <h3>Currency and validity</h3>
-                        <p>Choose how the quotation will be presented to the buyer.</p>
-                    </div>
-                </div>
-
-                <div class="field-grid">
 
                     <div class="field">
-                        <label for="currency">
-                            Quotation currency <span class="required">*</span>
-                        </label>
-                        <select id="currency" name="currency" required>
-                            <option value="ZAR">ZAR — South African rand</option>
-                            <option value="LSL">LSL — Lesotho loti</option>
+                        <label for="payment_plan">Payment Plan *</label>
+                        <select id="payment_plan" name="payment_plan" required>
+                            <option value="standard">Standard Payment — No Discount</option>
+                            <option value="full">Full Upfront Payment — 5% Discount</option>
+                            <option value="deposit">Deposit Payment — 2% Discount</option>
                         </select>
                     </div>
 
+                    <div class="field" id="depositField" style="display:none;">
+                        <label for="deposit_percent">Deposit Percentage *</label>
+                        <select id="deposit_percent" name="deposit_percent">
+                            <option value="50">50%</option>
+                            <option value="60">60%</option>
+                            <option value="70">70%</option>
+                            <option value="80">80%</option>
+                            <option value="90">90%</option>
+                            <option value="100">100%</option>
+                        </select>
+                        <small class="help">
+                            The deposit must be at least 50% to qualify for the
+                            deposit discount.
+                        </small>
+                    </div>
+
                     <div class="field">
-                        <label for="expires_days">
-                            Quotation validity <span class="required">*</span>
-                        </label>
+                        <label for="expires_days">Quotation Validity *</label>
                         <select id="expires_days" name="expires_days" required>
                             <option value="1">1 day</option>
                             <option value="3" selected>3 days</option>
                             <option value="7">7 days</option>
                             <option value="14">14 days</option>
                         </select>
-                        <p class="hint">
-                            The period during which the offer is intended to remain valid.
-                        </p>
                     </div>
-
                 </div>
 
-                <div class="price-preview" aria-live="polite">
-                    <h3 class="price-preview-title">Estimated quotation total</h3>
-                    <p class="price-preview-description">
-                        Check the proposed amount before saving your draft.
-                    </p>
+                <div class="preview-error" id="previewError" role="alert"></div>
+                <div class="preview-warning" id="previewWarning" role="status"></div>
 
-                    <div class="price-row">
-                        <span>Product cost</span>
-                        <strong id="preview-product">ZAR 0.00</strong>
-                    </div>
+                <div class="btn-row">
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="saveButton"
+                    >
+                        Save Draft Quotation
+                    </button>
 
-                    <div class="price-row">
-                        <span>Sourcing / service fee</span>
-                        <strong id="preview-fee">ZAR 0.00</strong>
-                    </div>
-
-                    <div class="price-row">
-                        <span>Delivery cost</span>
-                        <strong id="preview-delivery">ZAR 0.00</strong>
-                    </div>
-
-                    <div class="price-row">
-                        <span>Other costs</span>
-                        <strong id="preview-other">ZAR 0.00</strong>
-                    </div>
-
-                    <div class="price-row">
-                        <span>Business profit</span>
-                        <strong id="preview-profit">ZAR 0.00</strong>
-                    </div>
-
-                    <div class="price-total">
-                        <span class="price-total-label">Proposed selling price</span>
-                        <span class="price-total-value" id="preview-total">ZAR 0.00</span>
-                    </div>
-
-                    <p class="preview-disclaimer">
-                        This is a browser-side estimate for your convenience.
-                        It is not a saved quotation or a confirmed buyer price.
-                        The server calculates and validates the amount when you submit.
-                    </p>
+                    <a
+                        href="{{ url_for('company_dashboard') }}"
+                        class="btn btn-secondary"
+                    >
+                        Cancel
+                    </a>
                 </div>
-            </section>
+            </form>
+        </section>
 
-            <div class="form-actions">
-                <button class="button button-primary" type="submit">
-                    Save Draft Quotation →
-                </button>
+        <aside class="card">
+            <span class="draft-label">DRAFT PREVIEW</span>
+            <h3>Cost Inputs</h3>
 
-                <a class="button button-secondary"
-                   href="{{ url_for('company_dashboard') }}">
-                    Cancel and Return
-                </a>
+            <div class="preview-row">
+                <span>Supplier Product Cost</span>
+                <strong id="previewProduct">—</strong>
             </div>
 
-        </form>
-    </section>
+            <div class="preview-row">
+                <span>Service Fee</span>
+                <strong id="previewFee">—</strong>
+            </div>
 
-    <p class="footer-note">
-        Review all costs, currency and validity details before saving.
-        A draft does not authorise a purchase.
-    </p>
+            <div class="preview-row">
+                <span>Shipping Estimate</span>
+                <strong id="previewDelivery">—</strong>
+            </div>
 
+            <div class="preview-row">
+                <span>Other Costs</span>
+                <strong id="previewOther">—</strong>
+            </div>
+
+            <div class="preview-row">
+                <span>Buyer Currency</span>
+                <strong id="previewBuyerCurrency">—</strong>
+            </div>
+
+            <div class="preview-row">
+                <span>Product Markup</span>
+                <strong>Server calculated</strong>
+            </div>
+
+            <div class="preview-row discount">
+                <span>Payment Discount</span>
+                <strong id="previewDiscount">Calculated by server</strong>
+            </div>
+
+            <div class="preview-row total">
+                <span>Quotation Total</span>
+                <strong id="previewTotal">Pending conversion</strong>
+            </div>
+
+            <p class="preview-note">
+                These are original cost inputs, not a converted quotation total.
+                The server will calculate the final buyer price after applying
+                exchange rates, markup, service fees and discounts.
+            </p>
+        </aside>
+    </div>
 </main>
 
-<footer class="site-footer">
-    <strong>Universal Marketplace</strong>
-    <br>
-    Connecting buyers and suppliers across Lesotho 🇱🇸 and South Africa 🇿🇦
+<footer>
+    Universal Runner Marketplace · Global Sourcing · International Procurement · Worldwide Delivery
 </footer>
 
 <script>
-    (function () {
-        const fieldIds = [
-            "product_cost",
-            "sourcing_fee",
-            "delivery_cost",
-            "other_costs",
-            "profit_amount"
-        ];
+    "use strict";
 
-        const currencyField = document.getElementById("currency");
+    const form = document.getElementById("quotationForm");
 
-        const outputIds = [
-            "preview-product",
-            "preview-fee",
-            "preview-delivery",
-            "preview-other",
-            "preview-profit",
-            "preview-total"
-        ];
+    const supplierSelect = document.getElementById("supplier_id");
+    const supplierCurrencyHelp =
+        document.getElementById("supplier_currency_help");
+    const supplierCurrencyDisplay =
+        document.getElementById("supplier_currency_display");
+    const supplierOriginalCurrencyInput =
+        document.getElementById("supplier_original_currency");
 
-        function readAmount(id) {
-            const input = document.getElementById(id);
-            const value = Number(input.value);
+    const sourcingRequestSelect =
+        document.getElementById("sourcing_request_id");
 
-            if (input.value.trim() === "" || !Number.isFinite(value) || value < 0) {
-                return 0;
-            }
+    const currencyInput = document.getElementById("currency");
+    const productCostInput = document.getElementById("product_cost");
 
-            return value;
-        }
+    const distanceInput = document.getElementById("delivery_distance");
+    const deliveryCostInput = document.getElementById("delivery_cost");
+    const shippingCurrencyInput =
+        document.getElementById("shipping_currency");
 
-        function formatMoney(amount, currency) {
-            return currency + " " + amount.toLocaleString("en-ZA", {
+    const otherCostsInput = document.getElementById("other_costs");
+    const otherCostsCurrencyInput =
+        document.getElementById("other_costs_currency");
+
+    const paymentPlanInput = document.getElementById("payment_plan");
+    const depositPercentInput =
+        document.getElementById("deposit_percent");
+    const depositField = document.getElementById("depositField");
+
+    const previewError = document.getElementById("previewError");
+    const previewWarning = document.getElementById("previewWarning");
+    const saveButton = document.getElementById("saveButton");
+
+    const supportedCurrencies = Array.from(currencyInput.options)
+        .map(option => option.value);
+
+    function numberFrom(input) {
+        const value = Number(input.value);
+
+        return Number.isFinite(value) && value >= 0
+            ? value
+            : 0;
+    }
+
+    function formatAmount(value) {
+        return Number(value || 0).toLocaleString(
+            undefined,
+            {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-            });
-        }
-
-        function updatePreview() {
-            const values = fieldIds.map(readAmount);
-            const currency = currencyField.value;
-
-            const product = values[0];
-            const fee = values[1];
-            const delivery = values[2];
-            const other = values[3];
-            const profit = values[4];
-
-            const total = product + fee + delivery + other + profit;
-
-            const amounts = [
-                product,
-                fee,
-                delivery,
-                other,
-                profit,
-                total
-            ];
-
-            outputIds.forEach(function (id, index) {
-                document.getElementById(id).textContent =
-                    formatMoney(amounts[index], currency);
-            });
-        }
-
-        fieldIds.forEach(function (id) {
-            document.getElementById(id).addEventListener("input", updatePreview);
-        });
-
-        currencyField.addEventListener("change", updatePreview);
-
-        document.getElementById("quotation-form").addEventListener("submit", function (event) {
-            for (const id of fieldIds) {
-                const input = document.getElementById(id);
-                const value = Number(input.value);
-
-                if (
-                    input.value.trim() === "" ||
-                    !Number.isFinite(value) ||
-                    value < 0
-                ) {
-                    event.preventDefault();
-                    input.focus();
-                    alert("Please enter a valid, non-negative amount for every cost field.");
-                    return;
-                }
             }
-        });
+        );
+    }
+
+    function setText(id, value) {
+        document.getElementById(id).textContent = value;
+    }
+
+    function showError(message) {
+        previewError.textContent = message;
+        previewError.style.display = message ? "block" : "none";
+    }
+
+    function showWarning(message) {
+        previewWarning.textContent = message;
+        previewWarning.style.display = message ? "block" : "none";
+    }
+
+    function updateSupplierCurrency() {
+        const selectedOption =
+            supplierSelect.options[supplierSelect.selectedIndex];
+
+        const supplierCurrency = selectedOption
+            ? selectedOption.dataset.currency
+            : "";
+
+        supplierOriginalCurrencyInput.value =
+            supplierCurrency || "";
+
+        if (supplierCurrency) {
+            supplierCurrencyHelp.textContent =
+                "Enter the supplier's original product price in " +
+                supplierCurrency + ".";
+
+            supplierCurrencyDisplay.textContent =
+                "Supplier currency: " + supplierCurrency;
+        } else {
+            supplierCurrencyHelp.textContent =
+                "Select a supplier to see their registered currency.";
+
+            supplierCurrencyDisplay.textContent =
+                "Supplier currency: Not selected";
+        }
 
         updatePreview();
-    })();
-</script>
+    }
 
+    function updatePreview() {
+        const productCost = numberFrom(productCostInput);
+        const shippingCost = numberFrom(deliveryCostInput);
+        const otherCosts = numberFrom(otherCostsInput);
+        const distance = numberFrom(distanceInput);
+
+        const supplierCurrency =
+            supplierOriginalCurrencyInput.value || "Not selected";
+
+        const shippingCurrency =
+            shippingCurrencyInput.value;
+
+        const otherCurrency =
+            otherCostsCurrencyInput.value;
+
+        const buyerCurrency = currencyInput.value;
+
+        const paymentPlan = paymentPlanInput.value;
+        const depositPercent =
+            Number(depositPercentInput.value || 0);
+
+        const discountRate =
+            paymentPlan === "full" ? 0.05 :
+            paymentPlan === "deposit" && depositPercent >= 50 ? 0.02 :
+            0;
+
+        depositField.style.display =
+            paymentPlan === "deposit" ? "block" : "none";
+
+        depositPercentInput.required =
+            paymentPlan === "deposit";
+
+        setText(
+            "previewProduct",
+            supplierCurrency + " " + formatAmount(productCost)
+        );
+
+        setText(
+            "previewDelivery",
+            shippingCurrency + " " + formatAmount(shippingCost)
+        );
+
+        setText(
+            "previewOther",
+            otherCurrency + " " + formatAmount(otherCosts)
+        );
+
+        setText(
+            "previewBuyerCurrency",
+            buyerCurrency
+        );
+
+        setText(
+            "previewFee",
+            "Configured in Pricing Settings"
+        );
+
+        setText(
+            "previewDiscount",
+            discountRate > 0
+                ? (discountRate * 100) + "% (after conversion)"
+                : "No discount"
+        );
+
+        setText(
+            "previewTotal",
+            "Pending server conversion"
+        );
+
+        let error = "";
+        let warning = "";
+
+        if (!sourcingRequestSelect.value) {
+            error = "Please select a sourcing request.";
+        } else if (!supplierSelect.value) {
+            error = "Please select a supplier.";
+        } else if (!supplierCurrency) {
+            error = "The selected supplier has no registered currency.";
+        } else if (!supportedCurrencies.includes(buyerCurrency)) {
+            error = "Please select a supported buyer quotation currency.";
+        } else if (!supportedCurrencies.includes(shippingCurrency)) {
+            error = "Please select a supported shipping currency.";
+        } else if (!supportedCurrencies.includes(otherCurrency)) {
+            error = "Please select a supported other-cost currency.";
+        } else if (
+            !Number.isFinite(productCost) ||
+            !Number.isFinite(shippingCost) ||
+            !Number.isFinite(otherCosts) ||
+            !Number.isFinite(distance)
+        ) {
+            error = "Please enter valid non-negative amounts.";
+        } else if (paymentPlan === "deposit" && depositPercent < 50) {
+            error = "A deposit must be at least 50% to qualify for the discount.";
+        } else if (distance > 0 && shippingCost === 0) {
+            warning =
+                "A delivery distance has been entered, but the shipping estimate is zero.";
+        }
+
+        if (!error) {
+            warning = warning ||
+                "Exchange rates and the final quotation total will be calculated by the server. Do not send a quotation until the backend conversion is complete.";
+        }
+
+        showError(error);
+        showWarning(warning);
+
+        // Prevent submission until the backend route is updated.
+        saveButton.disabled = true;
+        saveButton.title =
+            "Waiting for the multi-currency backend implementation.";
+    }
+
+    supplierSelect.addEventListener(
+        "change",
+        updateSupplierCurrency
+    );
+
+    sourcingRequestSelect.addEventListener(
+        "change",
+        function () {
+            const option =
+                sourcingRequestSelect.options[
+                    sourcingRequestSelect.selectedIndex
+                ];
+
+            const requestedCurrency =
+                option ? option.dataset.currency : "";
+
+            if (supportedCurrencies.includes(requestedCurrency)) {
+                currencyInput.value = requestedCurrency;
+
+                shippingCurrencyInput.value =
+                    requestedCurrency;
+
+                otherCostsCurrencyInput.value =
+                    requestedCurrency;
+            }
+
+            updatePreview();
+        }
+    );
+
+    [
+        currencyInput,
+        productCostInput,
+        distanceInput,
+        deliveryCostInput,
+        shippingCurrencyInput,
+        otherCostsInput,
+        otherCostsCurrencyInput,
+        paymentPlanInput,
+        depositPercentInput
+    ].forEach(function (element) {
+        element.addEventListener("input", updatePreview);
+        element.addEventListener("change", updatePreview);
+    });
+
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        showError(
+            "New quotations are temporarily disabled while the multi-currency backend is being completed. Your existing quotations are not affected."
+        );
+    });
+
+    updateSupplierCurrency();
+    updatePreview();
+</script>
 </body>
 </html>

@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Quotations | Universal Marketplace</title>
+    <title>Quotations | Universal Runner Marketplace</title>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: Arial, sans-serif;
@@ -19,7 +17,7 @@
         }
 
         main {
-            max-width: 1250px;
+            max-width: 1400px;
             margin: auto;
         }
 
@@ -31,9 +29,7 @@
             border-radius: 10px;
         }
 
-        header h1 {
-            margin-top: 0;
-        }
+        header h1 { margin-top: 0; }
 
         .navigation {
             background: white;
@@ -45,8 +41,7 @@
             gap: 10px;
         }
 
-        a.button,
-        button.button {
+        a.button, button.button {
             display: inline-block;
             background: #009543;
             color: white;
@@ -60,33 +55,21 @@
             font-family: Arial, sans-serif;
         }
 
-        a.button:hover,
-        button.button:hover {
+        a.button:hover, button.button:hover {
             background: #007a36;
         }
 
-        a.home-button,
-        a.compare-button {
+        a.home-button, a.compare-button {
             background: #00209F;
         }
 
-        a.home-button:hover,
-        a.compare-button:hover {
+        a.home-button:hover, a.compare-button:hover {
             background: #001875;
         }
 
-        button.reject-button {
-            background: #b42318;
-        }
+        button.reject-button { background: #b42318; }
 
-        button.reject-button:hover {
-            background: #8f1d14;
-        }
-
-        a.compare-button,
-        button.send-button {
-            white-space: nowrap;
-        }
+        button.reject-button:hover { background: #8f1d14; }
 
         .table-wrap {
             overflow-x: auto;
@@ -98,11 +81,10 @@
         table {
             border-collapse: collapse;
             width: 100%;
-            min-width: 1100px;
+            min-width: 1250px;
         }
 
-        th,
-        td {
+        th, td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #e1e5ec;
@@ -114,15 +96,12 @@
             white-space: nowrap;
         }
 
-        tbody tr:hover {
-            background: #f8faff;
-        }
+        tbody tr:hover { background: #f8faff; }
 
         .message {
             padding: 12px;
             margin: 14px 0;
             border-radius: 6px;
-            background: #e0f5e8;
             overflow-wrap: anywhere;
         }
 
@@ -131,14 +110,14 @@
             color: #8a1c13;
         }
 
-        .message.warning {
-            background: #fff3cd;
-            color: #664d03;
-        }
-
         .message.success {
             background: #e0f5e8;
             color: #14532d;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #664d03;
         }
 
         .empty {
@@ -158,6 +137,16 @@
             margin-bottom: 5px;
         }
 
+        .shipping-estimated {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .shipping-confirmed {
+            background: #e0f5e8;
+            color: #14532d;
+        }
+
         .status-actions {
             display: flex;
             flex-direction: column;
@@ -166,9 +155,7 @@
             margin-top: 8px;
         }
 
-        .status-actions form {
-            margin: 0;
-        }
+        .status-actions form { margin: 0; }
 
         .note {
             color: #555;
@@ -189,26 +176,11 @@
         }
 
         @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-
-            header {
-                padding: 16px;
-            }
-
-            header h1 {
-                font-size: 23px;
-            }
-
-            .navigation {
-                padding: 10px;
-            }
-
-            a.button,
-            button.button {
-                padding: 10px;
-            }
+            body { padding: 10px; }
+            header { padding: 16px; }
+            header h1 { font-size: 23px; }
+            .navigation { padding: 10px; }
+            a.button, button.button { padding: 10px; }
         }
     </style>
 </head>
@@ -216,7 +188,7 @@
 <body>
 <main>
     <header>
-        <h1>🇱🇸 Universal Marketplace 🇿🇦</h1>
+        <h1>🇱🇸 Universal Runner Marketplace 🇿🇦</h1>
         <p>Quotation management | Lesotho and South Africa</p>
     </header>
 
@@ -229,39 +201,32 @@
     {% endwith %}
 
     <nav class="navigation" aria-label="Main navigation">
-        <a class="button home-button"
-           href="{{ url_for('home') }}">
+        <a class="button home-button" href="{{ url_for('home') }}">
             🏠 Home / Marketplace
         </a>
 
-        <a class="button"
-           href="{{ url_for('list_quotations') }}">
+        <a class="button" href="{{ url_for('list_quotations') }}">
             📄 Quotations
         </a>
 
         {% if current_user.role in ADMIN_ROLES %}
-            <a class="button"
-               href="{{ url_for('company_dashboard') }}">
+            <a class="button" href="{{ url_for('company_dashboard') }}">
                 Company Dashboard
             </a>
 
-            <a class="button"
-               href="{{ url_for('list_suppliers') }}">
+            <a class="button" href="{{ url_for('list_suppliers') }}">
                 Suppliers
             </a>
 
-            <a class="button"
-               href="{{ url_for('create_quotation') }}">
+            <a class="button" href="{{ url_for('create_quotation') }}">
                 + Create Quotation
             </a>
 
-            <a class="button"
-               href="{{ url_for('manage_products') }}">
+            <a class="button" href="{{ url_for('manage_products') }}">
                 Products
             </a>
 
-            <a class="button"
-               href="{{ url_for('company_product_enquiries') }}">
+            <a class="button" href="{{ url_for('company_product_enquiries') }}">
                 Product Enquiries
             </a>
         {% endif %}
@@ -290,6 +255,7 @@
                         <th>Request</th>
                         <th>Supplier</th>
                         <th>Product Cost</th>
+                        <th>Shipping</th>
                         <th>Other Costs and Fees</th>
                         <th>Proposed Total</th>
                         <th>Status and Actions</th>
@@ -301,13 +267,9 @@
                 <tbody>
                     {% for q in quotations %}
                         <tr>
-                            <td>
-                                <strong>QT-{{ q.id }}</strong>
-                            </td>
+                            <td><strong>QT-{{ q.id }}</strong></td>
 
-                            <td>
-                                UM-{{ q.sourcing_request_id }}
-                            </td>
+                            <td>UM-{{ q.sourcing_request_id }}</td>
 
                             <td>
                                 {{ q.supplier.name }}
@@ -321,10 +283,32 @@
                             </td>
 
                             <td>
+                                {% if q.shipping_status == "Confirmed" %}
+                                    <span class="status shipping-confirmed">
+                                        Confirmed
+                                    </span>
+                                    <br>
+                                    <strong>
+                                        {{ "%.2f"|format(q.shipping_confirmed_cost) }}
+                                        {{ q.shipping_currency or q.currency }}
+                                    </strong>
+                                    <br>
+                                    <small>
+                                        {{ q.freight_provider or "Provider not recorded" }}
+                                    </small>
+                                {% else %}
+                                    <span class="status shipping-estimated">
+                                        Estimated
+                                    </span>
+                                    <br>
+                                    {{ "%.2f"|format(q.shipping_estimated_cost or 0) }}
+                                    {{ q.currency }}
+                                {% endif %}
+                            </td>
+
+                            <td>
                                 {{ "%.2f"|format(
-                                    q.sourcing_fee
-                                    + q.delivery_cost
-                                    + q.other_costs
+                                    q.sourcing_fee + q.other_costs
                                 ) }}
                                 {{ q.currency }}
                             </td>
@@ -334,38 +318,59 @@
                                     {{ "%.2f"|format(q.selling_price) }}
                                     {{ q.currency }}
                                 </strong>
+
+                                {% if q.shipping_status != "Confirmed" %}
+                                    <br>
+                                    <small class="small-text">
+                                        Provisional total — shipping is estimated.
+                                    </small>
+                                {% endif %}
                             </td>
 
                             <td>
-                                <span class="status">
-                                    {{ q.status }}
-                                </span>
+                                <span class="status">{{ q.status }}</span>
 
                                 {% if current_user.role in ADMIN_ROLES
                                       and q.status == "Draft" %}
 
                                     <div class="status-actions">
-                                        <form method="POST"
-                                              action="{{ url_for(
-                                                  'send_quotation_to_buyer',
-                                                  quotation_id=q.id
-                                              ) }}"
-                                              onsubmit="return confirm('Send this quotation to the registered buyer for review?');">
 
-                                            <input type="hidden"
-                                                   name="csrf_token"
-                                                   value="{{ csrf_token() }}">
+                                        {% if q.shipping_status != "Confirmed" %}
+                                            <a class="button"
+                                               href="{{ url_for(
+                                                   'confirm_quotation_shipping',
+                                                   quotation_id=q.id
+                                               ) }}">
+                                                Confirm Shipping
+                                            </a>
 
-                                            <button type="submit"
-                                                    class="button send-button">
-                                                Send to Buyer
-                                            </button>
-                                        </form>
+                                            <p class="small-text">
+                                                Shipping must be confirmed
+                                                before sending.
+                                            </p>
+                                        {% else %}
+                                            <p class="small-text">
+                                                Shipping confirmed.
+                                            </p>
+
+                                            <form method="POST"
+                                                  action="{{ url_for(
+                                                      'send_quotation_to_buyer',
+                                                      quotation_id=q.id
+                                                  ) }}"
+                                                  onsubmit="return confirm('Send this quotation to the registered buyer?');">
+
+                                                <input type="hidden"
+                                                       name="csrf_token"
+                                                       value="{{ csrf_token() }}">
+
+                                                <button type="submit"
+                                                        class="button">
+                                                    Send to Buyer
+                                                </button>
+                                            </form>
+                                        {% endif %}
                                     </div>
-
-                                    <p class="small-text">
-                                        This quotation has not yet been sent.
-                                    </p>
 
                                 {% elif q.status == "Sent"
                                       and current_user.role in ADMIN_ROLES %}
@@ -391,12 +396,10 @@
                                         <p class="small-text">
                                             You approved this quotation.
                                         </p>
-
                                     {% elif q.buyer_decision == "Rejected" %}
                                         <p class="small-text">
                                             You rejected this quotation.
                                         </p>
-
                                     {% else %}
                                         <p class="small-text">
                                             Review the proposed price and
@@ -452,8 +455,7 @@
 
                                         {% else %}
                                             <p class="small-text">
-                                                This quotation has expired
-                                                and can no longer be decided on.
+                                                This quotation has expired.
                                             </p>
                                         {% endif %}
                                     {% endif %}
@@ -490,13 +492,11 @@
                     Your saved quotations will appear here.
                 {% else %}
                     You do not have any quotations available yet.
-                    Quotations will appear here when they are sent to you.
                 {% endif %}
             </p>
 
             {% if current_user.role in ADMIN_ROLES %}
-                <a class="button"
-                   href="{{ url_for('create_quotation') }}">
+                <a class="button" href="{{ url_for('create_quotation') }}">
                     Create First Quotation
                 </a>
             {% endif %}
@@ -504,7 +504,7 @@
     {% endif %}
 
     <footer>
-        <p>Universal Marketplace 🇱🇸 🇿🇦</p>
+        <p>Universal Runner Marketplace 🇱🇸 🇿🇦</p>
         <p>
             Connecting buyers and suppliers across Lesotho and South Africa.
         </p>
