@@ -1,10 +1,10 @@
-@'
 __pycache__/
 *.py[cod]
 .venv/
 venv/
 .env
 .env.*
+!.env.example
 *.db
 *.sqlite
 *.sqlite3
@@ -13,4 +13,3 @@ venv/
 instance/
 .pytest_cache/
 .coverage
-'@ | Set-Content -Path .gitignore

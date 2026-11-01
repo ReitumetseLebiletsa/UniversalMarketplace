@@ -1,9 +1,11 @@
 import os
+import uuid
 import math
 from pathlib import Path
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from functools import wraps
-
+from supabase import create_client, Client
 from flask import (
     Flask,
     render_template,
@@ -16,6 +18,7 @@ from flask import (
     current_app,
 )
 
+from math import isfinite
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager,
@@ -25,10 +28,11 @@ from flask_login import (
     login_required,
     current_user,
 )
+from currency_service import get_exchange_rate, CurrencyServiceError
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import uuid
+
 
 
 # --------------------------------------------------
@@ -56,6 +60,43 @@ app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB maximum
 
 db = SQLAlchemy(app)
+
+# --------------------------------------------------
+# SUPABASE — PRIVATE PAYMENT PROOF STORAGE
+# --------------------------------------------------
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get(
+    "SUPABASE_SERVICE_ROLE_KEY"
+)
+
+supabase: Client | None = None
+
+if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    try:
+        supabase = create_client(
+            SUPABASE_URL,
+            SUPABASE_SERVICE_ROLE_KEY,
+        )
+        app.logger.info("Supabase storage client initialised.")
+    except Exception:
+        app.logger.exception(
+            "Could not initialise Supabase storage client."
+        )
+else:
+    app.logger.warning(
+        "Supabase environment variables are not configured."
+    )
+
+PAYMENT_PROOF_BUCKET = "payment-proofs"
+MAX_PAYMENT_PROOF_SIZE = 5 * 1024 * 1024
+
+ALLOWED_PAYMENT_PROOF_EXTENSIONS = {
+    ".pdf",
+    ".jpg",
+    ".jpeg",
+    ".png",
+}
 
 csrf = CSRFProtect(app)
 
@@ -290,6 +331,159 @@ class Quotation(db.Model):
     sourcing_request = db.relationship("SourcingRequest")
     supplier = db.relationship("Supplier")
 
+ # --------------------------------------------------
+# PAYMENT MODEL — UNIVERSAL RUNNER MARKETPLACE
+# --------------------------------------------------
+
+class Payment(db.Model):
+    __tablename__ = "payment"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    # The quotation this payment belongs to.
+    quotation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("quotation.id"),
+        nullable=False,
+        index=True,
+    )
+
+    # Amount actually received or submitted for verification.
+    amount = db.Column(
+        db.Float,
+        nullable=False,
+    )
+
+    currency = db.Column(
+        db.String(3),
+        nullable=False,
+    )
+
+    # Payment details.
+    payment_method = db.Column(
+        db.String(50),
+        nullable=False,
+    )
+
+    transaction_reference = db.Column(
+        db.String(150),
+        nullable=True,
+    )
+
+    # Pending, Confirmed, Failed or Refunded.
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="Pending",
+        index=True,
+    )
+
+    notes = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    # --------------------------------------------------
+    # PAYMENT PROOF — PRIVATE SUPABASE STORAGE
+    # --------------------------------------------------
+
+    # Private object path inside the payment-proofs bucket.
+    # Never store a public URL here.
+    proof_storage_path = db.Column(
+        db.String(500),
+        nullable=True,
+    )
+
+    # Original filename supplied by the buyer.
+    proof_original_filename = db.Column(
+        db.String(255),
+        nullable=True,
+    )
+
+    # Buyer who submitted the payment proof.
+    submitted_by = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=True,
+    )
+
+    # --------------------------------------------------
+    # PAYMENT RECORDING AND VERIFICATION
+    # --------------------------------------------------
+
+    # User who recorded the payment.
+    # Kept non-null to preserve the existing database design.
+    recorded_by = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False,
+    )
+
+    # Administrator who verified the payment.
+    confirmed_by = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=True,
+    )
+
+    # Date the payment was recorded or submitted.
+    payment_date = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    # Date the administrator confirmed the payment.
+    confirmed_at = db.Column(
+        db.DateTime,
+        nullable=True,
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    # --------------------------------------------------
+    # DATABASE RELATIONSHIPS
+    # --------------------------------------------------
+
+    quotation = db.relationship(
+        "Quotation",
+        backref=db.backref(
+            "payments",
+            lazy=True,
+        ),
+    )
+
+    recorder = db.relationship(
+        "User",
+        foreign_keys=[recorded_by],
+    )
+
+    confirmer = db.relationship(
+        "User",
+        foreign_keys=[confirmed_by],
+    )
+
+    submitter = db.relationship(
+        "User",
+        foreign_keys=[submitted_by],
+    )
+
+    def __repr__(self):
+        return (
+            f"<Payment id={self.id} "
+            f"quotation_id={self.quotation_id} "
+            f"amount={self.amount} "
+            f"currency={self.currency} "
+            f"status={self.status}>"
+        )
+
 # --------------------------------------------------
 # QUOTATION EXCHANGE RATE MODEL
 # --------------------------------------------------
@@ -462,26 +656,33 @@ class PricingSetting(db.Model):
         nullable=False,
     )
 
-# Create missing tables without deleting existing records.
-with app.app_context():
-    db.create_all()
+# ==========================================================
+# DATABASE INITIALISATION AND SAFE COLUMN MIGRATIONS
+# UNIVERSAL RUNNER MARKETPLACE
+# ==========================================================
 
-# Safely add missing quotation columns.
-# Existing tables, quotations and records are preserved.
-with app.app_context():
-    db.create_all()
+from sqlalchemy import inspect, text
 
-    from sqlalchemy import inspect, text
+with app.app_context():
+
+    # Create missing tables without deleting existing records.
+    db.create_all()
 
     inspector = inspect(db.engine)
+    existing_tables = inspector.get_table_names()
 
-    if "quotation" in inspector.get_table_names():
-        existing_columns = {
+    # ------------------------------------------------------
+    # 1. SAFELY ADD MISSING QUOTATION COLUMNS
+    # ------------------------------------------------------
+
+    if "quotation" in existing_tables:
+
+        existing_quotation_columns = {
             column["name"]
             for column in inspector.get_columns("quotation")
         }
 
-        new_columns = {
+        new_quotation_columns = {
             "profit_amount": "FLOAT NOT NULL DEFAULT 0",
             "delivery_distance": "FLOAT NOT NULL DEFAULT 0",
             "payment_plan": "VARCHAR(20) NOT NULL DEFAULT 'standard'",
@@ -500,8 +701,11 @@ with app.app_context():
         }
 
         with db.engine.begin() as connection:
-            for column_name, column_definition in new_columns.items():
-                if column_name not in existing_columns:
+
+            for column_name, column_definition in new_quotation_columns.items():
+
+                if column_name not in existing_quotation_columns:
+
                     connection.execute(
                         text(
                             f'ALTER TABLE quotation ADD COLUMN '
@@ -511,7 +715,39 @@ with app.app_context():
 
                     print(f"Added quotation column: {column_name}")
 
-    print("Database tables and quotation columns checked.")
+    # ------------------------------------------------------
+    # 2. SAFELY ADD MISSING PAYMENT-PROOF COLUMNS
+    # ------------------------------------------------------
+
+    if "payment" in existing_tables:
+
+        existing_payment_columns = {
+            column["name"]
+            for column in inspector.get_columns("payment")
+        }
+
+        new_payment_columns = {
+            "proof_storage_path": "VARCHAR(500)",
+            "proof_original_filename": "VARCHAR(255)",
+            "submitted_by": "INTEGER",
+        }
+
+        with db.engine.begin() as connection:
+
+            for column_name, column_definition in new_payment_columns.items():
+
+                if column_name not in existing_payment_columns:
+
+                    connection.execute(
+                        text(
+                            f'ALTER TABLE payment ADD COLUMN '
+                            f'"{column_name}" {column_definition}'
+                        )
+                    )
+
+                    print(f"Added payment column: {column_name}")
+
+    print("Database tables and columns checked successfully.")
 
 # --------------------------------------------------
 # INITIALIZE DEFAULT URM PRICING SETTINGS
@@ -818,7 +1054,7 @@ def request_product():
             source_country=source_country,
             delivery_country=delivery_country,
             target_price=target_price,
-            currency=currency,
+            currency=buyer_currency,
             buyer_name=buyer_name,
             buyer_contact=buyer_contact,
         )
@@ -1100,14 +1336,14 @@ def create_quotation():
         ).strip().upper()
 
         currencies = [
-            currency,
-            supplier_currency,
-            shipping_currency,
-            other_costs_currency,
-            pricing.service_fee_currency.strip().upper(),
-            pricing.default_currency.strip().upper(),
-            pricing.accounting_currency.strip().upper(),
-        ]
+    buyer_currency,
+    supplier_currency,
+    shipping_currency,
+    other_costs_currency,
+    pricing.service_fee_currency.strip().upper(),
+    pricing.default_currency.strip().upper(),
+    pricing.accounting_currency.strip().upper(),
+]
 
         if any(code not in supported_currencies for code in currencies):
             flash(
@@ -1282,7 +1518,7 @@ def create_quotation():
             product_cost = convert_amount(
                 supplier_original_cost,
                 supplier_currency,
-                currency,
+                buyer_currency,
             )
 
             product_cost_lsl = convert_amount(
@@ -1295,7 +1531,7 @@ def create_quotation():
             estimated_shipping = convert_amount(
                 shipping_original_cost,
                 shipping_currency,
-                currency,
+                buyer_currency,
             )
 
             shipping_cost_lsl = convert_amount(
@@ -1308,7 +1544,7 @@ def create_quotation():
             other_costs = convert_amount(
                 other_costs_original,
                 other_costs_currency,
-                currency,
+                buyer_currency,
             )
 
             other_costs_lsl = convert_amount(
@@ -1333,7 +1569,7 @@ def create_quotation():
                 sourcing_fee = convert_amount(
                     float(pricing.service_fee_value),
                     pricing.service_fee_currency.upper(),
-                    currency,
+buyer_currency,
                 )
 
                 sourcing_fee_lsl = convert_amount(
@@ -1358,7 +1594,7 @@ def create_quotation():
                 profit_amount = convert_amount(
                     float(pricing.markup_value),
                     pricing.default_currency.upper(),
-                    currency,
+buyer_currency,
                 )
 
                 profit_amount_lsl = convert_amount(
@@ -1517,7 +1753,7 @@ def create_quotation():
             deposit_percent=deposit_percent,
             discount_amount=discount_amount,
             selling_price=provisional_total,
-            currency=currency,
+            currency=buyer_currency,
 
             status="Draft",
             expires_at=datetime.utcnow() + timedelta(days=expires_days),
@@ -1553,7 +1789,7 @@ def create_quotation():
 
         flash(
             f"Draft quotation QT-{quotation.id} saved. "
-            f"Estimated buyer total: {provisional_total:.2f} {currency}. "
+            f"Estimated buyer total: {provisional_total:.2f} {buyer_currency}. "
             f"Internal accounting total: {selling_price_lsl:.2f} LSL. "
             "Shipping must still be confirmed before the quotation can be sent.",
             "success",
@@ -1813,36 +2049,116 @@ def buyer_quotation_decision(quotation_id):
 
 # --------------------------------------------------
 # QUOTATION LIST — ADMIN ALL / BUYER OWN ONLY
+# Includes payment summaries for each quotation
 # --------------------------------------------------
 
 @app.route("/company/quotations")
 @login_required
 def list_quotations():
+    # 1. Load quotations according to the user's role.
     if current_user.role in ADMIN_ROLES:
         quotations = Quotation.query.order_by(
             Quotation.created_at.desc()
         ).all()
 
     elif current_user.role == "buyer":
-        quotations = Quotation.query.join(
-            SourcingRequest,
-            Quotation.sourcing_request_id == SourcingRequest.id,
-        ).filter(
-            SourcingRequest.buyer_user_id == current_user.id
-        ).order_by(
-            Quotation.created_at.desc()
-        ).all()
+        quotations = (
+            Quotation.query.join(
+                SourcingRequest,
+                Quotation.sourcing_request_id == SourcingRequest.id,
+            )
+            .filter(
+                SourcingRequest.buyer_user_id == current_user.id,
+                Quotation.status == "Sent",
+            )
+            .order_by(Quotation.created_at.desc())
+            .all()
+        )
 
     else:
         abort(403)
 
-    return render_template(
-    "quotations.html",
-    quotations=quotations,
-    ADMIN_ROLES=ADMIN_ROLES,
-    now=datetime.utcnow(),
-)
+    # 2. Prepare the display currency.
+    display_currency = request.args.get(
+        "currency", "ZAR"
+    ).strip().upper()
 
+    if display_currency not in ["ZAR", "LSL"]:
+        display_currency = "ZAR"
+
+    # 3. Prepare exchange-rate information for buyers.
+    exchange_rates = {}
+    currency_error = None
+
+    if current_user.role == "buyer":
+        currencies_needed = {
+            q.currency.upper()
+            for q in quotations
+            if q.currency
+        }
+
+        currencies_needed.update({
+            q.shipping_currency.upper()
+            for q in quotations
+            if getattr(q, "shipping_currency", None)
+        })
+
+        try:
+            for source_currency in currencies_needed:
+                if source_currency == display_currency:
+                    exchange_rates[source_currency] = {
+                        "rate": 1.0,
+                        "date": datetime.utcnow().date(),
+                        "provider": "Same currency",
+                    }
+                else:
+                    rate_details = get_exchange_rate(
+                        source_currency,
+                        display_currency,
+                    )
+
+                    exchange_rates[source_currency] = rate_details
+
+        except CurrencyServiceError as error:
+            currency_error = str(error)
+            exchange_rates = {}
+
+    # 4. Calculate payment summaries for every quotation.
+    # This MUST be defined before render_template() uses it.
+    payment_summaries = {}
+
+    for quotation in quotations:
+        confirmed_total, outstanding = (
+            get_quotation_payment_summary(quotation)
+        )
+
+        fully_paid = outstanding <= 0.001
+
+        if fully_paid:
+            payment_status = "Fully Paid"
+        elif confirmed_total > 0:
+            payment_status = "Partially Paid"
+        else:
+            payment_status = "Unpaid"
+
+        payment_summaries[quotation.id] = {
+            "confirmed_total": confirmed_total,
+            "outstanding": outstanding,
+            "fully_paid": fully_paid,
+            "status": payment_status,
+        }
+
+    # 5. Render the quotation list with payment summaries.
+    return render_template(
+        "quotations.html",
+        quotations=quotations,
+        ADMIN_ROLES=ADMIN_ROLES,
+        now=datetime.utcnow(),
+        display_currency=display_currency,
+        exchange_rates=exchange_rates,
+        currency_error=currency_error,
+        payment_summaries=payment_summaries,
+    )
 @app.route("/company/quotations/compare/<int:request_id>")
 @login_required
 def compare_suppliers(request_id):
@@ -1897,14 +2213,6 @@ def compare_suppliers(request_id):
         comparisons=comparisons,
     )
 
-# --------------------------------------------------
-# SEND QUOTATION TO BUYER — ADMIN ONLY
-# --------------------------------------------------
-
-@app.route(
-    "/company/quotations/<int:quotation_id>/send",
-    methods=["POST"],
-)
 
 # --------------------------------------------------
 # CONFIRM SHIPPING COST — ADMIN ONLY
@@ -2212,7 +2520,7 @@ def confirm_quotation_shipping(quotation_id):
 # --------------------------------------------------
 
 @app.route(
-    "/company/quotations/<int:quotation_id>/send",
+    "/admin/quotations/<int:quotation_id>/send",
     methods=["POST"],
 )
 @admin_required
@@ -2292,6 +2600,809 @@ def send_quotation_to_buyer(quotation_id):
     )
 
     return redirect(url_for("list_quotations"))
+
+# --------------------------------------------------
+# PAYMENT MANAGEMENT — ADMIN ONLY
+# --------------------------------------------------
+
+def get_quotation_payment_summary(quotation):
+    """Calculate confirmed payments and outstanding balance."""
+    confirmed_total = sum(
+        payment.amount
+        for payment in quotation.payments
+        if payment.status == "Confirmed"
+    )
+
+    outstanding = max(
+        0.0,
+        quotation.selling_price - confirmed_total,
+    )
+
+    return confirmed_total, outstanding
+
+
+@app.route(
+    "/admin/quotations/<int:quotation_id>/payments",
+    methods=["GET", "POST"],
+)
+
+@admin_required
+def manage_quotation_payments(quotation_id):
+    quotation = db.session.get(Quotation, quotation_id)
+
+    if quotation is None:
+        abort(404)
+
+    if request.method == "POST":
+        if quotation.buyer_decision != "Approved":
+            flash(
+                "Payments can only be recorded for buyer-approved quotations.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        confirmed_total, outstanding = get_quotation_payment_summary(
+            quotation
+        )
+
+        if outstanding <= 0:
+            flash(
+                "This quotation is already fully paid.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        try:
+            amount = Decimal(
+                request.form.get("amount", "").strip()
+            )
+
+            if not amount.is_finite() or amount <= 0:
+                raise InvalidOperation
+
+        except (InvalidOperation, ValueError):
+            flash("Enter a valid positive payment amount.", "error")
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        if amount > Decimal(str(outstanding)):
+            flash(
+                f"Payment cannot exceed the outstanding balance of "
+                f"{quotation.currency} {outstanding:.2f}.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        currency = request.form.get(
+            "currency", ""
+        ).strip().upper()
+
+        if currency != quotation.currency:
+            flash(
+                f"Payment currency must be {quotation.currency}.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        payment_method = request.form.get(
+            "payment_method", ""
+        ).strip()
+
+        transaction_reference = request.form.get(
+            "transaction_reference", ""
+        ).strip()
+
+        notes = request.form.get("notes", "").strip()
+
+        if not payment_method or len(payment_method) > 50:
+            flash("Enter a valid payment method.", "error")
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        if len(transaction_reference) > 150 or len(notes) > 5000:
+            flash("Payment details are too long.", "error")
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        payment = Payment(
+            quotation_id=quotation.id,
+            amount=float(amount),
+            currency=currency,
+            payment_method=payment_method,
+            transaction_reference=transaction_reference or None,
+            notes=notes or None,
+            status="Pending",
+            recorded_by=current_user.id,
+        )
+
+        try:
+            db.session.add(payment)
+            db.session.commit()
+            flash(
+                "Payment recorded as Pending. Verify receipt before confirming it.",
+                "success",
+            )
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception(
+                "Could not record quotation payment"
+            )
+            flash("The payment could not be recorded.", "error")
+
+        return redirect(url_for(
+            "manage_quotation_payments",
+            quotation_id=quotation.id,
+        ))
+
+    confirmed_total, outstanding = get_quotation_payment_summary(
+        quotation
+    )
+
+    payments = Payment.query.filter_by(
+        quotation_id=quotation.id
+    ).order_by(
+        Payment.created_at.desc()
+    ).all()
+
+    fully_paid = outstanding <= 0.001
+
+    return render_template(
+        "quotation_payments.html",
+        quotation=quotation,
+        payments=payments,
+        confirmed_total=confirmed_total,
+        outstanding=outstanding,
+        fully_paid=fully_paid,
+    )
+
+# --------------------------------------------------
+# BUYER — SUBMIT PAYMENT PROOF
+# --------------------------------------------------
+
+@app.route(
+    "/company/quotations/<int:quotation_id>/payment-proof",
+    methods=["GET", "POST"],
+)
+@login_required
+def submit_payment_proof(quotation_id):
+
+    # Only buyers may submit payment proof.
+    if current_user.role != "buyer":
+        abort(403)
+
+    # Supabase must be configured.
+    if supabase is None:
+        flash(
+            "Payment proof uploads are temporarily unavailable. Please contact support.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    quotation = db.session.get(Quotation, quotation_id)
+
+    if quotation is None:
+        abort(404)
+
+    # Verify that this quotation belongs to the logged-in buyer.
+    sourcing_request = db.session.get(
+        SourcingRequest,
+        quotation.sourcing_request_id,
+    )
+
+    if (
+        sourcing_request is None
+        or sourcing_request.buyer_user_id != current_user.id
+    ):
+        abort(403)
+
+    # Payment proof is allowed only after approval.
+    if quotation.buyer_decision != "Approved":
+        flash(
+            "You must approve this quotation before submitting payment.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    confirmed_total, outstanding = get_quotation_payment_summary(
+        quotation
+    )
+
+    # Reserve amounts already awaiting verification so buyers
+    # cannot submit several pending payments exceeding the balance.
+    pending_total = sum(
+        payment.amount
+        for payment in quotation.payments
+        if payment.status == "Pending"
+    )
+
+    available_to_submit = max(
+        0.0,
+        outstanding - pending_total,
+    )
+
+    if available_to_submit <= 0.001:
+        flash(
+            "There is no outstanding amount available for another payment submission.",
+            "error",
+        )
+        return redirect(url_for("list_quotations"))
+
+    if request.method == "POST":
+
+        # --------------------------------------------------
+        # VALIDATE AMOUNT
+        # --------------------------------------------------
+
+        try:
+            amount = Decimal(
+                request.form.get("amount", "").strip()
+            )
+
+            if not amount.is_finite() or amount <= 0:
+                raise InvalidOperation
+
+        except (InvalidOperation, ValueError):
+            flash(
+                "Enter a valid positive payment amount.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        if amount > Decimal(str(available_to_submit)):
+            flash(
+                f"Your payment cannot exceed the available amount of "
+                f"{quotation.currency} {available_to_submit:.2f}.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        # --------------------------------------------------
+        # VALIDATE PAYMENT METHOD
+        # --------------------------------------------------
+
+        allowed_methods = {
+            "Bank Transfer",
+            "Cash Deposit",
+            "Mobile Money",
+            "Card",
+            "Other",
+        }
+
+        payment_method = request.form.get(
+            "payment_method",
+            "",
+        ).strip()
+
+        if payment_method not in allowed_methods:
+            flash(
+                "Select a valid payment method.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        transaction_reference = request.form.get(
+            "transaction_reference",
+            "",
+        ).strip()
+
+        notes = request.form.get(
+            "notes",
+            "",
+        ).strip()
+
+        if (
+            len(transaction_reference) > 150
+            or len(notes) > 5000
+        ):
+            flash(
+                "Your payment details are too long.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        # --------------------------------------------------
+        # VALIDATE UPLOADED FILE
+        # --------------------------------------------------
+
+        proof_file = request.files.get("payment_proof")
+
+        if proof_file is None or not proof_file.filename:
+            flash(
+                "Please select your payment proof.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        original_filename = secure_filename(
+            proof_file.filename
+        )
+
+        if not original_filename:
+            flash(
+                "The uploaded filename is invalid.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        file_extension = Path(
+            original_filename
+        ).suffix.lower()
+
+        allowed_types = {
+            ".pdf": (
+                "application/pdf",
+                lambda data: data.startswith(b"%PDF-"),
+            ),
+            ".jpg": (
+                "image/jpeg",
+                lambda data: data.startswith(b"\xff\xd8\xff"),
+            ),
+            ".jpeg": (
+                "image/jpeg",
+                lambda data: data.startswith(b"\xff\xd8\xff"),
+            ),
+            ".png": (
+                "image/png",
+                lambda data: data.startswith(
+                    b"\x89PNG\r\n\x1a\n"
+                ),
+            ),
+        }
+
+        if file_extension not in allowed_types:
+            flash(
+                "Only PDF, JPG, JPEG and PNG files are accepted.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        file_data = proof_file.read(
+            MAX_PAYMENT_PROOF_SIZE + 1
+        )
+
+        if not file_data:
+            flash(
+                "The uploaded file is empty.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        if len(file_data) > MAX_PAYMENT_PROOF_SIZE:
+            flash(
+                "The payment proof must not exceed 5 MB.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        content_type, signature_check = allowed_types[
+            file_extension
+        ]
+
+        if not signature_check(file_data):
+            flash(
+                "The uploaded file does not match its file extension.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        # --------------------------------------------------
+        # UPLOAD TO PRIVATE SUPABASE STORAGE
+        # --------------------------------------------------
+
+        object_name = (
+            f"quotation-{quotation.id}/"
+            f"{uuid.uuid4().hex}{file_extension}"
+        )
+
+        try:
+            supabase.storage.from_(
+                PAYMENT_PROOF_BUCKET
+            ).upload(
+                object_name,
+                file_data,
+                file_options={
+                    "content-type": content_type,
+                    "upsert": "false",
+                },
+            )
+
+        except Exception:
+            current_app.logger.exception(
+                "Payment proof upload failed for quotation %s",
+                quotation.id,
+            )
+
+            flash(
+                "Your payment proof could not be uploaded. Please try again.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "submit_payment_proof",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        # --------------------------------------------------
+        # SAVE PAYMENT RECORD
+        # --------------------------------------------------
+
+        payment = Payment(
+            quotation_id=quotation.id,
+            amount=float(amount),
+            currency=quotation.currency,
+            payment_method=payment_method,
+            transaction_reference=transaction_reference or None,
+            notes=notes or None,
+            proof_storage_path=object_name,
+            proof_original_filename=original_filename,
+            submitted_by=current_user.id,
+            recorded_by=current_user.id,
+            status="Pending",
+        )
+
+        try:
+            db.session.add(payment)
+            db.session.commit()
+
+            flash(
+                "Payment proof submitted successfully. Your payment is awaiting verification.",
+                "success",
+            )
+
+        except Exception:
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Could not save payment record for quotation %s",
+                quotation.id,
+            )
+
+            # Remove the uploaded object if the database save failed.
+            try:
+                supabase.storage.from_(
+                    PAYMENT_PROOF_BUCKET
+                ).remove([object_name])
+            except Exception:
+                current_app.logger.exception(
+                    "Could not clean up uploaded payment proof %s",
+                    object_name,
+                )
+
+            flash(
+                "Your payment record could not be saved. Please try again.",
+                "error",
+            )
+
+        return redirect(url_for("list_quotations"))
+
+    # --------------------------------------------------
+    # DISPLAY PAYMENT SUBMISSION FORM
+    # --------------------------------------------------
+
+    return render_template(
+        "submit_payment_proof.html",
+        quotation=quotation,
+        available_to_submit=available_to_submit,
+    )
+
+@app.route(
+    "/admin/payments/<int:payment_id>/confirm",
+    methods=["POST"],
+)
+
+@admin_required
+def confirm_quotation_payment(payment_id):
+    payment = db.session.get(Payment, payment_id)
+
+    if payment is None:
+        abort(404)
+
+    quotation = payment.quotation
+
+    if payment.status != "Pending":
+        flash("Only pending payments can be confirmed.", "error")
+        return redirect(url_for(
+            "manage_quotation_payments",
+            quotation_id=quotation.id,
+        ))
+
+    if quotation.buyer_decision != "Approved":
+        flash(
+            "The quotation must be approved by the buyer.",
+            "error",
+        )
+        return redirect(url_for(
+            "manage_quotation_payments",
+            quotation_id=quotation.id,
+        ))
+
+    if payment.currency != quotation.currency:
+        flash(
+            "Payment currency does not match the quotation.",
+            "error",
+        )
+        return redirect(url_for(
+            "manage_quotation_payments",
+            quotation_id=quotation.id,
+        ))
+
+    try:
+        # Refresh the payment and quotation before checking the balance.
+        db.session.refresh(payment)
+        db.session.refresh(quotation)
+
+        if payment.status != "Pending":
+            flash(
+                "This payment has already been processed.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        confirmed_total, outstanding = get_quotation_payment_summary(
+            quotation
+        )
+
+        if outstanding <= 0.001:
+            flash(
+                "This quotation is already fully paid.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        if payment.amount > outstanding + 0.001:
+            flash(
+                "This payment exceeds the outstanding balance. "
+                "It has not been confirmed.",
+                "error",
+            )
+            return redirect(url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            ))
+
+        payment.status = "Confirmed"
+        payment.confirmed_by = current_user.id
+        payment.confirmed_at = datetime.utcnow()
+
+        db.session.commit()
+
+        flash("Payment confirmed successfully.", "success")
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Could not confirm quotation payment"
+        )
+        flash(
+            "The payment could not be confirmed. Please try again.",
+            "error",
+        )
+
+    return redirect(url_for(
+        "manage_quotation_payments",
+        quotation_id=quotation.id,
+    ))
+
+# --------------------------------------------------
+# ADMIN — VIEW PRIVATE PAYMENT PROOF
+# --------------------------------------------------
+
+@app.route(
+    "/admin/payments/<int:payment_id>/proof",
+    methods=["GET"],
+)
+@admin_required
+def view_payment_proof(payment_id):
+
+    payment = db.session.get(Payment, payment_id)
+
+    if payment is None:
+        abort(404)
+
+    if not payment.proof_storage_path:
+        flash("No payment proof is attached to this record.", "error")
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=payment.quotation_id,
+            )
+        )
+
+    if supabase is None:
+        flash("Private storage is currently unavailable.", "error")
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=payment.quotation_id,
+            )
+        )
+
+    try:
+        # Generate a private link valid for only 60 seconds.
+        result = supabase.storage.from_(
+            PAYMENT_PROOF_BUCKET
+        ).create_signed_url(
+            payment.proof_storage_path,
+            60,
+        )
+
+        signed_url = (
+            result.get("signedURL")
+            or result.get("signedUrl")
+        )
+
+        if not signed_url:
+            raise ValueError("Supabase did not return a signed URL.")
+
+        return redirect(signed_url)
+
+    except Exception:
+        current_app.logger.exception(
+            "Could not generate payment proof link for payment %s",
+            payment.id,
+        )
+
+        flash(
+            "Could not open the payment proof. Please try again.",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=payment.quotation_id,
+            )
+        )
+
+
+# --------------------------------------------------
+# ADMIN — REJECT PENDING PAYMENT
+# --------------------------------------------------
+
+@app.route(
+    "/admin/payments/<int:payment_id>/reject",
+    methods=["POST"],
+)
+@admin_required
+def reject_quotation_payment(payment_id):
+
+    payment = db.session.get(Payment, payment_id)
+
+    if payment is None:
+        abort(404)
+
+    quotation = payment.quotation
+
+    if payment.status != "Pending":
+        flash(
+            "Only pending payments can be rejected.",
+            "error",
+        )
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            )
+        )
+
+    try:
+        db.session.refresh(payment)
+
+        if payment.status != "Pending":
+            flash(
+                "This payment has already been processed.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "manage_quotation_payments",
+                    quotation_id=quotation.id,
+                )
+            )
+
+        payment.status = "Rejected"
+
+        db.session.commit()
+
+        flash(
+            "Payment rejected. The buyer's outstanding balance remains unchanged.",
+            "success",
+        )
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Could not reject payment %s",
+            payment_id,
+        )
+
+        flash(
+            "The payment could not be rejected. Please try again.",
+            "error",
+        )
+
+    return redirect(
+        url_for(
+            "manage_quotation_payments",
+            quotation_id=quotation.id,
+        )
+    )
 
 # --------------------------------------------------
 # PRODUCT MANAGEMENT — ADMIN ONLY

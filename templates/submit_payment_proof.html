@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Submit Payment Proof | Universal Runner Marketplace</title>
+
+    <style>
+        :root {
+            --green: #0B3D2E;
+            --lime: #7CB342;
+            --light: #f4f7f5;
+            --border: #dce5df;
+            --text: #26332b;
+            --muted: #6b786f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 15px;
+            background: var(--light);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: var(--green);
+            color: white;
+            padding: 25px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .header p {
+            margin: 0;
+            color: #dcebdc;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        }
+
+        .quotation-summary {
+            background: #f0f6f1;
+            border-left: 4px solid var(--lime);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+
+        .quotation-summary p {
+            margin: 7px 0;
+            font-size: 14px;
+        }
+
+        .amount {
+            color: var(--green);
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin: 18px 0 7px;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: 15px;
+            background: white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid var(--lime);
+            border-color: var(--lime);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            background: #fafcfb;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .help {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .notice {
+            background: #fff8e6;
+            border: 1px solid #f1dfa9;
+            color: #715719;
+            padding: 13px;
+            border-radius: 7px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 20px 0;
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            border: none;
+            border-radius: 7px;
+            background: var(--green);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #155b43;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: var(--green);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .flash {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .flash.error {
+            background: #fdeaea;
+            color: #9d2525;
+        }
+
+        .flash.success {
+            background: #e9f6ed;
+            color: #206b37;
+        }
+
+        @media (max-width: 500px) {
+            .card {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Universal Runner Marketplace</h1>
+        <p>Secure Payment Proof Submission</p>
+    </div>
+
+    <div class="card">
+
+        <h2>Submit Your Payment</h2>
+
+        <p>
+            Complete the form below and upload your payment receipt
+            for administrator verification.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="quotation-summary">
+
+            <p>
+                <strong>Quotation Number:</strong>
+                #{{ quotation.id }}
+            </p>
+
+            <p><strong>Payment Currency:</strong>
+                {{ quotation.currency }}
+            </p>
+
+            <p><strong>Available Amount to Submit:</strong></p>
+
+            <div class="amount">
+                {{ quotation.currency }}
+                {{ "%.2f"|format(available_to_submit) }}
+            </div>
+
+        </div>
+
+        <form
+            method="POST"
+            action="{{ url_for('submit_payment_proof', quotation_id=quotation.id) }}"
+            enctype="multipart/form-data"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <label for="amount">Amount Paid *</label>
+
+            <input
+                type="number"
+                id="amount"
+                name="amount"
+                min="0.01"
+                max="{{ available_to_submit }}"
+                step="0.01"
+                placeholder="Enter amount paid"
+                required
+            >
+
+            <div class="help">
+                Enter the amount you actually paid.
+                Maximum available: {{ quotation.currency }}
+                {{ "%.2f"|format(available_to_submit) }}.
+            </div>
+
+            <label for="payment_method">Payment Method *</label>
+
+            <select
+                id="payment_method"
+                name="payment_method"
+                required
+            >
+                <option value="">Select payment method</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cash Deposit">Cash Deposit</option>
+                <option value="Mobile Money">Mobile Money</option>
+                <option value="Card">Card</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="transaction_reference">
+                Transaction Reference
+            </label>
+
+            <input
+                type="text"
+                id="transaction_reference"
+                name="transaction_reference"
+                maxlength="150"
+                placeholder="Enter your transaction reference"
+            >
+
+            <label for="payment_proof">
+                Upload Payment Proof *
+            </label>
+
+            <input
+                type="file"
+                id="payment_proof"
+                name="payment_proof"
+                accept=".pdf,.jpg,.jpeg,.png"
+                required
+            >
+
+            <div class="help">
+                Accepted formats: PDF, JPG, JPEG and PNG.
+                Maximum file size: 5 MB.
+            </div>
+
+            <label for="notes">Additional Notes</label>
+
+            <textarea
+                id="notes"
+                name="notes"
+                maxlength="5000"
+                placeholder="Optional payment information..."
+            ></textarea>
+
+            <div class="notice">
+                <strong>Important:</strong>
+                Submitting payment proof does not mean your payment
+                has been confirmed. Your payment will remain pending
+                until an administrator verifies your receipt.
+            </div>
+
+            <button type="submit" class="button">
+                Submit Payment Proof
+            </button>
+
+        </form>
+
+        <a
+            href="{{ url_for('list_quotations') }}"
+            class="back-link"
+        >
+            ← Back to My Quotations
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>

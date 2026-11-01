@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Quotation Payments | Universal Runner Marketplace</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fb;
+            padding: 20px;
+            color: #111;
+            margin: 0;
+        }
+
+        main { max-width: 1100px; margin: auto; }
+
+        header {
+            background: #00209F;
+            color: white;
+            padding: 22px;
+            border-bottom: 6px solid #009543;
+            border-radius: 10px;
+        }
+
+        header h1 { margin-top: 0; }
+
+        .navigation, .card {
+            background: white;
+            padding: 18px;
+            margin: 18px 0;
+            border-radius: 10px;
+        }
+
+        .navigation {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        a.button, button.button {
+            display: inline-block;
+            background: #009543;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        a.home-button, a.back-button {
+            background: #00209F;
+        }
+
+        .button-blue { background: #00209F !important; }
+        .button-red { background: #b42318 !important; }
+        .button-grey { background: #555 !important; }
+
+        .card h3 { margin-top: 0; }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-item {
+            background: #e9eefb;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .summary-item strong {
+            display: block;
+            margin-bottom: 7px;
+        }
+
+        .balance {
+            background: #e0f5e8;
+            border-left: 5px solid #009543;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin: 13px 0 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        input[readonly] { background: #eee; }
+
+        button.button { margin-top: 10px; }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        th { background: #e9eefb; }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 5px;
+            background: #fff3cd;
+            color: #664d03;
+            font-weight: bold;
+        }
+
+        .status-confirmed {
+            background: #e0f5e8;
+            color: #14532d;
+        }
+
+        .status-rejected {
+            background: #fde8e7;
+            color: #8a1c13;
+        }
+
+        .message {
+            padding: 12px;
+            margin: 14px 0;
+            border-radius: 6px;
+        }
+
+        .message.success {
+            background: #e0f5e8;
+            color: #14532d;
+        }
+
+        .message.error {
+            background: #fde8e7;
+            color: #8a1c13;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .muted { color: #555; }
+
+        .action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            min-width: 150px;
+        }
+
+        .action-group form { margin: 0; }
+
+        .action-group button,
+        .action-group a {
+            margin-top: 0;
+        }
+
+        .small-text {
+            font-size: 12px;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        footer {
+            margin-top: 25px;
+            padding: 15px;
+            text-align: center;
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            header { padding: 16px; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+
+    <header>
+        <h1>Universal Runner Marketplace</h1>
+        <p>Quotation Payment Management</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message {{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <nav class="navigation">
+        <a class="button home-button" href="{{ url_for('home') }}">
+            Home / Marketplace
+        </a>
+
+        <a class="button back-button" href="{{ url_for('list_quotations') }}">
+            Back to Quotations
+        </a>
+    </nav>
+
+    <h2>Payments for QT-{{ quotation.id }}</h2>
+
+    <p class="muted">
+        Request UM-{{ quotation.sourcing_request_id }}
+        · {{ quotation.currency }}
+    </p>
+
+    <section class="card">
+        <h3>Quotation Summary</h3>
+
+        <div class="summary">
+            <div class="summary-item">
+                <strong>Quotation Total</strong>
+                {{ "%.2f"|format(quotation.selling_price) }}
+                {{ quotation.currency }}
+            </div>
+
+            <div class="summary-item">
+                <strong>Confirmed Payments</strong>
+                {{ "%.2f"|format(confirmed_total) }}
+                {{ quotation.currency }}
+            </div>
+
+            <div class="summary-item balance">
+                <strong>Outstanding Balance</strong>
+                {{ "%.2f"|format(outstanding) }}
+                {{ quotation.currency }}
+            </div>
+        </div>
+
+        <p><strong>Quotation Status:</strong> {{ quotation.status }}</p>
+
+        <p>
+            <strong>Buyer Decision:</strong>
+            {{ quotation.buyer_decision or "Not decided" }}
+        </p>
+    </section>
+
+    {% if quotation.buyer_decision == "Approved" and outstanding > 0 %}
+    <section class="card">
+        <h3>Record a Payment</h3>
+
+        <p class="muted">
+            Use this form for payments recorded directly by an administrator.
+            Buyer-uploaded receipts appear in the payment history below.
+        </p>
+
+        <form method="POST"
+              action="{{ url_for('manage_quotation_payments', quotation_id=quotation.id) }}">
+
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <label for="amount">Payment Amount</label>
+            <input type="number"
+                   id="amount"
+                   name="amount"
+                   min="0.01"
+                   max="{{ outstanding }}"
+                   step="0.01"
+                   required>
+
+            <label for="currency">Currency</label>
+            <input type="text"
+                   id="currency"
+                   name="currency"
+                   value="{{ quotation.currency }}"
+                   readonly>
+
+            <label for="payment_method">Payment Method</label>
+            <select id="payment_method" name="payment_method" required>
+                <option value="">Select payment method</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Mobile Money">Mobile Money</option>
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="transaction_reference">
+                Transaction Reference
+            </label>
+            <input type="text"
+                   id="transaction_reference"
+                   name="transaction_reference"
+                   maxlength="150">
+
+            <label for="notes">Notes</label>
+            <textarea id="notes"
+                      name="notes"
+                      rows="3"
+                      maxlength="5000"></textarea>
+
+            <button type="submit" class="button">
+                Record Pending Payment
+            </button>
+        </form>
+    </section>
+
+    {% elif quotation.buyer_decision != "Approved" %}
+    <section class="card">
+        <p class="message warning">
+            Payments cannot be recorded until the buyer approves
+            this quotation.
+        </p>
+    </section>
+
+    {% else %}
+    <section class="card">
+        <p class="message success">
+            This quotation has no outstanding balance.
+        </p>
+    </section>
+    {% endif %}
+
+    <section class="card">
+        <h3>Payment History and Verification</h3>
+
+        <p class="muted">
+            Only confirmed payments reduce the outstanding balance.
+            Pending payments must be verified before confirmation.
+        </p>
+
+        {% if payments %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th>Submitted By</th>
+                        <th>Proof</th>
+                        <th>Status</th>
+                        <th>Admin Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>
+                            {{ payment.payment_date.strftime("%Y-%m-%d %H:%M") }}
+                        </td>
+
+                        <td>
+                            {{ "%.2f"|format(payment.amount) }}
+                            {{ payment.currency }}
+                        </td>
+
+                        <td>{{ payment.payment_method }}</td>
+
+                        <td>
+                            {{ payment.transaction_reference or "—" }}
+                        </td>
+
+                        <td>
+                            {% if payment.submitter %}
+                                {{ payment.submitter.username }}
+                            {% elif payment.recorder %}
+                                {{ payment.recorder.username }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if payment.proof_storage_path %}
+                                <a class="button button-blue"
+                                   href="{{ url_for(
+                                       'view_payment_proof',
+                                       payment_id=payment.id
+                                   ) }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    View Proof
+                                </a>
+
+                                <div class="small-text">
+                                    {{ payment.proof_original_filename or "Payment receipt" }}
+                                </div>
+                            {% else %}
+                                <span class="muted">No file uploaded</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if payment.status == "Confirmed" %}
+                                <span class="status status-confirmed">
+                                    Confirmed
+                                </span>
+                            {% elif payment.status == "Rejected" %}
+                                <span class="status status-rejected">
+                                    Rejected
+                                </span>
+                            {% else %}
+                                <span class="status">
+                                    {{ payment.status }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if payment.status == "Pending" %}
+                                <div class="action-group">
+
+                                    <form method="POST"
+                                          action="{{ url_for(
+                                              'confirm_quotation_payment',
+                                              payment_id=payment.id
+                                          ) }}"
+                                          onsubmit="return confirm('Have you verified that this money was received?');">
+
+                                        <input type="hidden"
+                                               name="csrf_token"
+                                               value="{{ csrf_token() }}">
+
+                                        <button type="submit"
+                                                class="button">
+                                            Confirm
+                                        </button>
+                                    </form>
+
+                                    <form method="POST"
+                                          action="{{ url_for(
+                                              'reject_quotation_payment',
+                                              payment_id=payment.id
+                                          ) }}"
+                                          onsubmit="return confirm('Are you sure you want to reject this payment submission?');">
+
+                                        <input type="hidden"
+                                               name="csrf_token"
+                                               value="{{ csrf_token() }}">
+
+                                        <button type="submit"
+                                                class="button button-red">
+                                            Reject
+                                        </button>
+                                    </form>
+
+                                </div>
+
+                            {% else %}
+                                <span class="muted">No action</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+            <p class="muted">No payments have been recorded yet.</p>
+        {% endif %}
+    </section>
+
+    <footer>
+        <p>Universal Runner Marketplace</p>
+        <p>Connecting buyers and suppliers.</p>
+    </footer>
+
+</main>
+</body>
+</html>

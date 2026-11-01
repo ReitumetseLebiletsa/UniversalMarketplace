@@ -17,7 +17,7 @@
         }
 
         main {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: auto;
         }
 
@@ -68,7 +68,6 @@
         }
 
         button.reject-button { background: #b42318; }
-
         button.reject-button:hover { background: #8f1d14; }
 
         .table-wrap {
@@ -81,7 +80,7 @@
         table {
             border-collapse: collapse;
             width: 100%;
-            min-width: 1250px;
+            min-width: 1600px;
         }
 
         th, td {
@@ -168,6 +167,116 @@
             line-height: 1.5;
         }
 
+        .currency-panel {
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            margin: 18px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .currency-panel label {
+            font-weight: bold;
+        }
+
+        .currency-panel select {
+            padding: 10px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            font-size: 15px;
+            min-width: 150px;
+            background: white;
+        }
+
+        .converted-amount {
+            display: block;
+            color: #007a36;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .original-amount {
+            display: block;
+            color: #555;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .legacy-note {
+            display: block;
+            color: #664d03;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .payment-summary {
+            min-width: 150px;
+            line-height: 1.7;
+        }
+
+        .payment-summary strong {
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .payment-status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .payment-status.unpaid {
+            background: #e9eefb;
+            color: #00209F;
+        }
+
+        .payment-status.partial {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .payment-status.paid {
+            background: #e0f5e8;
+            color: #14532d;
+        }
+
+        /* PAYMENT PROOF FORM */
+        .payment-proof-panel {
+            background: #f3f6fb;
+            border: 1px solid #d5deed;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            min-width: 220px;
+        }
+
+        .payment-proof-panel label {
+            display: block;
+            font-weight: bold;
+            margin: 10px 0 5px;
+        }
+
+        .payment-proof-panel input,
+        .payment-proof-panel select {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .payment-proof-panel button {
+            margin-top: 12px;
+            width: 100%;
+        }
+
         footer {
             margin-top: 25px;
             padding: 15px;
@@ -187,11 +296,13 @@
 
 <body>
 <main>
+
     <header>
-        <h1>🇱🇸 Universal Runner Marketplace 🇿🇦</h1>
-        <p>Quotation management | Lesotho and South Africa</p>
+        <h1>Universal Runner Marketplace</h1>
+        <p>Quotation management</p>
     </header>
 
+    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             <div class="message {{ category }}">
@@ -200,7 +311,18 @@
         {% endfor %}
     {% endwith %}
 
+    <!-- CURRENCY CONVERSION WARNING -->
+    {% if currency_error and current_user.role == "buyer" %}
+        <div class="message warning">
+            Currency conversion is temporarily unavailable.
+            Original quotation amounts are being displayed.
+            {{ currency_error }}
+        </div>
+    {% endif %}
+
+    <!-- NAVIGATION -->
     <nav class="navigation" aria-label="Main navigation">
+
         <a class="button home-button" href="{{ url_for('home') }}">
             🏠 Home / Marketplace
         </a>
@@ -210,6 +332,7 @@
         </a>
 
         {% if current_user.role in ADMIN_ROLES %}
+
             <a class="button" href="{{ url_for('company_dashboard') }}">
                 Company Dashboard
             </a>
@@ -229,6 +352,7 @@
             <a class="button" href="{{ url_for('company_product_enquiries') }}">
                 Product Enquiries
             </a>
+
         {% endif %}
     </nav>
 
@@ -246,18 +370,57 @@
         Draft quotations have not yet been sent to buyers.
     </p>
 
+    <!-- BUYER CURRENCY SELECTOR -->
+    {% if current_user.role == "buyer" and quotations %}
+
+        <form method="GET"
+              action="{{ url_for('list_quotations') }}"
+              class="currency-panel">
+
+            <label for="currency">Display prices in:</label>
+
+            <select name="currency"
+                    id="currency"
+                    onchange="this.form.submit()">
+
+                <option value="ZAR"
+                    {% if display_currency == "ZAR" %}selected{% endif %}>
+                    ZAR – South African Rand
+                </option>
+
+                <option value="LSL"
+                    {% if display_currency == "LSL" %}selected{% endif %}>
+                    LSL – Lesotho Loti
+                </option>
+            </select>
+
+            <span class="small-text">
+                This changes display only. Your original quotation and
+                payment currency remain unchanged.
+            </span>
+        </form>
+
+    {% endif %}
+
+    <!-- QUOTATIONS -->
     {% if quotations %}
+
         <div class="table-wrap">
             <table>
+
                 <thead>
                     <tr>
                         <th>Quotation</th>
                         <th>Request</th>
                         <th>Supplier</th>
                         <th>Product Cost</th>
+                        <th>Product Markup</th>
                         <th>Shipping</th>
                         <th>Other Costs and Fees</th>
+                        <th>Discount</th>
+                        <th>Unitemised Legacy Amount</th>
                         <th>Proposed Total</th>
+                        <th>Payment Summary</th>
                         <th>Status and Actions</th>
                         <th>Expires</th>
                         <th>Supplier Comparison</th>
@@ -265,225 +428,629 @@
                 </thead>
 
                 <tbody>
-                    {% for q in quotations %}
-                        <tr>
-                            <td><strong>QT-{{ q.id }}</strong></td>
 
-                            <td>UM-{{ q.sourcing_request_id }}</td>
+                {% for q in quotations %}
 
-                            <td>
-                                {{ q.supplier.name }}
+                    {% set quote_currency = q.currency %}
+                    {% set shipping_currency =
+                        q.shipping_currency or q.currency %}
+
+                    {% set shipping_display_amount =
+                        (q.shipping_confirmed_cost or 0)
+                        if q.shipping_status == "Confirmed"
+                        else (
+                            q.shipping_estimated_cost
+                            if (q.shipping_estimated_cost or 0) > 0
+                            else (q.delivery_cost or 0)
+                        )
+                    %}
+
+                    {% set product_rate =
+                        exchange_rates.get(quote_currency)
+                        if current_user.role == "buyer"
+                        else none %}
+
+                    {% set shipping_rate =
+                        exchange_rates.get(shipping_currency)
+                        if current_user.role == "buyer"
+                        else none %}
+
+                    {% set discount_display = q.discount_amount or 0 %}
+
+                    {% set recorded_components =
+                        (q.product_cost or 0)
+                        + (q.profit_amount or 0)
+                        + shipping_display_amount
+                        + (q.sourcing_fee or 0)
+                        + (q.other_costs or 0)
+                        - discount_display
+                    %}
+
+                    {% set unitemised_amount =
+                        (q.selling_price - recorded_components)
+                        | round(2)
+                    %}
+
+                    {% set payment =
+                        payment_summaries.get(q.id, {}) %}
+
+                    {% set confirmed_total =
+                        payment.get("confirmed_total", 0) %}
+
+                    {% set outstanding =
+                        payment.get("outstanding", q.selling_price) %}
+
+                    {% set fully_paid =
+                        payment.get("fully_paid", false) %}
+
+                    <tr>
+
+                        <!-- QUOTATION -->
+                        <td>
+                            <strong>QT-{{ q.id }}</strong>
+                        </td>
+
+                        <!-- REQUEST -->
+                        <td>
+                            UM-{{ q.sourcing_request_id }}
+                        </td>
+
+                        <!-- SUPPLIER -->
+                        <td>
+                            {{ q.supplier.name }}
+                            <br>
+                            <small>{{ q.supplier.country }}</small>
+                        </td>
+
+                        <!-- PRODUCT COST -->
+                        <td>
+                            {{ "%.2f"|format(q.product_cost or 0) }}
+                            {{ quote_currency }}
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != quote_currency
+                                  and product_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        (q.product_cost or 0)
+                                        * product_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+
+                                <span class="original-amount">
+                                    Original quotation currency:
+                                    {{ quote_currency }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- MARKUP -->
+                        <td>
+                            {{ "%.2f"|format(q.profit_amount or 0) }}
+                            {{ quote_currency }}
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != quote_currency
+                                  and product_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        (q.profit_amount or 0)
+                                        * product_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- SHIPPING -->
+                        <td>
+
+                            {% if q.shipping_status == "Confirmed" %}
+                                <span class="status shipping-confirmed">
+                                    Confirmed
+                                </span>
+                            {% else %}
+                                <span class="status shipping-estimated">
+                                    Estimated
+                                </span>
+                            {% endif %}
+
+                            <br>
+
+                            {{ "%.2f"|format(shipping_display_amount) }}
+                            {{ shipping_currency }}
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != shipping_currency
+                                  and shipping_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        shipping_display_amount
+                                        * shipping_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+
+                                <span class="original-amount">
+                                    Original shipping currency:
+                                    {{ shipping_currency }}
+                                </span>
+                            {% endif %}
+
+                            {% if q.shipping_status != "Confirmed" %}
+                                <span class="small-text">
+                                    Provisional shipping estimate.
+                                </span>
+                            {% else %}
                                 <br>
-                                <small>{{ q.supplier.country }}</small>
-                            </td>
+                                <small>
+                                    {{ q.freight_provider or
+                                       "Provider not recorded" }}
+                                </small>
+                            {% endif %}
 
-                            <td>
-                                {{ "%.2f"|format(q.product_cost) }}
-                                {{ q.currency }}
-                            </td>
+                            {% if (q.shipping_estimated_cost or 0) == 0
+                                  and (q.delivery_cost or 0) > 0
+                                  and q.shipping_status != "Confirmed" %}
 
-                            <td>
-                                {% if q.shipping_status == "Confirmed" %}
-                                    <span class="status shipping-confirmed">
-                                        Confirmed
-                                    </span>
-                                    <br>
-                                    <strong>
-                                        {{ "%.2f"|format(q.shipping_confirmed_cost) }}
-                                        {{ q.shipping_currency or q.currency }}
-                                    </strong>
-                                    <br>
-                                    <small>
-                                        {{ q.freight_provider or "Provider not recorded" }}
-                                    </small>
+                                <span class="legacy-note">
+                                    Original legacy shipping field used.
+                                </span>
+                            {% endif %}
+
+                        </td>
+
+                        <!-- OTHER COSTS -->
+                        <td>
+                            {{ "%.2f"|format(
+                                (q.sourcing_fee or 0)
+                                + (q.other_costs or 0)
+                            ) }} {{ quote_currency }}
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != quote_currency
+                                  and product_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        (
+                                            (q.sourcing_fee or 0)
+                                            + (q.other_costs or 0)
+                                        ) * product_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- DISCOUNT -->
+                        <td>
+                            {{ "%.2f"|format(discount_display) }}
+                            {{ quote_currency }}
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != quote_currency
+                                  and product_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        discount_display
+                                        * product_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- LEGACY AMOUNT -->
+                        <td>
+                            {{ "%.2f"|format(unitemised_amount) }}
+                            {{ quote_currency }}
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != quote_currency
+                                  and product_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        unitemised_amount
+                                        * product_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+                            {% endif %}
+
+                            {% if unitemised_amount > 0.005 %}
+                                <span class="legacy-note">
+                                    Unitemised amount retained from an
+                                    older quotation calculation.
+                                </span>
+                            {% elif unitemised_amount < -0.005 %}
+                                <span class="legacy-note">
+                                    Please review this historical
+                                    quotation's recorded breakdown.
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- PROPOSED TOTAL -->
+                        <td>
+                            <strong>
+                                {{ "%.2f"|format(q.selling_price) }}
+                                {{ quote_currency }}
+                            </strong>
+
+                            {% if current_user.role == "buyer"
+                                  and display_currency != quote_currency
+                                  and product_rate %}
+
+                                <span class="converted-amount">
+                                    ≈ {{ "%.2f"|format(
+                                        q.selling_price
+                                        * product_rate.rate
+                                    ) }} {{ display_currency }}
+                                </span>
+
+                                <span class="original-amount">
+                                    Original quotation currency:
+                                    {{ quote_currency }}
+                                </span>
+
+                            {% elif current_user.role == "buyer"
+                                    and display_currency != quote_currency %}
+
+                                <span class="original-amount">
+                                    Conversion unavailable.
+                                    Original amount shown above.
+                                </span>
+
+                            {% endif %}
+
+                            {% if q.shipping_status != "Confirmed" %}
+                                <br>
+                                <small class="small-text">
+                                    Provisional total — shipping is estimated.
+                                </small>
+                            {% endif %}
+                        </td>
+
+                        <!-- PAYMENT SUMMARY -->
+                        <td class="payment-summary">
+
+                            {% if fully_paid %}
+                                <span class="payment-status paid">
+                                    Fully Paid
+                                </span>
+                            {% elif confirmed_total > 0 %}
+                                <span class="payment-status partial">
+                                    Partially Paid
+                                </span>
+                            {% else %}
+                                <span class="payment-status unpaid">
+                                    Unpaid
+                                </span>
+                            {% endif %}
+
+                            <br>
+
+                            <strong>Paid:</strong>
+                            {{ "%.2f"|format(confirmed_total) }}
+                            {{ q.currency }}
+
+                            <br>
+
+                            <strong>Balance:</strong>
+                            {{ "%.2f"|format(outstanding) }}
+                            {{ q.currency }}
+
+                            {% if current_user.role in ADMIN_ROLES %}
+                                <div class="status-actions">
+                                    <a class="button"
+                                       href="{{ url_for(
+                                           'manage_quotation_payments',
+                                           quotation_id=q.id
+                                       ) }}">
+                                        Manage Payments
+                                    </a>
+                                </div>
+                            {% endif %}
+
+                        </td>
+
+                        <!-- STATUS AND ACTIONS -->
+                        <td>
+
+                            <span class="status">{{ q.status }}</span>
+
+                            {% if current_user.role in ADMIN_ROLES
+                                  and q.status == "Draft" %}
+
+                                <div class="status-actions">
+
+                                    {% if q.shipping_status != "Confirmed" %}
+
+                                        <a class="button"
+                                           href="{{ url_for(
+                                               'confirm_quotation_shipping',
+                                               quotation_id=q.id
+                                           ) }}">
+                                            Confirm Shipping
+                                        </a>
+
+                                        <p class="small-text">
+                                            Shipping must be confirmed
+                                            before sending.
+                                        </p>
+
+                                    {% else %}
+
+                                        <p class="small-text">
+                                            Shipping confirmed.
+                                        </p>
+
+                                        <form method="POST"
+                                              action="{{ url_for(
+                                                  'send_quotation_to_buyer',
+                                                  quotation_id=q.id
+                                              ) }}"
+                                              onsubmit="return confirm('Send this quotation to the registered buyer?');">
+
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
+
+                                            <button type="submit"
+                                                    class="button">
+                                                Send to Buyer
+                                            </button>
+                                        </form>
+
+                                    {% endif %}
+                                </div>
+
+                            {% elif q.status == "Sent"
+                                  and current_user.role in ADMIN_ROLES %}
+
+                                {% if q.buyer_decision == "Approved" %}
+                                    <p class="small-text">
+                                        Buyer approved this quotation.
+                                    </p>
+                                {% elif q.buyer_decision == "Rejected" %}
+                                    <p class="small-text">
+                                        Buyer rejected this quotation.
+                                    </p>
                                 {% else %}
-                                    <span class="status shipping-estimated">
-                                        Estimated
-                                    </span>
-                                    <br>
-                                    {{ "%.2f"|format(q.shipping_estimated_cost or 0) }}
-                                    {{ q.currency }}
+                                    <p class="small-text">
+                                        Awaiting buyer response.
+                                    </p>
                                 {% endif %}
-                            </td>
 
-                            <td>
-                                {{ "%.2f"|format(
-                                    q.sourcing_fee + q.other_costs
-                                ) }}
-                                {{ q.currency }}
-                            </td>
+                            {% elif q.status == "Sent"
+                                  and current_user.role == "buyer" %}
 
-                            <td>
-                                <strong>
-                                    {{ "%.2f"|format(q.selling_price) }}
-                                    {{ q.currency }}
-                                </strong>
+                                {% if q.buyer_decision == "Approved" %}
 
-                                {% if q.shipping_status != "Confirmed" %}
-                                    <br>
-                                    <small class="small-text">
-                                        Provisional total — shipping is estimated.
-                                    </small>
-                                {% endif %}
-                            </td>
+                                    <p class="small-text">
+                                        You approved this quotation.
+                                    </p>
 
-                            <td>
-                                <span class="status">{{ q.status }}</span>
+                                    <!-- BUYER PAYMENT PROOF SUBMISSION -->
+                                    {% if not fully_paid and outstanding > 0 %}
 
-                                {% if current_user.role in ADMIN_ROLES
-                                      and q.status == "Draft" %}
+                                        <div class="payment-proof-panel">
 
-                                    <div class="status-actions">
-
-                                        {% if q.shipping_status != "Confirmed" %}
-                                            <a class="button"
-                                               href="{{ url_for(
-                                                   'confirm_quotation_shipping',
-                                                   quotation_id=q.id
-                                               ) }}">
-                                                Confirm Shipping
-                                            </a>
+                                            <strong>
+                                                Submit Payment Proof
+                                            </strong>
 
                                             <p class="small-text">
-                                                Shipping must be confirmed
-                                                before sending.
-                                            </p>
-                                        {% else %}
-                                            <p class="small-text">
-                                                Shipping confirmed.
+                                                Enter your payment details
+                                                and upload proof. Your
+                                                outstanding balance changes
+                                                only after administrator
+                                                verification.
                                             </p>
 
                                             <form method="POST"
                                                   action="{{ url_for(
-                                                      'send_quotation_to_buyer',
+                                                      'submit_payment_proof',
                                                       quotation_id=q.id
                                                   ) }}"
-                                                  onsubmit="return confirm('Send this quotation to the registered buyer?');">
+                                                  enctype="multipart/form-data">
 
                                                 <input type="hidden"
                                                        name="csrf_token"
                                                        value="{{ csrf_token() }}">
 
+                                                <label for="amount-{{ q.id }}">
+                                                    Payment Amount
+                                                    ({{ q.currency }})
+                                                </label>
+
+                                                <input
+                                                    type="number"
+                                                    id="amount-{{ q.id }}"
+                                                    name="amount"
+                                                    min="0.01"
+                                                    max="{{ outstanding }}"
+                                                    step="0.01"
+                                                    required
+                                                >
+
+                                                <label for="method-{{ q.id }}">
+                                                    Payment Method
+                                                </label>
+
+                                                <select
+                                                    id="method-{{ q.id }}"
+                                                    name="payment_method"
+                                                    required
+                                                >
+                                                    <option value="">
+                                                        Select method
+                                                    </option>
+                                                    <option value="Bank Transfer">
+                                                        Bank Transfer
+                                                    </option>
+                                                    <option value="Mobile Money">
+                                                        Mobile Money
+                                                    </option>
+                                                    <option value="Cash Deposit">
+                                                        Cash Deposit
+                                                    </option>
+                                                    <option value="Other">
+                                                        Other
+                                                    </option>
+                                                </select>
+
+                                                <label for="reference-{{ q.id }}">
+                                                    Transaction Reference
+                                                </label>
+
+                                                <input
+                                                    type="text"
+                                                    id="reference-{{ q.id }}"
+                                                    name="transaction_reference"
+                                                    maxlength="150"
+                                                    placeholder="Enter transaction reference"
+                                                >
+
+                                                <label for="proof-{{ q.id }}">
+                                                    Payment Proof
+                                                </label>
+
+                                                <input
+                                                    type="file"
+                                                    id="proof-{{ q.id }}"
+                                                    name="payment_proof"
+                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                    required
+                                                >
+
+                                                <p class="small-text">
+                                                    Accepted formats: PDF,
+                                                    JPG and PNG.
+                                                    Maximum size: 5 MB.
+                                                </p>
+
+                                                <button type="submit"
+                                                        class="button"
+                                                        onclick="return confirm('Submit this payment proof for verification?');">
+                                                    Submit Payment Proof
+                                                </button>
+
+                                            </form>
+                                        </div>
+
+                                    {% else %}
+
+                                        <p class="small-text">
+                                            This quotation is fully paid.
+                                        </p>
+
+                                    {% endif %}
+
+                                {% elif q.buyer_decision == "Rejected" %}
+
+                                    <p class="small-text">
+                                        You rejected this quotation.
+                                    </p>
+
+                                {% else %}
+
+                                    <p class="small-text">
+                                        Review the proposed price and decide
+                                        whether to proceed.
+                                    </p>
+
+                                    {% if q.expires_at is none
+                                          or q.expires_at > now %}
+
+                                        <div class="status-actions">
+
+                                            <form method="POST"
+                                                  action="{{ url_for(
+                                                      'buyer_quotation_decision',
+                                                      quotation_id=q.id
+                                                  ) }}"
+                                                  onsubmit="return confirm('Approve this quotation?');">
+
+                                                <input type="hidden"
+                                                       name="csrf_token"
+                                                       value="{{ csrf_token() }}">
+
+                                                <input type="hidden"
+                                                       name="decision"
+                                                       value="approve">
+
                                                 <button type="submit"
                                                         class="button">
-                                                    Send to Buyer
+                                                    Approve Quotation
                                                 </button>
                                             </form>
-                                        {% endif %}
-                                    </div>
 
-                                {% elif q.status == "Sent"
-                                      and current_user.role in ADMIN_ROLES %}
+                                            <form method="POST"
+                                                  action="{{ url_for(
+                                                      'buyer_quotation_decision',
+                                                      quotation_id=q.id
+                                                  ) }}"
+                                                  onsubmit="return confirm('Reject this quotation?');">
 
-                                    {% if q.buyer_decision == "Approved" %}
-                                        <p class="small-text">
-                                            Buyer approved this quotation.
-                                        </p>
-                                    {% elif q.buyer_decision == "Rejected" %}
-                                        <p class="small-text">
-                                            Buyer rejected this quotation.
-                                        </p>
+                                                <input type="hidden"
+                                                       name="csrf_token"
+                                                       value="{{ csrf_token() }}">
+
+                                                <input type="hidden"
+                                                       name="decision"
+                                                       value="reject">
+
+                                                <button type="submit"
+                                                        class="button reject-button">
+                                                    Reject Quotation
+                                                </button>
+                                            </form>
+
+                                        </div>
+
                                     {% else %}
-                                        <p class="small-text">
-                                            Awaiting buyer response.
-                                        </p>
-                                    {% endif %}
 
-                                {% elif q.status == "Sent"
-                                      and current_user.role == "buyer" %}
-
-                                    {% if q.buyer_decision == "Approved" %}
                                         <p class="small-text">
-                                            You approved this quotation.
-                                        </p>
-                                    {% elif q.buyer_decision == "Rejected" %}
-                                        <p class="small-text">
-                                            You rejected this quotation.
-                                        </p>
-                                    {% else %}
-                                        <p class="small-text">
-                                            Review the proposed price and
-                                            decide whether to proceed.
+                                            This quotation has expired.
                                         </p>
 
-                                        {% if q.expires_at is none
-                                              or q.expires_at > now %}
-
-                                            <div class="status-actions">
-                                                <form method="POST"
-                                                      action="{{ url_for(
-                                                          'buyer_quotation_decision',
-                                                          quotation_id=q.id
-                                                      ) }}"
-                                                      onsubmit="return confirm('Approve this quotation?');">
-
-                                                    <input type="hidden"
-                                                           name="csrf_token"
-                                                           value="{{ csrf_token() }}">
-
-                                                    <input type="hidden"
-                                                           name="decision"
-                                                           value="approve">
-
-                                                    <button type="submit"
-                                                            class="button">
-                                                        Approve Quotation
-                                                    </button>
-                                                </form>
-
-                                                <form method="POST"
-                                                      action="{{ url_for(
-                                                          'buyer_quotation_decision',
-                                                          quotation_id=q.id
-                                                      ) }}"
-                                                      onsubmit="return confirm('Reject this quotation?');">
-
-                                                    <input type="hidden"
-                                                           name="csrf_token"
-                                                           value="{{ csrf_token() }}">
-
-                                                    <input type="hidden"
-                                                           name="decision"
-                                                           value="reject">
-
-                                                    <button type="submit"
-                                                            class="button reject-button">
-                                                        Reject Quotation
-                                                    </button>
-                                                </form>
-                                            </div>
-
-                                        {% else %}
-                                            <p class="small-text">
-                                                This quotation has expired.
-                                            </p>
-                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
-                            </td>
+                            {% endif %}
 
-                            <td>
-                                {{ q.expires_at.strftime("%Y-%m-%d")
-                                   if q.expires_at else "—" }}
-                            </td>
+                        </td>
 
-                            <td>
-                                <a class="button compare-button"
-                                   href="{{ url_for(
-                                       'compare_suppliers',
-                                       request_id=q.sourcing_request_id
-                                   ) }}">
-                                    Compare Suppliers
-                                </a>
-                            </td>
-                        </tr>
-                    {% endfor %}
+                        <!-- EXPIRY -->
+                        <td>
+                            {{ q.expires_at.strftime("%Y-%m-%d")
+                               if q.expires_at else "—" }}
+                        </td>
+
+                        <!-- SUPPLIER COMPARISON -->
+                        <td>
+                            <a class="button compare-button"
+                               href="{{ url_for(
+                                   'compare_suppliers',
+                                   request_id=q.sourcing_request_id
+                               ) }}">
+                                Compare Suppliers
+                            </a>
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
                 </tbody>
             </table>
         </div>
 
     {% else %}
+
         <div class="empty">
+
             <h3>No quotations yet</h3>
 
             <p>
@@ -500,15 +1067,16 @@
                     Create First Quotation
                 </a>
             {% endif %}
+
         </div>
+
     {% endif %}
 
     <footer>
-        <p>Universal Runner Marketplace 🇱🇸 🇿🇦</p>
-        <p>
-            Connecting buyers and suppliers across Lesotho and South Africa.
-        </p>
+        <p>Universal Runner Marketplace</p>
+        <p>Connecting buyers and suppliers.</p>
     </footer>
+
 </main>
 </body>
 </html>
