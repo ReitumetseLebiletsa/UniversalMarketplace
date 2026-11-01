@@ -52,3 +52,4 @@ websockets==15.0.1
 Werkzeug==3.1.9
 WTForms==3.3.1
 yarl==1.25.1
+gunicorn==23.0.0
