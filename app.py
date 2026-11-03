@@ -989,6 +989,7 @@ def request_product():
         abort(403)
 
     if request.method == "POST":
+        # Collect form information
         product_name = request.form.get("product_name", "").strip()
         category = request.form.get("category", "").strip()
         description = request.form.get("description", "").strip()
@@ -998,17 +999,24 @@ def request_product():
         delivery_country = request.form.get("delivery_country", "").strip()
         currency = request.form.get("currency", "").strip().upper()
 
+        # Validate quantity and target price
         try:
             quantity = int(request.form.get("quantity", "0"))
             raw_price = request.form.get("target_price", "").strip()
             target_price = float(raw_price) if raw_price else None
+
         except (TypeError, ValueError):
-            flash("Please enter a valid quantity and target price.", "error")
+            flash(
+                "Please enter a valid quantity and target price.",
+                "error"
+            )
             return redirect(url_for("request_product"))
 
+        # Allowed countries and currencies
         allowed_countries = {"Lesotho", "South Africa"}
         allowed_currencies = {"LSL", "ZAR"}
 
+        # Required fields
         if not all([
             product_name,
             category,
@@ -1021,30 +1029,39 @@ def request_product():
             flash("Please complete all required fields.", "error")
             return redirect(url_for("request_product"))
 
+        # Validate sourcing country
         if source_country not in allowed_countries:
             flash("Please select a valid sourcing country.", "error")
             return redirect(url_for("request_product"))
 
+        # Validate delivery country
         if delivery_country not in allowed_countries:
             flash("Please select a valid delivery country.", "error")
             return redirect(url_for("request_product"))
 
+        # Validate currency
         if currency not in allowed_currencies:
             flash("Please select LSL or ZAR.", "error")
             return redirect(url_for("request_product"))
 
+        # Validate quantity and price
         if (
             quantity < 1
-            or (target_price is not None and (
-                not math.isfinite(target_price) or target_price < 0
-            ))
+            or (
+                target_price is not None
+                and (
+                    not math.isfinite(target_price)
+                    or target_price < 0
+                )
+            )
         ):
             flash(
                 "Quantity must be at least 1 and price must be valid.",
-                "error",
+                "error"
             )
             return redirect(url_for("request_product"))
 
+        # Create the sourcing request
         new_request = SourcingRequest(
             buyer_user_id=current_user.id,
             product_name=product_name,
@@ -1054,17 +1071,30 @@ def request_product():
             source_country=source_country,
             delivery_country=delivery_country,
             target_price=target_price,
-            currency=buyer_currency,
+            currency=currency,
             buyer_name=buyer_name,
             buyer_contact=buyer_contact,
         )
 
-        db.session.add(new_request)
-        db.session.commit()
+        # Save request to database
+        try:
+            db.session.add(new_request)
+            db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+            app.logger.exception(
+                "Failed to save buyer sourcing request."
+            )
+            flash(
+                "We could not submit your request. Please try again.",
+                "error"
+            )
+            return redirect(url_for("request_product"))
 
         flash(
             "Your sourcing request has been submitted successfully.",
-            "success",
+            "success"
         )
 
         return render_template(
@@ -1073,7 +1103,6 @@ def request_product():
         )
 
     return render_template("request_product.html")
-
 
 # --------------------------------------------------
 # BUYER'S OWN REQUESTS
