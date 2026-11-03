@@ -39,25 +39,91 @@ from werkzeug.utils import secure_filename
 # APPLICATION CONFIGURATION
 # --------------------------------------------------
 
+import os
+from pathlib import Path
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+
 app = Flask(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app.config["SECRET_KEY"] = os.environ.get(
-    "SECRET_KEY",
-    "dev-only-change-this-before-deployment",
-)
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "sqlite:///" + str(BASE_DIR / "marketplace.db")
-)
+
+# --------------------------------------------------
+# SECURITY CONFIGURATION
+# --------------------------------------------------
+
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+
+if not app.config["SECRET_KEY"]:
+    if os.environ.get("RENDER"):
+        raise RuntimeError(
+            "SECRET_KEY must be configured in Render Environment Variables."
+        )
+
+    app.config["SECRET_KEY"] = "local-development-secret-key"
+
+
+# --------------------------------------------------
+# DATABASE CONFIGURATION
+# --------------------------------------------------
+
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url:
+    # Support Render PostgreSQL connection URLs
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace(
+            "postgres://",
+            "postgresql+psycopg://",
+            1
+        )
+
+    elif database_url.startswith("postgresql://"):
+        database_url = database_url.replace(
+            "postgresql://",
+            "postgresql+psycopg://",
+            1
+        )
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
+else:
+    # Local development continues using SQLite
+    app.config["SQLALCHEMY_DATABASE_URI"] = (
+        "sqlite:///" + str(BASE_DIR / "marketplace.db")
+    )
+
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Product image upload settings
+# Database connection pool settings
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+}
+
+
+# --------------------------------------------------
+# FILE UPLOAD CONFIGURATION
+# --------------------------------------------------
+
 UPLOAD_FOLDER = BASE_DIR / "static" / "uploads"
-UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+
+UPLOAD_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True
+)
 
 app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
+
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB maximum
+
+
+# --------------------------------------------------
+# INITIALISE DATABASE
+# --------------------------------------------------
 
 db = SQLAlchemy(app)
 
@@ -659,128 +725,199 @@ class PricingSetting(db.Model):
 # ==========================================================
 # DATABASE INITIALISATION AND SAFE COLUMN MIGRATIONS
 # UNIVERSAL RUNNER MARKETPLACE
+# SQLITE + POSTGRESQL COMPATIBLE
 # ==========================================================
+
 
 from sqlalchemy import inspect, text
 
-with app.app_context():
 
-    # Create missing tables without deleting existing records.
-    db.create_all()
+def initialise_database():
 
-    inspector = inspect(db.engine)
-    existing_tables = inspector.get_table_names()
+    with app.app_context():
 
-    # ------------------------------------------------------
-    # 1. SAFELY ADD MISSING QUOTATION COLUMNS
-    # ------------------------------------------------------
+        print("Starting URM database initialisation...")
 
-    if "quotation" in existing_tables:
+        # --------------------------------------------------
+        # 1. CREATE MISSING TABLES
+        # --------------------------------------------------
 
-        existing_quotation_columns = {
-            column["name"]
-            for column in inspector.get_columns("quotation")
-        }
+        # Creates missing tables without deleting existing records.
+        db.create_all()
 
-        new_quotation_columns = {
-            "profit_amount": "FLOAT NOT NULL DEFAULT 0",
-            "delivery_distance": "FLOAT NOT NULL DEFAULT 0",
-            "payment_plan": "VARCHAR(20) NOT NULL DEFAULT 'standard'",
-            "deposit_percent": "FLOAT NOT NULL DEFAULT 0",
-            "discount_amount": "FLOAT NOT NULL DEFAULT 0",
+        inspector = inspect(db.engine)
 
-            # Shipping estimate and confirmation
-            "shipping_status": "VARCHAR(20) NOT NULL DEFAULT 'Estimated'",
-            "shipping_estimated_cost": "FLOAT NOT NULL DEFAULT 0",
-            "shipping_confirmed_cost": "FLOAT",
-            "shipping_currency": "VARCHAR(3)",
-            "freight_provider": "VARCHAR(150)",
-            "shipping_reference": "VARCHAR(150)",
-            "shipping_confirmed_at": "DATETIME",
-            "shipping_total_recalculated": "BOOLEAN NOT NULL DEFAULT 0",
-        }
+        existing_tables = set(inspector.get_table_names())
 
-        with db.engine.begin() as connection:
+        print("Database tables checked.")
 
-            for column_name, column_definition in new_quotation_columns.items():
+        # --------------------------------------------------
+        # 2. SAFE QUOTATION COLUMN MIGRATIONS
+        # --------------------------------------------------
 
-                if column_name not in existing_quotation_columns:
+        if "quotation" in existing_tables:
 
-                    connection.execute(
-                        text(
-                            f'ALTER TABLE quotation ADD COLUMN '
-                            f'"{column_name}" {column_definition}'
+            existing_columns = {
+                column["name"]
+                for column in inspector.get_columns("quotation")
+            }
+
+            quotation_columns = {
+
+                "profit_amount":
+                    "FLOAT NOT NULL DEFAULT 0",
+
+                "delivery_distance":
+                    "FLOAT NOT NULL DEFAULT 0",
+
+                "payment_plan":
+                    "VARCHAR(20) NOT NULL DEFAULT 'standard'",
+
+                "deposit_percent":
+                    "FLOAT NOT NULL DEFAULT 0",
+
+                "discount_amount":
+                    "FLOAT NOT NULL DEFAULT 0",
+
+                # Shipping estimates and confirmation
+                "shipping_status":
+                    "VARCHAR(20) NOT NULL DEFAULT 'Estimated'",
+
+                "shipping_estimated_cost":
+                    "FLOAT NOT NULL DEFAULT 0",
+
+                "shipping_confirmed_cost":
+                    "FLOAT",
+
+                "shipping_currency":
+                    "VARCHAR(3)",
+
+                "freight_provider":
+                    "VARCHAR(150)",
+
+                "shipping_reference":
+                    "VARCHAR(150)",
+
+                "shipping_confirmed_at":
+                    "TIMESTAMP",
+
+                "shipping_total_recalculated":
+                    "BOOLEAN NOT NULL DEFAULT FALSE",
+            }
+
+            with db.engine.begin() as connection:
+
+                for column_name, definition in quotation_columns.items():
+
+                    if column_name not in existing_columns:
+
+                        connection.execute(
+                            text(
+                                f'ALTER TABLE quotation '
+                                f'ADD COLUMN "{column_name}" {definition}'
+                            )
                         )
-                    )
 
-                    print(f"Added quotation column: {column_name}")
-
-    # ------------------------------------------------------
-    # 2. SAFELY ADD MISSING PAYMENT-PROOF COLUMNS
-    # ------------------------------------------------------
-
-    if "payment" in existing_tables:
-
-        existing_payment_columns = {
-            column["name"]
-            for column in inspector.get_columns("payment")
-        }
-
-        new_payment_columns = {
-            "proof_storage_path": "VARCHAR(500)",
-            "proof_original_filename": "VARCHAR(255)",
-            "submitted_by": "INTEGER",
-        }
-
-        with db.engine.begin() as connection:
-
-            for column_name, column_definition in new_payment_columns.items():
-
-                if column_name not in existing_payment_columns:
-
-                    connection.execute(
-                        text(
-                            f'ALTER TABLE payment ADD COLUMN '
-                            f'"{column_name}" {column_definition}'
+                        print(
+                            f"Added quotation column: {column_name}"
                         )
-                    )
 
-                    print(f"Added payment column: {column_name}")
+        # --------------------------------------------------
+        # 3. SAFE PAYMENT COLUMN MIGRATIONS
+        # --------------------------------------------------
 
-    print("Database tables and columns checked successfully.")
+        if "payment" in existing_tables:
 
-# --------------------------------------------------
-# INITIALIZE DEFAULT URM PRICING SETTINGS
-# --------------------------------------------------
+            existing_columns = {
+                column["name"]
+                for column in inspector.get_columns("payment")
+            }
 
-with app.app_context():
-    default_pricing = PricingSetting.query.filter_by(
-        name="default"
-    ).first()
+            payment_columns = {
 
-    if default_pricing is None:
-        default_pricing = PricingSetting(
-            name="default",
-            markup_type="percentage",
-            markup_value=0,
-            service_fee_type="fixed",
-            service_fee_value=0,
-            service_fee_currency="USD",
-            default_currency="USD",
-            shipping_estimates_enabled=True,
-            require_shipping_confirmation=True,
-        )
+                "proof_storage_path":
+                    "VARCHAR(500)",
 
-        db.session.add(default_pricing)
-        db.session.commit()
+                "proof_original_filename":
+                    "VARCHAR(255)",
 
-        print("Created default URM pricing settings.")
-    else:
-        print("URM pricing settings already exist.")
+                "submitted_by":
+                    "INTEGER",
+            }
 
-# --------------------------------------------------
+            with db.engine.begin() as connection:
+
+                for column_name, definition in payment_columns.items():
+
+                    if column_name not in existing_columns:
+
+                        connection.execute(
+                            text(
+                                f'ALTER TABLE payment '
+                                f'ADD COLUMN "{column_name}" {definition}'
+                            )
+                        )
+
+                        print(
+                            f"Added payment column: {column_name}"
+                        )
+
+        print("Database table and column checks completed.")
+
+        # --------------------------------------------------
+        # 4. INITIALISE DEFAULT PRICING SETTINGS
+        # --------------------------------------------------
+
+        try:
+
+            default_pricing = PricingSetting.query.filter_by(
+                name="default"
+            ).first()
+
+            if default_pricing is None:
+
+                default_pricing = PricingSetting(
+                    name="default",
+                    markup_type="percentage",
+                    markup_value=0,
+                    service_fee_type="fixed",
+                    service_fee_value=0,
+                    service_fee_currency="LSL",
+                    default_currency="LSL",
+                    shipping_estimates_enabled=True,
+                    require_shipping_confirmation=True,
+                )
+
+                db.session.add(default_pricing)
+                db.session.commit()
+
+                print("Created default URM pricing settings.")
+
+            else:
+
+                print(
+                    "Existing URM pricing settings preserved."
+                )
+
+        except Exception:
+
+            db.session.rollback()
+
+            raise
+
+        print("URM database initialisation completed successfully.")
+
+
+# ----------------------------------------------------------
+# RUN DATABASE INITIALISATION
+# ----------------------------------------------------------
+
+initialise_database()
+
+
+# ==========================================================
 # CONSTANTS AND ACCESS CONTROL
-# --------------------------------------------------
+# ==========================================================
 
 REQUEST_STATUSES = [
     "New",
@@ -792,7 +929,12 @@ REQUEST_STATUSES = [
     "Cancelled",
 ]
 
-ADMIN_ROLES = ("admin", "super_admin", "company_admin")
+
+ADMIN_ROLES = (
+    "admin",
+    "super_admin",
+    "company_admin",
+)
 
 
 def admin_required(view_function):
@@ -980,23 +1122,97 @@ def logout():
 
 # --------------------------------------------------
 # BUYER SOURCING REQUESTS
+# CATALOGUE + CUSTOM PRODUCT REQUESTS
 # --------------------------------------------------
 
 @app.route("/request-product", methods=["GET", "POST"])
 @login_required
 def request_product():
+
     if current_user.role != "buyer":
         abort(403)
 
+    selected_product = None
+
+    # --------------------------------------------------
+    # LOAD SELECTED CATALOGUE PRODUCT
+    # --------------------------------------------------
+
+    if request.method == "GET":
+
+        product_id = request.args.get("product_id", type=int)
+
+        if product_id is not None:
+
+            selected_product = Product.query.filter_by(
+                id=product_id,
+                published=True
+            ).first_or_404()
+
+    # --------------------------------------------------
+    # PROCESS CUSTOMER REQUEST
+    # --------------------------------------------------
+
     if request.method == "POST":
-        product_name = request.form.get("product_name", "").strip()
-        category = request.form.get("category", "").strip()
-        description = request.form.get("description", "").strip()
-        buyer_name = request.form.get("buyer_name", "").strip()
-        buyer_contact = request.form.get("buyer_contact", "").strip()
-        source_country = request.form.get("source_country", "").strip()
-        delivery_country = request.form.get("delivery_country", "").strip()
-        currency = request.form.get("currency", "").strip().upper()
+
+        raw_product_id = request.form.get(
+            "product_id", ""
+        ).strip()
+
+        if raw_product_id:
+
+            try:
+                product_id = int(raw_product_id)
+
+            except (TypeError, ValueError):
+                abort(400, description="Invalid product reference.")
+
+            selected_product = Product.query.filter_by(
+                id=product_id,
+                published=True
+            ).first_or_404()
+
+            # Catalogue product details come from the database.
+            # Do not trust product details submitted by the browser.
+            product_name = selected_product.name
+            category = selected_product.category
+            description = selected_product.description
+            source_country = selected_product.country
+
+        else:
+
+            # Allow customers to request products not in the catalogue.
+            product_name = request.form.get(
+                "product_name", ""
+            ).strip()
+
+            category = request.form.get(
+                "category", ""
+            ).strip()
+
+            description = request.form.get(
+                "description", ""
+            ).strip()
+
+            source_country = request.form.get(
+                "source_country", ""
+            ).strip()
+
+        buyer_name = request.form.get(
+            "buyer_name", ""
+        ).strip()
+
+        buyer_contact = request.form.get(
+            "buyer_contact", ""
+        ).strip()
+
+        delivery_country = request.form.get(
+            "delivery_country", ""
+        ).strip()
+
+        currency = request.form.get(
+            "currency", ""
+        ).strip().upper()
 
         allowed_delivery_countries = {
             "Lesotho",
@@ -1009,20 +1225,45 @@ def request_product():
             "SGD", "BWP", "MZN", "ZMW"
         }
 
-        # Validate quantity and target price
+        # --------------------------------------------------
+        # VALIDATE QUANTITY AND TARGET PRICE
+        # --------------------------------------------------
+
         try:
-            quantity = int(request.form.get("quantity", "0"))
-            raw_price = request.form.get("target_price", "").strip()
-            target_price = float(raw_price) if raw_price else None
+
+            quantity = int(
+                request.form.get("quantity", "0")
+            )
+
+            raw_price = request.form.get(
+                "target_price", ""
+            ).strip()
+
+            target_price = (
+                float(raw_price)
+                if raw_price
+                else None
+            )
 
         except (TypeError, ValueError):
+
             flash(
                 "Please enter a valid quantity and target price.",
                 "error"
             )
-            return redirect(url_for("request_product"))
 
-        # Required fields
+            return redirect(
+                url_for(
+                    "request_product",
+                    product_id=selected_product.id
+                ) if selected_product
+                else url_for("request_product")
+            )
+
+        # --------------------------------------------------
+        # REQUIRED FIELD VALIDATION
+        # --------------------------------------------------
+
         if not all([
             product_name,
             category,
@@ -1033,31 +1274,78 @@ def request_product():
             delivery_country,
             currency
         ]):
-            flash("Please complete all required fields.", "error")
+
+            flash(
+                "Please complete all required fields.",
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "request_product",
+                    product_id=selected_product.id
+                ) if selected_product
+                else url_for("request_product")
+            )
+
+        if len(product_name) > 150:
+            flash("Product name is too long.", "error")
             return redirect(url_for("request_product"))
 
-        # Worldwide sourcing
+        if len(category) > 80:
+            flash("Invalid product category.", "error")
+            return redirect(url_for("request_product"))
+
+        if len(description) > 10000:
+            flash("Product description is too long.", "error")
+            return redirect(url_for("request_product"))
+
         if len(source_country) > 100:
-            flash("Please select a valid sourcing country.", "error")
+            flash("Please enter a valid sourcing country.", "error")
             return redirect(url_for("request_product"))
 
-        # Delivery restrictions
+        # --------------------------------------------------
+        # DELIVERY VALIDATION
+        # --------------------------------------------------
+
         if delivery_country not in allowed_delivery_countries:
+
             flash(
                 "Delivery is currently available only in Lesotho and South Africa.",
                 "error"
             )
-            return redirect(url_for("request_product"))
 
-        # International currency validation
+            return redirect(
+                url_for(
+                    "request_product",
+                    product_id=selected_product.id
+                ) if selected_product
+                else url_for("request_product")
+            )
+
+        # --------------------------------------------------
+        # CURRENCY VALIDATION
+        # --------------------------------------------------
+
         if currency not in allowed_currencies:
+
             flash(
                 "Please select a supported price currency.",
                 "error"
             )
-            return redirect(url_for("request_product"))
 
-        # Validate quantity and price
+            return redirect(
+                url_for(
+                    "request_product",
+                    product_id=selected_product.id
+                ) if selected_product
+                else url_for("request_product")
+            )
+
+        # --------------------------------------------------
+        # PRICE AND QUANTITY VALIDATION
+        # --------------------------------------------------
+
         if (
             quantity < 1
             or (
@@ -1068,13 +1356,24 @@ def request_product():
                 )
             )
         ):
+
             flash(
                 "Quantity must be at least 1 and price must be valid.",
                 "error"
             )
-            return redirect(url_for("request_product"))
 
-        # Create sourcing request
+            return redirect(
+                url_for(
+                    "request_product",
+                    product_id=selected_product.id
+                ) if selected_product
+                else url_for("request_product")
+            )
+
+        # --------------------------------------------------
+        # CREATE SOURCING REQUEST
+        # --------------------------------------------------
+
         new_request = SourcingRequest(
             buyer_user_id=current_user.id,
             product_name=product_name,
@@ -1089,21 +1388,35 @@ def request_product():
             buyer_contact=buyer_contact,
         )
 
-        # Save to database
         try:
+
             db.session.add(new_request)
             db.session.commit()
 
         except Exception:
+
             db.session.rollback()
+
             app.logger.exception(
                 "Failed to save buyer sourcing request."
             )
+
             flash(
                 "We could not submit your request. Please try again.",
                 "error"
             )
-            return redirect(url_for("request_product"))
+
+            return redirect(
+                url_for(
+                    "request_product",
+                    product_id=selected_product.id
+                ) if selected_product
+                else url_for("request_product")
+            )
+
+        # --------------------------------------------------
+        # SUCCESS
+        # --------------------------------------------------
 
         flash(
             "Your sourcing request has been submitted successfully.",
@@ -1115,7 +1428,14 @@ def request_product():
             request_id=new_request.id,
         )
 
-    return render_template("request_product.html")
+    # --------------------------------------------------
+    # DISPLAY REQUEST FORM
+    # --------------------------------------------------
+
+    return render_template(
+        "request_product.html",
+        selected_product=selected_product
+    )
 
 # --------------------------------------------------
 # BUYER'S OWN REQUESTS

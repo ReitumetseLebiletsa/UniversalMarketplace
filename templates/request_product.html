@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Request a Product | Universal Runner Marketplace</title>
 
+    <meta name="description"
+          content="Request products from Universal Runner Marketplace. We source worldwide and arrange delivery in Lesotho and South Africa.">
+
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -20,6 +26,10 @@
             color: white;
             padding: 20px 7%;
             border-bottom: 5px solid #009543;
+        }
+
+        header strong {
+            font-size: 19px;
         }
 
         main {
@@ -36,7 +46,9 @@
             box-shadow: 0 5px 20px rgba(0, 32, 159, 0.07);
         }
 
-        h1 { color: #00209F; }
+        h1 {
+            color: #00209F;
+        }
 
         .intro {
             line-height: 1.6;
@@ -55,20 +67,43 @@
             gap: 7px;
         }
 
-        .full { grid-column: 1 / -1; }
+        .full {
+            grid-column: 1 / -1;
+        }
 
         label {
             font-weight: bold;
             font-size: 14px;
         }
 
-        input, select, textarea {
+        input,
+        select,
+        textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font: inherit;
             background: white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid #7CB342;
+            border-color: #009543;
+        }
+
+        input[readonly],
+        textarea[readonly] {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        select:disabled {
+            background: #f1f5f9;
+            color: #334155;
+            opacity: 1;
         }
 
         textarea {
@@ -89,7 +124,14 @@
             margin-top: 22px;
         }
 
-        button:hover { background: #007a36; }
+        button:hover {
+            background: #007a36;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
         .notice {
             background: #e4f5eb;
@@ -97,6 +139,14 @@
             border-left: 4px solid #009543;
             line-height: 1.5;
             margin: 20px 0;
+        }
+
+        .product-notice {
+            background: #edf3ff;
+            border-left: 4px solid #00209F;
+            padding: 14px;
+            margin: 18px 0;
+            line-height: 1.5;
         }
 
         .message {
@@ -119,10 +169,28 @@
             line-height: 1.4;
         }
 
+        .required-note {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 15px;
+        }
+
         @media (max-width: 600px) {
-            .grid { grid-template-columns: 1fr; }
-            .full { grid-column: auto; }
-            .panel { padding: 20px; }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            header {
+                padding: 18px;
+            }
         }
     </style>
 </head>
@@ -134,6 +202,7 @@
 </header>
 
 <main>
+
     <a class="back" href="/">← Back to homepage</a>
 
     <div class="panel">
@@ -147,56 +216,139 @@
 
         <div class="notice">
             <strong>Worldwide sourcing, regional delivery.</strong><br>
+
             We search for products from suppliers around the world.
             For now, delivery is available only in Lesotho and South Africa.
+
             Submitting a request does not commit you to a purchase.
         </div>
 
+        {% if selected_product %}
+            <div class="product-notice">
+                <strong>Catalogue product selected</strong><br>
+
+                You are requesting a quotation for:
+                <strong>{{ selected_product.name }}</strong>.
+
+                Our team will confirm availability and pricing before
+                sending you an official quotation.
+            </div>
+        {% endif %}
+
         {% for category, message in get_flashed_messages(with_categories=true) %}
-            <div class="message">{{ message }}</div>
+            <div class="message">
+                {{ message }}
+            </div>
         {% endfor %}
 
         <form method="POST">
 
+            {% if selected_product %}
+                <input
+                    type="hidden"
+                    name="product_id"
+                    value="{{ selected_product.id }}"
+                >
+            {% endif %}
+
             <div class="grid">
 
+                <!-- PRODUCT NAME -->
+
                 <div class="field">
-                    <label for="product_name">Product name *</label>
+
+                    <label for="product_name">
+                        Product name *
+                    </label>
+
                     <input
                         id="product_name"
                         name="product_name"
                         placeholder="e.g. Toyota Hilux clutch kit"
+                        value="{{ selected_product.name if selected_product else '' }}"
+                        {% if selected_product %}readonly{% endif %}
                         required
                     >
+
                 </div>
+
+                <!-- CATEGORY -->
 
                 <div class="field">
-                    <label for="category">Category *</label>
-                    <select id="category" name="category" required>
+
+                    <label for="category">
+                        Category *
+                    </label>
+
+                    <select
+                        id="category"
+                        name="category"
+                        {% if selected_product %}disabled{% endif %}
+                        required
+                    >
+
                         <option value="">Choose category</option>
-                        <option>Beauty &amp; Personal Care</option>
-                        <option>Automotive &amp; Mechanical</option>
-                        <option>Heavy Machinery</option>
-                        <option>General Wholesale</option>
-                        <option>Medical Equipment &amp; Supplies</option>
-                        <option>Electronics: Cameras &amp; Phones</option>
-                        <option>Adult Sexuality &amp; Wellness</option>
-                        <option>Other</option>
+
+                        {% set categories = [
+                            "Beauty & Personal Care",
+                            "Automotive & Mechanical",
+                            "Heavy Machinery",
+                            "General Wholesale",
+                            "Medical Equipment & Supplies",
+                            "Electronics: Cameras & Phones",
+                            "Adult Sexuality & Wellness",
+                            "Other"
+                        ] %}
+
+                        {% for item in categories %}
+
+                            <option
+                                value="{{ item }}"
+                                {% if selected_product and selected_product.category == item %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ item }}
+                            </option>
+
+                        {% endfor %}
+
                     </select>
+
+                    {% if selected_product %}
+                        <span class="help-text">
+                            This category comes from the selected catalogue product.
+                        </span>
+                    {% endif %}
+
                 </div>
 
+                <!-- DESCRIPTION -->
+
                 <div class="field full">
-                    <label for="description">Product details or link *</label>
+
+                    <label for="description">
+                        Product details or link *
+                    </label>
+
                     <textarea
                         id="description"
                         name="description"
-                        placeholder="Describe the item, brand, model, size, supplier link or advertised price."
+                        placeholder="Describe the item, brand, model, size or specifications."
+                        {% if selected_product %}readonly{% endif %}
                         required
-                    ></textarea>
+                    >{{ selected_product.description if selected_product else '' }}</textarea>
+
                 </div>
 
+                <!-- QUANTITY -->
+
                 <div class="field">
-                    <label for="quantity">Quantity required *</label>
+
+                    <label for="quantity">
+                        Quantity required *
+                    </label>
+
                     <input
                         id="quantity"
                         type="number"
@@ -205,10 +357,17 @@
                         value="1"
                         required
                     >
+
                 </div>
 
+                <!-- TARGET PRICE -->
+
                 <div class="field">
-                    <label for="target_price">Your target price (optional)</label>
+
+                    <label for="target_price">
+                        Your target price (optional)
+                    </label>
+
                     <input
                         id="target_price"
                         type="number"
@@ -217,11 +376,23 @@
                         step="0.01"
                         placeholder="e.g. 1500"
                     >
+
                 </div>
 
+                <!-- CURRENCY -->
+
                 <div class="field">
-                    <label for="currency">Target price currency *</label>
-                    <select id="currency" name="currency" required>
+
+                    <label for="currency">
+                        Target price currency *
+                    </label>
+
+                    <select
+                        id="currency"
+                        name="currency"
+                        required
+                    >
+
                         <option value="LSL">LSL — Lesotho loti</option>
                         <option value="ZAR">ZAR — South African rand</option>
                         <option value="USD">USD — US dollar</option>
@@ -238,74 +409,149 @@
                         <option value="BWP">BWP — Botswana pula</option>
                         <option value="MZN">MZN — Mozambican metical</option>
                         <option value="ZMW">ZMW — Zambian kwacha</option>
+
                     </select>
+
                     <span class="help-text">
-                        Choose the currency in which the target price is advertised.
+                        Choose the currency in which your target price is advertised.
                     </span>
+
                 </div>
 
-                <div class="field">
-                    <label for="source_country">Where should we source it? *</label>
-                    <select id="source_country" name="source_country" required>
-                        <option value="">Choose sourcing country</option>
-                        <option>Lesotho</option>
-                        <option>South Africa</option>
-                        <option>China</option>
-                        <option>United States</option>
-                        <option>United Kingdom</option>
-                        <option>United Arab Emirates</option>
-                        <option>India</option>
-                        <option>Germany</option>
-                        <option>Japan</option>
-                        <option>Turkey</option>
-                        <option>Australia</option>
-                        <option>Canada</option>
-                        <option>France</option>
-                        <option>Italy</option>
-                        <option>Netherlands</option>
-                        <option>Singapore</option>
-                        <option>Malaysia</option>
-                        <option>Thailand</option>
-                        <option>Brazil</option>
-                        <option>Other</option>
-                    </select>
-                    <span class="help-text">
-                        Select a supplier country. Choose Other if your country is not listed.
-                    </span>
-                </div>
+                <!-- SOURCING COUNTRY -->
 
                 <div class="field">
-                    <label for="delivery_country">Delivery country *</label>
-                    <select id="delivery_country" name="delivery_country" required>
+
+                    <label for="source_country">
+                        Where should we source it? *
+                    </label>
+
+                    {% if selected_product %}
+
+                        <input
+                            id="source_country"
+                            name="source_country"
+                            value="{{ selected_product.country }}"
+                            readonly
+                            required
+                        >
+
+                        <span class="help-text">
+                            This is the listed product's sourcing country.
+                        </span>
+
+                    {% else %}
+
+                        <select
+                            id="source_country"
+                            name="source_country"
+                            required
+                        >
+
+                            <option value="">Choose sourcing country</option>
+                            <option>Lesotho</option>
+                            <option>South Africa</option>
+                            <option>China</option>
+                            <option>United States</option>
+                            <option>United Kingdom</option>
+                            <option>United Arab Emirates</option>
+                            <option>India</option>
+                            <option>Germany</option>
+                            <option>Japan</option>
+                            <option>Turkey</option>
+                            <option>Australia</option>
+                            <option>Canada</option>
+                            <option>France</option>
+                            <option>Italy</option>
+                            <option>Netherlands</option>
+                            <option>Singapore</option>
+                            <option>Malaysia</option>
+                            <option>Thailand</option>
+                            <option>Brazil</option>
+                            <option>Other</option>
+
+                        </select>
+
+                        <span class="help-text">
+                            Select the country where we should look for the product.
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+                <!-- DELIVERY COUNTRY -->
+
+                <div class="field">
+
+                    <label for="delivery_country">
+                        Delivery country *
+                    </label>
+
+                    <select
+                        id="delivery_country"
+                        name="delivery_country"
+                        required
+                    >
+
                         <option value="">Choose delivery country</option>
-                        <option value="Lesotho">Lesotho</option>
-                        <option value="South Africa">South Africa</option>
+
+                        <option value="Lesotho">
+                            Lesotho
+                        </option>
+
+                        <option value="South Africa">
+                            South Africa
+                        </option>
+
                     </select>
+
                     <span class="help-text">
                         Delivery is currently available in Lesotho and South Africa only.
                     </span>
+
                 </div>
 
+                <!-- BUYER NAME -->
+
                 <div class="field">
-                    <label for="buyer_name">Your name *</label>
+
+                    <label for="buyer_name">
+                        Your name *
+                    </label>
+
                     <input
                         id="buyer_name"
                         name="buyer_name"
+                        autocomplete="name"
                         required
                     >
+
                 </div>
 
+                <!-- BUYER CONTACT -->
+
                 <div class="field">
-                    <label for="buyer_contact">Phone or email *</label>
+
+                    <label for="buyer_contact">
+                        Phone or email *
+                    </label>
+
                     <input
                         id="buyer_contact"
                         name="buyer_contact"
+                        autocomplete="tel"
                         placeholder="Include your country code if using a phone"
                         required
                     >
+
                 </div>
 
             </div>
+
+            <p class="required-note">
+                * Required fields. Your request will be reviewed by our team.
+            </p>
 
             <input
                 type="hidden"
@@ -313,10 +559,14 @@
                 value="{{ csrf_token() }}"
             >
 
-            <button type="submit">Submit sourcing request</button>
+            <button type="submit">
+                Submit quotation request
+            </button>
 
         </form>
+
     </div>
+
 </main>
 
 </body>
