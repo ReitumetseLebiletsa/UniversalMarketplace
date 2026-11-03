@@ -998,17 +998,31 @@ def request_product():
         delivery_country = request.form.get("delivery_country", "").strip()
         currency = request.form.get("currency", "").strip().upper()
 
+        allowed_delivery_countries = {
+            "Lesotho",
+            "South Africa"
+        }
+
+        allowed_currencies = {
+            "LSL", "ZAR", "USD", "EUR", "GBP", "CNY",
+            "INR", "AED", "JPY", "AUD", "CAD", "CHF",
+            "SGD", "BWP", "MZN", "ZMW"
+        }
+
+        # Validate quantity and target price
         try:
             quantity = int(request.form.get("quantity", "0"))
             raw_price = request.form.get("target_price", "").strip()
             target_price = float(raw_price) if raw_price else None
+
         except (TypeError, ValueError):
-            flash("Please enter a valid quantity and target price.", "error")
+            flash(
+                "Please enter a valid quantity and target price.",
+                "error"
+            )
             return redirect(url_for("request_product"))
 
-        allowed_delivery_countries = {"Lesotho", "South Africa"}
-        allowed_currencies = {"LSL", "ZAR"}
-
+        # Required fields
         if not all([
             product_name,
             category,
@@ -1017,16 +1031,17 @@ def request_product():
             buyer_contact,
             source_country,
             delivery_country,
+            currency
         ]):
             flash("Please complete all required fields.", "error")
             return redirect(url_for("request_product"))
 
-        # Worldwide sourcing: accept a non-empty country supplied by the form.
+        # Worldwide sourcing
         if len(source_country) > 100:
-            flash("Please enter a valid sourcing country.", "error")
+            flash("Please select a valid sourcing country.", "error")
             return redirect(url_for("request_product"))
 
-        # Delivery is currently limited to Lesotho and South Africa.
+        # Delivery restrictions
         if delivery_country not in allowed_delivery_countries:
             flash(
                 "Delivery is currently available only in Lesotho and South Africa.",
@@ -1034,10 +1049,15 @@ def request_product():
             )
             return redirect(url_for("request_product"))
 
+        # International currency validation
         if currency not in allowed_currencies:
-            flash("Please select LSL or ZAR.", "error")
+            flash(
+                "Please select a supported price currency.",
+                "error"
+            )
             return redirect(url_for("request_product"))
 
+        # Validate quantity and price
         if (
             quantity < 1
             or (
@@ -1054,6 +1074,7 @@ def request_product():
             )
             return redirect(url_for("request_product"))
 
+        # Create sourcing request
         new_request = SourcingRequest(
             buyer_user_id=current_user.id,
             product_name=product_name,
@@ -1068,13 +1089,16 @@ def request_product():
             buyer_contact=buyer_contact,
         )
 
+        # Save to database
         try:
             db.session.add(new_request)
             db.session.commit()
 
         except Exception:
             db.session.rollback()
-            app.logger.exception("Failed to save buyer sourcing request.")
+            app.logger.exception(
+                "Failed to save buyer sourcing request."
+            )
             flash(
                 "We could not submit your request. Please try again.",
                 "error"

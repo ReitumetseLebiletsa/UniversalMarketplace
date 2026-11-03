@@ -22,8 +22,6 @@
             border-bottom: 5px solid #009543;
         }
 
-        header a { color: white; text-decoration: none; }
-
         main {
             max-width: 850px;
             margin: 35px auto;
@@ -38,9 +36,12 @@
             box-shadow: 0 5px 20px rgba(0, 32, 159, 0.07);
         }
 
-        h1, h2 { color: #00209F; }
+        h1 { color: #00209F; }
 
-        .intro { line-height: 1.6; color: #4c566a; }
+        .intro {
+            line-height: 1.6;
+            color: #4c566a;
+        }
 
         .grid {
             display: grid;
@@ -56,7 +57,10 @@
 
         .full { grid-column: 1 / -1; }
 
-        label { font-weight: bold; font-size: 14px; }
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
 
         input, select, textarea {
             width: 100%;
@@ -67,7 +71,10 @@
             background: white;
         }
 
-        textarea { min-height: 110px; resize: vertical; }
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
 
         button {
             background: #009543;
@@ -121,6 +128,7 @@
 </head>
 
 <body>
+
 <header>
     <strong>Universal Runner Marketplace</strong>
 </header>
@@ -129,6 +137,7 @@
     <a class="back" href="/">← Back to homepage</a>
 
     <div class="panel">
+
         <h1>Request a product</h1>
 
         <p class="intro">
@@ -138,7 +147,7 @@
 
         <div class="notice">
             <strong>Worldwide sourcing, regional delivery.</strong><br>
-            We can search for products from suppliers around the world.
+            We search for products from suppliers around the world.
             For now, delivery is available only in Lesotho and South Africa.
             Submitting a request does not commit you to a purchase.
         </div>
@@ -148,6 +157,7 @@
         {% endfor %}
 
         <form method="POST">
+
             <div class="grid">
 
                 <div class="field">
@@ -180,7 +190,7 @@
                     <textarea
                         id="description"
                         name="description"
-                        placeholder="Describe the item, brand, model, size, or where you saw it and its advertised price."
+                        placeholder="Describe the item, brand, model, size, supplier link or advertised price."
                         required
                     ></textarea>
                 </div>
@@ -210,55 +220,57 @@
                 </div>
 
                 <div class="field">
-                    <label for="currency">Price currency *</label>
+                    <label for="currency">Target price currency *</label>
                     <select id="currency" name="currency" required>
                         <option value="LSL">LSL — Lesotho loti</option>
                         <option value="ZAR">ZAR — South African rand</option>
+                        <option value="USD">USD — US dollar</option>
+                        <option value="EUR">EUR — Euro</option>
+                        <option value="GBP">GBP — British pound</option>
+                        <option value="CNY">CNY — Chinese yuan</option>
+                        <option value="INR">INR — Indian rupee</option>
+                        <option value="AED">AED — UAE dirham</option>
+                        <option value="JPY">JPY — Japanese yen</option>
+                        <option value="AUD">AUD — Australian dollar</option>
+                        <option value="CAD">CAD — Canadian dollar</option>
+                        <option value="CHF">CHF — Swiss franc</option>
+                        <option value="SGD">SGD — Singapore dollar</option>
+                        <option value="BWP">BWP — Botswana pula</option>
+                        <option value="MZN">MZN — Mozambican metical</option>
+                        <option value="ZMW">ZMW — Zambian kwacha</option>
                     </select>
+                    <span class="help-text">
+                        Choose the currency in which the target price is advertised.
+                    </span>
                 </div>
 
                 <div class="field">
                     <label for="source_country">Where should we source it? *</label>
                     <select id="source_country" name="source_country" required>
                         <option value="">Choose sourcing country</option>
-                        {% for country in [
-                            "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
-                            "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
-                            "Bahamas", "Bahrain", "Bangladesh", "Belgium", "Benin",
-                            "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana",
-                            "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
-                            "Cambodia", "Cameroon", "Canada", "Chad", "Chile", "China",
-                            "Colombia", "Costa Rica", "Croatia", "Cyprus", "Czechia",
-                            "Denmark", "Djibouti", "Dominican Republic", "Ecuador",
-                            "Egypt", "El Salvador", "Estonia", "Ethiopia", "Finland",
-                            "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana",
-                            "Greece", "Guatemala", "Guinea", "Guyana", "Haiti",
-                            "Honduras", "Hungary", "Iceland", "India", "Indonesia",
-                            "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
-                            "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait",
-                            "Latvia", "Lebanon", "Liberia", "Libya", "Lithuania",
-                            "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives",
-                            "Mali", "Malta", "Mauritania", "Mauritius", "Mexico",
-                            "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique",
-                            "Myanmar", "Namibia", "Nepal", "Netherlands", "New Zealand",
-                            "Nicaragua", "Niger", "Nigeria", "North Korea", "Norway",
-                            "Oman", "Pakistan", "Panama", "Papua New Guinea", "Paraguay",
-                            "Peru", "Philippines", "Poland", "Portugal", "Qatar",
-                            "Romania", "Russia", "Rwanda", "Saudi Arabia", "Senegal",
-                            "Serbia", "Seychelles", "Sierra Leone", "Singapore",
-                            "Slovakia", "Slovenia", "Somalia", "South Africa", "South Korea",
-                            "South Sudan", "Spain", "Sri Lanka", "Sudan", "Swaziland",
-                            "Sweden", "Switzerland", "Syria", "Taiwan", "Tanzania",
-                            "Thailand", "Togo", "Tunisia", "Turkey", "Uganda",
-                            "Ukraine", "United Arab Emirates", "United Kingdom",
-                            "United States", "Uruguay", "Uzbekistan", "Venezuela",
-                            "Vietnam", "Yemen", "Zambia", "Zimbabwe", "Lesotho"
-                        ] %}
-                            <option value="{{ country }}">{{ country }}</option>
-                        {% endfor %}
+                        <option>Lesotho</option>
+                        <option>South Africa</option>
+                        <option>China</option>
+                        <option>United States</option>
+                        <option>United Kingdom</option>
+                        <option>United Arab Emirates</option>
+                        <option>India</option>
+                        <option>Germany</option>
+                        <option>Japan</option>
+                        <option>Turkey</option>
+                        <option>Australia</option>
+                        <option>Canada</option>
+                        <option>France</option>
+                        <option>Italy</option>
+                        <option>Netherlands</option>
+                        <option>Singapore</option>
+                        <option>Malaysia</option>
+                        <option>Thailand</option>
+                        <option>Brazil</option>
+                        <option>Other</option>
                     </select>
                     <span class="help-text">
-                        Select the country where you want us to find the product.
+                        Select a supplier country. Choose Other if your country is not listed.
                     </span>
                 </div>
 
@@ -270,13 +282,17 @@
                         <option value="South Africa">South Africa</option>
                     </select>
                     <span class="help-text">
-                        Currently available in Lesotho and South Africa only.
+                        Delivery is currently available in Lesotho and South Africa only.
                     </span>
                 </div>
 
                 <div class="field">
                     <label for="buyer_name">Your name *</label>
-                    <input id="buyer_name" name="buyer_name" required>
+                    <input
+                        id="buyer_name"
+                        name="buyer_name"
+                        required
+                    >
                 </div>
 
                 <div class="field">
@@ -291,11 +307,17 @@
 
             </div>
 
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
 
             <button type="submit">Submit sourcing request</button>
+
         </form>
     </div>
 </main>
+
 </body>
 </html>
