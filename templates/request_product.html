@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request a Product | Universal Runner Marketplace</title>
+
     <style>
         * { box-sizing: border-box; }
 
@@ -99,7 +100,17 @@
             border-radius: 6px;
         }
 
-        .back { color: #00209F; display: inline-block; margin-bottom: 20px; }
+        .back {
+            color: #00209F;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .help-text {
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.4;
+        }
 
         @media (max-width: 600px) {
             .grid { grid-template-columns: 1fr; }
@@ -108,115 +119,183 @@
         }
     </style>
 </head>
+
 <body>
-    <header>
-        <strong>Universal Runner Marketplace 🇱🇸 🇿🇦</strong>
-    </header>
+<header>
+    <strong>Universal Runner Marketplace</strong>
+</header>
 
-    <main>
-        <a class="back" href="/">← Back to homepage</a>
+<main>
+    <a class="back" href="/">← Back to homepage</a>
 
-        <div class="panel">
-            <h1>Request a product</h1>
-            <p class="intro">
-                Tell us what you need. Our team will investigate supplier
-                availability and prepare a quotation for your approval.
-            </p>
+    <div class="panel">
+        <h1>Request a product</h1>
 
-            <div class="notice">
-                Submitting a request does not place an order or commit you
-                to a purchase. We will confirm pricing, availability, fees
-                and delivery arrangements before you approve an order.
+        <p class="intro">
+            Tell us what you need. Our team will investigate suppliers
+            worldwide and prepare a quotation for your approval.
+        </p>
+
+        <div class="notice">
+            <strong>Worldwide sourcing, regional delivery.</strong><br>
+            We can search for products from suppliers around the world.
+            For now, delivery is available only in Lesotho and South Africa.
+            Submitting a request does not commit you to a purchase.
+        </div>
+
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
+
+        <form method="POST">
+            <div class="grid">
+
+                <div class="field">
+                    <label for="product_name">Product name *</label>
+                    <input
+                        id="product_name"
+                        name="product_name"
+                        placeholder="e.g. Toyota Hilux clutch kit"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Choose category</option>
+                        <option>Beauty &amp; Personal Care</option>
+                        <option>Automotive &amp; Mechanical</option>
+                        <option>Heavy Machinery</option>
+                        <option>General Wholesale</option>
+                        <option>Medical Equipment &amp; Supplies</option>
+                        <option>Electronics: Cameras &amp; Phones</option>
+                        <option>Adult Sexuality &amp; Wellness</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="field full">
+                    <label for="description">Product details or link *</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Describe the item, brand, model, size, or where you saw it and its advertised price."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="quantity">Quantity required *</label>
+                    <input
+                        id="quantity"
+                        type="number"
+                        name="quantity"
+                        min="1"
+                        value="1"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="target_price">Your target price (optional)</label>
+                    <input
+                        id="target_price"
+                        type="number"
+                        name="target_price"
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 1500"
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="currency">Price currency *</label>
+                    <select id="currency" name="currency" required>
+                        <option value="LSL">LSL — Lesotho loti</option>
+                        <option value="ZAR">ZAR — South African rand</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="source_country">Where should we source it? *</label>
+                    <select id="source_country" name="source_country" required>
+                        <option value="">Choose sourcing country</option>
+                        {% for country in [
+                            "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+                            "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+                            "Bahamas", "Bahrain", "Bangladesh", "Belgium", "Benin",
+                            "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana",
+                            "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
+                            "Cambodia", "Cameroon", "Canada", "Chad", "Chile", "China",
+                            "Colombia", "Costa Rica", "Croatia", "Cyprus", "Czechia",
+                            "Denmark", "Djibouti", "Dominican Republic", "Ecuador",
+                            "Egypt", "El Salvador", "Estonia", "Ethiopia", "Finland",
+                            "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana",
+                            "Greece", "Guatemala", "Guinea", "Guyana", "Haiti",
+                            "Honduras", "Hungary", "Iceland", "India", "Indonesia",
+                            "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
+                            "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait",
+                            "Latvia", "Lebanon", "Liberia", "Libya", "Lithuania",
+                            "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives",
+                            "Mali", "Malta", "Mauritania", "Mauritius", "Mexico",
+                            "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique",
+                            "Myanmar", "Namibia", "Nepal", "Netherlands", "New Zealand",
+                            "Nicaragua", "Niger", "Nigeria", "North Korea", "Norway",
+                            "Oman", "Pakistan", "Panama", "Papua New Guinea", "Paraguay",
+                            "Peru", "Philippines", "Poland", "Portugal", "Qatar",
+                            "Romania", "Russia", "Rwanda", "Saudi Arabia", "Senegal",
+                            "Serbia", "Seychelles", "Sierra Leone", "Singapore",
+                            "Slovakia", "Slovenia", "Somalia", "South Africa", "South Korea",
+                            "South Sudan", "Spain", "Sri Lanka", "Sudan", "Swaziland",
+                            "Sweden", "Switzerland", "Syria", "Taiwan", "Tanzania",
+                            "Thailand", "Togo", "Tunisia", "Turkey", "Uganda",
+                            "Ukraine", "United Arab Emirates", "United Kingdom",
+                            "United States", "Uruguay", "Uzbekistan", "Venezuela",
+                            "Vietnam", "Yemen", "Zambia", "Zimbabwe", "Lesotho"
+                        ] %}
+                            <option value="{{ country }}">{{ country }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="help-text">
+                        Select the country where you want us to find the product.
+                    </span>
+                </div>
+
+                <div class="field">
+                    <label for="delivery_country">Delivery country *</label>
+                    <select id="delivery_country" name="delivery_country" required>
+                        <option value="">Choose delivery country</option>
+                        <option value="Lesotho">Lesotho</option>
+                        <option value="South Africa">South Africa</option>
+                    </select>
+                    <span class="help-text">
+                        Currently available in Lesotho and South Africa only.
+                    </span>
+                </div>
+
+                <div class="field">
+                    <label for="buyer_name">Your name *</label>
+                    <input id="buyer_name" name="buyer_name" required>
+                </div>
+
+                <div class="field">
+                    <label for="buyer_contact">Phone or email *</label>
+                    <input
+                        id="buyer_contact"
+                        name="buyer_contact"
+                        placeholder="Include your country code if using a phone"
+                        required
+                    >
+                </div>
+
             </div>
 
-            {% for category, message in get_flashed_messages(with_categories=true) %}
-                <div class="message">{{ message }}</div>
-            {% endfor %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <form method="POST">
-                <div class="grid">
-                    <div class="field">
-                        <label for="product_name">Product name *</label>
-                        <input id="product_name" name="product_name"
-                               placeholder="e.g. Toyota Hilux clutch kit" required>
-                    </div>
-
-                    <div class="field">
-                        <label for="category">Category *</label>
-                       <select id="category" name="category" required>
-    <option value="">Choose category</option>
-    <option>Beauty &amp; Personal Care</option>
-    <option>Automotive &amp; Mechanical</option>
-    <option>Heavy Machinery</option>
-    <option>General Wholesale</option>
-    <option>Medical Equipment &amp; Supplies</option>
-    <option>Electronics: Cameras &amp; Phones</option>
-    <option>Adult Sexuality &amp; Wellness</option>
-    <option>Other</option>
-</select>
-                    </div>
-
-                    <div class="field full">
-                        <label for="description">Product details or link *</label>
-                        <textarea id="description" name="description"
-                                  placeholder="Describe the item, brand, model, size, or where you saw it and its advertised price."
-                                  required></textarea>
-                    </div>
-
-                    <div class="field">
-                        <label for="quantity">Quantity required *</label>
-                        <input id="quantity" type="number" name="quantity"
-                               min="1" value="1" required>
-                    </div>
-
-                    <div class="field">
-                        <label for="target_price">Your target price (optional)</label>
-                        <input id="target_price" type="number" name="target_price"
-                               min="0" step="0.01" placeholder="e.g. 1500">
-                    </div>
-
-                    <div class="field">
-                        <label for="currency">Price currency *</label>
-                        <select id="currency" name="currency" required>
-                            <option value="LSL">LSL — Lesotho loti</option>
-                            <option value="ZAR">ZAR — South African rand</option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label for="source_country">Where should we source it? *</label>
-                        <select id="source_country" name="source_country" required>
-                            <option value="">Choose country</option>
-                            <option>Lesotho</option>
-                            <option>South Africa</option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label for="delivery_country">Delivery country *</label>
-                        <select id="delivery_country" name="delivery_country" required>
-                            <option value="">Choose country</option>
-                            <option>Lesotho</option>
-                            <option>South Africa</option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label for="buyer_name">Your name *</label>
-                        <input id="buyer_name" name="buyer_name" required>
-                    </div>
-
-                    <div class="field">
-                        <label for="buyer_contact">Phone or email *</label>
-                        <input id="buyer_contact" name="buyer_contact"
-                               placeholder="Include your country code if using a phone"
-                               required>
-                    </div>
-                </div>
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">Submit sourcing request</button>
-            </form>
-        </div>
-    </main>
+            <button type="submit">Submit sourcing request</button>
+        </form>
+    </div>
+</main>
 </body>
 </html>
