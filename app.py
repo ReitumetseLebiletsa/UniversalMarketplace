@@ -912,10 +912,15 @@ def initialise_database():
 # RUN DATABASE INITIALISATION
 # ----------------------------------------------------------
 
+print(
+    "DATABASE INITIALISATION FLAG:",
+    repr(os.environ.get("RUN_DB_INITIALISATION"))
+)
+
 if os.environ.get("RUN_DB_INITIALISATION", "true").lower() == "true":
     initialise_database()
 else:
-    app.logger.info(
+    app.logger.warning(
         "Automatic database initialisation is temporarily disabled."
     )
 
