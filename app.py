@@ -154,7 +154,7 @@ else:
         "Supabase environment variables are not configured."
     )
 
-PAYMENT_PROOF_BUCKET = "payment-proofs"
+PAYMENT_PROOF_BUCKET = "payments-proof"
 MAX_PAYMENT_PROOF_SIZE = 5 * 1024 * 1024
 
 ALLOWED_PAYMENT_PROOF_EXTENSIONS = {
@@ -3156,11 +3156,9 @@ def manage_quotation_payments(quotation_id):
 @login_required
 def submit_payment_proof(quotation_id):
 
-    # Only buyers may submit payment proof.
     if current_user.role != "buyer":
         abort(403)
 
-    # Supabase must be configured.
     if supabase is None:
         flash(
             "Payment proof uploads are temporarily unavailable. Please contact support.",
@@ -3173,7 +3171,6 @@ def submit_payment_proof(quotation_id):
     if quotation is None:
         abort(404)
 
-    # Verify that this quotation belongs to the logged-in buyer.
     sourcing_request = db.session.get(
         SourcingRequest,
         quotation.sourcing_request_id,
@@ -3185,7 +3182,6 @@ def submit_payment_proof(quotation_id):
     ):
         abort(403)
 
-    # Payment proof is allowed only after approval.
     if quotation.buyer_decision != "Approved":
         flash(
             "You must approve this quotation before submitting payment.",
@@ -3197,17 +3193,15 @@ def submit_payment_proof(quotation_id):
         quotation
     )
 
-    # Reserve amounts already awaiting verification so buyers
-    # cannot submit several pending payments exceeding the balance.
     pending_total = sum(
-        payment.amount
+        float(payment.amount)
         for payment in quotation.payments
         if payment.status == "Pending"
     )
 
     available_to_submit = max(
         0.0,
-        outstanding - pending_total,
+        float(outstanding) - pending_total,
     )
 
     if available_to_submit <= 0.001:
@@ -3219,10 +3213,7 @@ def submit_payment_proof(quotation_id):
 
     if request.method == "POST":
 
-        # --------------------------------------------------
         # VALIDATE AMOUNT
-        # --------------------------------------------------
-
         try:
             amount = Decimal(
                 request.form.get("amount", "").strip()
@@ -3232,10 +3223,7 @@ def submit_payment_proof(quotation_id):
                 raise InvalidOperation
 
         except (InvalidOperation, ValueError):
-            flash(
-                "Enter a valid positive payment amount.",
-                "error",
-            )
+            flash("Enter a valid positive payment amount.", "error")
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3256,10 +3244,7 @@ def submit_payment_proof(quotation_id):
                 )
             )
 
-        # --------------------------------------------------
         # VALIDATE PAYMENT METHOD
-        # --------------------------------------------------
-
         allowed_methods = {
             "Bank Transfer",
             "Cash Deposit",
@@ -3274,10 +3259,7 @@ def submit_payment_proof(quotation_id):
         ).strip()
 
         if payment_method not in allowed_methods:
-            flash(
-                "Select a valid payment method.",
-                "error",
-            )
+            flash("Select a valid payment method.", "error")
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3290,19 +3272,13 @@ def submit_payment_proof(quotation_id):
             "",
         ).strip()
 
-        notes = request.form.get(
-            "notes",
-            "",
-        ).strip()
+        notes = request.form.get("notes", "").strip()
 
         if (
             len(transaction_reference) > 150
             or len(notes) > 5000
         ):
-            flash(
-                "Your payment details are too long.",
-                "error",
-            )
+            flash("Your payment details are too long.", "error")
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3310,17 +3286,13 @@ def submit_payment_proof(quotation_id):
                 )
             )
 
-        # --------------------------------------------------
         # VALIDATE UPLOADED FILE
-        # --------------------------------------------------
+        # The HTML form must use name="payment_proof".
 
         proof_file = request.files.get("payment_proof")
 
         if proof_file is None or not proof_file.filename:
-            flash(
-                "Please select your payment proof.",
-                "error",
-            )
+            flash("Please select your payment proof.", "error")
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3333,10 +3305,7 @@ def submit_payment_proof(quotation_id):
         )
 
         if not original_filename:
-            flash(
-                "The uploaded filename is invalid.",
-                "error",
-            )
+            flash("The uploaded filename is invalid.", "error")
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3386,10 +3355,7 @@ def submit_payment_proof(quotation_id):
         )
 
         if not file_data:
-            flash(
-                "The uploaded file is empty.",
-                "error",
-            )
+            flash("The uploaded file is empty.", "error")
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3425,9 +3391,7 @@ def submit_payment_proof(quotation_id):
                 )
             )
 
-        # --------------------------------------------------
         # UPLOAD TO PRIVATE SUPABASE STORAGE
-        # --------------------------------------------------
 
         object_name = (
             f"quotation-{quotation.id}/"
@@ -3456,6 +3420,7 @@ def submit_payment_proof(quotation_id):
                 "Your payment proof could not be uploaded. Please try again.",
                 "error",
             )
+
             return redirect(
                 url_for(
                     "submit_payment_proof",
@@ -3463,9 +3428,7 @@ def submit_payment_proof(quotation_id):
                 )
             )
 
-        # --------------------------------------------------
         # SAVE PAYMENT RECORD
-        # --------------------------------------------------
 
         payment = Payment(
             quotation_id=quotation.id,
@@ -3498,11 +3461,11 @@ def submit_payment_proof(quotation_id):
                 quotation.id,
             )
 
-            # Remove the uploaded object if the database save failed.
             try:
                 supabase.storage.from_(
                     PAYMENT_PROOF_BUCKET
                 ).remove([object_name])
+
             except Exception:
                 current_app.logger.exception(
                     "Could not clean up uploaded payment proof %s",
@@ -3516,23 +3479,24 @@ def submit_payment_proof(quotation_id):
 
         return redirect(url_for("list_quotations"))
 
-    # --------------------------------------------------
-    # DISPLAY PAYMENT SUBMISSION FORM
-    # --------------------------------------------------
-
     return render_template(
         "submit_payment_proof.html",
         quotation=quotation,
         available_to_submit=available_to_submit,
     )
 
+
+# --------------------------------------------------
+# ADMIN — CONFIRM PAYMENT
+# --------------------------------------------------
+
 @app.route(
     "/admin/payments/<int:payment_id>/confirm",
     methods=["POST"],
 )
-
 @admin_required
 def confirm_quotation_payment(payment_id):
+
     payment = db.session.get(Payment, payment_id)
 
     if payment is None:
@@ -3541,34 +3505,42 @@ def confirm_quotation_payment(payment_id):
     quotation = payment.quotation
 
     if payment.status != "Pending":
-        flash("Only pending payments can be confirmed.", "error")
-        return redirect(url_for(
-            "manage_quotation_payments",
-            quotation_id=quotation.id,
-        ))
+        flash(
+            "Only pending payments can be confirmed.",
+            "error",
+        )
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            )
+        )
 
     if quotation.buyer_decision != "Approved":
         flash(
             "The quotation must be approved by the buyer.",
             "error",
         )
-        return redirect(url_for(
-            "manage_quotation_payments",
-            quotation_id=quotation.id,
-        ))
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            )
+        )
 
     if payment.currency != quotation.currency:
         flash(
             "Payment currency does not match the quotation.",
             "error",
         )
-        return redirect(url_for(
-            "manage_quotation_payments",
-            quotation_id=quotation.id,
-        ))
+        return redirect(
+            url_for(
+                "manage_quotation_payments",
+                quotation_id=quotation.id,
+            )
+        )
 
     try:
-        # Refresh the payment and quotation before checking the balance.
         db.session.refresh(payment)
         db.session.refresh(quotation)
 
@@ -3577,13 +3549,15 @@ def confirm_quotation_payment(payment_id):
                 "This payment has already been processed.",
                 "error",
             )
-            return redirect(url_for(
-                "manage_quotation_payments",
-                quotation_id=quotation.id,
-            ))
+            return redirect(
+                url_for(
+                    "manage_quotation_payments",
+                    quotation_id=quotation.id,
+                )
+            )
 
-        confirmed_total, outstanding = get_quotation_payment_summary(
-            quotation
+        confirmed_total, outstanding = (
+            get_quotation_payment_summary(quotation)
         )
 
         if outstanding <= 0.001:
@@ -3591,21 +3565,24 @@ def confirm_quotation_payment(payment_id):
                 "This quotation is already fully paid.",
                 "error",
             )
-            return redirect(url_for(
-                "manage_quotation_payments",
-                quotation_id=quotation.id,
-            ))
+            return redirect(
+                url_for(
+                    "manage_quotation_payments",
+                    quotation_id=quotation.id,
+                )
+            )
 
         if payment.amount > outstanding + 0.001:
             flash(
-                "This payment exceeds the outstanding balance. "
-                "It has not been confirmed.",
+                "This payment exceeds the outstanding balance. It has not been confirmed.",
                 "error",
             )
-            return redirect(url_for(
-                "manage_quotation_payments",
-                quotation_id=quotation.id,
-            ))
+            return redirect(
+                url_for(
+                    "manage_quotation_payments",
+                    quotation_id=quotation.id,
+                )
+            )
 
         payment.status = "Confirmed"
         payment.confirmed_by = current_user.id
@@ -3617,18 +3594,23 @@ def confirm_quotation_payment(payment_id):
 
     except Exception:
         db.session.rollback()
+
         current_app.logger.exception(
             "Could not confirm quotation payment"
         )
+
         flash(
             "The payment could not be confirmed. Please try again.",
             "error",
         )
 
-    return redirect(url_for(
-        "manage_quotation_payments",
-        quotation_id=quotation.id,
-    ))
+    return redirect(
+        url_for(
+            "manage_quotation_payments",
+            quotation_id=quotation.id,
+        )
+    )
+
 
 # --------------------------------------------------
 # ADMIN — VIEW PRIVATE PAYMENT PROOF
@@ -3647,7 +3629,10 @@ def view_payment_proof(payment_id):
         abort(404)
 
     if not payment.proof_storage_path:
-        flash("No payment proof is attached to this record.", "error")
+        flash(
+            "No payment proof is attached to this record.",
+            "error",
+        )
         return redirect(
             url_for(
                 "manage_quotation_payments",
@@ -3656,7 +3641,10 @@ def view_payment_proof(payment_id):
         )
 
     if supabase is None:
-        flash("Private storage is currently unavailable.", "error")
+        flash(
+            "Private storage is currently unavailable.",
+            "error",
+        )
         return redirect(
             url_for(
                 "manage_quotation_payments",
@@ -3665,7 +3653,6 @@ def view_payment_proof(payment_id):
         )
 
     try:
-        # Generate a private link valid for only 60 seconds.
         result = supabase.storage.from_(
             PAYMENT_PROOF_BUCKET
         ).create_signed_url(
@@ -3679,7 +3666,9 @@ def view_payment_proof(payment_id):
         )
 
         if not signed_url:
-            raise ValueError("Supabase did not return a signed URL.")
+            raise ValueError(
+                "Supabase did not return a signed URL."
+            )
 
         return redirect(signed_url)
 
@@ -3748,7 +3737,6 @@ def reject_quotation_payment(payment_id):
             )
 
         payment.status = "Rejected"
-
         db.session.commit()
 
         flash(
@@ -3775,7 +3763,6 @@ def reject_quotation_payment(payment_id):
             quotation_id=quotation.id,
         )
     )
-
 # --------------------------------------------------
 # PRODUCT MANAGEMENT — ADMIN ONLY
 # --------------------------------------------------

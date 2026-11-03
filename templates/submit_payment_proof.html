@@ -149,6 +149,11 @@
             background: #155b43;
         }
 
+        .button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
         .back-link {
             display: block;
             text-align: center;
@@ -177,6 +182,10 @@
         }
 
         @media (max-width: 500px) {
+            body {
+                padding: 15px 10px;
+            }
+
             .card {
                 padding: 20px;
             }
@@ -221,7 +230,8 @@
                 #{{ quotation.id }}
             </p>
 
-            <p><strong>Payment Currency:</strong>
+            <p>
+                <strong>Payment Currency:</strong>
                 {{ quotation.currency }}
             </p>
 
@@ -261,7 +271,8 @@
 
             <div class="help">
                 Enter the amount you actually paid.
-                Maximum available: {{ quotation.currency }}
+                Maximum available:
+                {{ quotation.currency }}
                 {{ "%.2f"|format(available_to_submit) }}.
             </div>
 
@@ -335,7 +346,7 @@
             href="{{ url_for('list_quotations') }}"
             class="back-link"
         >
-            ← Back to My Quotations
+            &larr; Back to My Quotations
         </a>
 
     </div>
