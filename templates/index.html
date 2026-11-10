@@ -85,17 +85,16 @@
             flex-shrink: 0;
         }
 
-        .brand-mark {
-            width: 48px;
-            height: 48px;
-            display: grid;
-            place-items: center;
-            border-radius: 14px;
-            background: var(--blue);
-            color: white;
-            font-size: 17px;
-            font-weight: 900;
-            border-bottom: 5px solid var(--green);
+        /* UPDATED LOGO */
+
+        .brand-logo {
+            width: 68px;
+            height: 58px;
+            display: block;
+            object-fit: contain;
+            object-position: center;
+            flex-shrink: 0;
+            border-radius: 8px;
         }
 
         .brand-name {
@@ -848,10 +847,9 @@
         }
 
         @media (max-width: 480px) {
-            .brand-mark {
-                width: 42px;
-                height: 42px;
-                font-size: 14px;
+            .brand-logo {
+                width: 52px;
+                height: 48px;
             }
 
             .brand-name {
@@ -923,7 +921,13 @@
         <div class="container nav-inner">
 
             <a href="{{ url_for('home') }}" class="brand">
-                <div class="brand-mark">URM</div>
+
+                <!-- UNIVERSAL RUNNER MARKETPLACE LOGO -->
+                <img
+                    class="brand-logo"
+                    src="{{ url_for('static', filename='URM.jpeg') }}"
+                    alt="Universal Runner Marketplace Logo">
+
                 <div>
                     <div class="brand-name">Universal Runner Marketplace</div>
                     <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
@@ -1345,7 +1349,12 @@
                 <div class="footer-brand-column">
 
                     <a href="{{ url_for('home') }}" class="brand">
-                        <div class="brand-mark">URM</div>
+
+                        <!-- FOOTER LOGO -->
+                        <img
+                            class="brand-logo"
+                            src="{{ url_for('static', filename='URM.jpeg') }}"
+                            alt="Universal Runner Marketplace Logo">
 
                         <div>
                             <div class="brand-name">Universal Runner Marketplace</div>
