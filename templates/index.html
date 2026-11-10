@@ -921,18 +921,16 @@
         <div class="container nav-inner">
 
             <a href="{{ url_for('home') }}" class="brand">
-
-                <!-- UNIVERSAL RUNNER MARKETPLACE LOGO -->
-                <img
-                    class="brand-logo"
-                    src=static/uploads'URM.jpeg'
-                    alt="">
-
-                <div>
-                    <div class="brand-name">Universal Runner Marketplace</div>
-                    <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
-                </div>
-            </a>
+    <img
+        src="{{ url_for('static', filename='uploads/URM.jpeg') }}"
+        alt="Universal Runner Marketplace Logo"
+        class="brand-logo"
+        onerror="this.style.display='none';"
+    >
+    <span class="brand-text">
+        Universal Runner Marketplace
+    </span>
+</a>
 
             <button
                 class="menu-toggle"
