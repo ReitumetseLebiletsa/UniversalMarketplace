@@ -3399,16 +3399,16 @@ def submit_payment_proof(quotation_id):
         )
 
         try:
-            supabase.storage.from_(
-                PAYMENT_PROOF_BUCKET
-            ).upload(
-                object_name,
-                file_data,
-                file_options={
-                    "content-type": content_type,
-                    "upsert": "false",
-                },
-            )
+           supabase.storage.from_(
+    PAYMENT_PROOF_BUCKET
+).upload(
+    object_name,
+    file_data,
+    file_options={
+        "content-type": content_type,
+        "upsert": "false",
+    },
+)
 
         except Exception:
             current_app.logger.exception(
