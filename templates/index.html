@@ -39,6 +39,11 @@
             background: var(--white);
             color: var(--black);
             line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        img {
+            max-width: 100%;
         }
 
         a {
@@ -65,7 +70,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.97);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
         }
@@ -83,9 +88,8 @@
             align-items: center;
             gap: 12px;
             flex-shrink: 0;
+            min-width: 0;
         }
-
-        /* UPDATED LOGO */
 
         .brand-logo {
             width: 68px;
@@ -523,7 +527,7 @@
             font-size: 12px;
         }
 
-        /* GLOBAL SOURCING SECTION */
+        /* GLOBAL SOURCING */
 
         .cross-border {
             position: relative;
@@ -735,10 +739,6 @@
             .steps-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
-
-            .cross-border-content {
-                align-items: flex-start;
-            }
         }
 
         @media (max-width: 760px) {
@@ -763,6 +763,8 @@
                 background: white;
                 border-bottom: 1px solid var(--border);
                 box-shadow: var(--shadow);
+                max-height: calc(100vh - 70px);
+                overflow-y: auto;
             }
 
             .nav-links.open {
@@ -817,6 +819,7 @@
 
             .cross-border-content {
                 flex-direction: column;
+                align-items: flex-start;
             }
 
             .global-icon {
@@ -921,16 +924,18 @@
         <div class="container nav-inner">
 
             <a href="{{ url_for('home') }}" class="brand">
-    <img
-        src="{{ url_for('static', filename='uploads/URM.jpeg') }}"
-        alt="Universal Runner Marketplace Logo"
-        class="Universal Runner Marketplace Logo"
-        onerror="this.style.display='none';"
-    >
-    <span class="brand-text">
-        Universal Runner Marketplace
-    </span>
-</a>
+                <img
+                    src="{{ url_for('static', filename='uploads/URM.jpeg') }}"
+                    alt="Universal Runner Marketplace Logo"
+                    class="brand-logo"
+                    onerror="this.style.display='none';"
+                >
+
+                <div>
+                    <div class="brand-name">Universal Runner Marketplace</div>
+                    <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
+                </div>
+            </a>
 
             <button
                 class="menu-toggle"
@@ -943,6 +948,7 @@
             </button>
 
             <nav class="nav-links" id="navLinks">
+
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="#categories">Categories</a>
                 <a href="#how-it-works">How It Works</a>
@@ -971,6 +977,7 @@
                     <a href="{{ url_for('login') }}">Log In</a>
                     <a class="btn btn-green" href="{{ url_for('register') }}">Get Started</a>
                 {% endif %}
+
             </nav>
         </div>
     </header>
@@ -1001,21 +1008,29 @@
                     </p>
 
                     <div class="hero-buttons">
+
                         {% if current_user.is_authenticated and current_user.role == 'buyer' %}
+
                             <a class="btn btn-green" href="{{ url_for('request_product') }}">
                                 Request a Product <span>→</span>
                             </a>
+
                             <a class="btn btn-outline-white" href="{{ url_for('my_requests') }}">
                                 View My Requests
                             </a>
+
                         {% else %}
+
                             <a class="btn btn-green" href="{{ url_for('register') }}">
                                 Start Sourcing <span>→</span>
                             </a>
+
                             <a class="btn btn-outline-white" href="#how-it-works">
                                 Discover How It Works
                             </a>
+
                         {% endif %}
+
                     </div>
 
                     <div class="hero-points">
@@ -1059,13 +1074,15 @@
             </div>
         </section>
 
-        <!-- CATEGORY PHOTOS -->
+        <!-- PRODUCT CATEGORIES -->
         <section class="section section-light" id="categories">
             <div class="container">
 
                 <div class="section-heading">
                     <div class="eyebrow">Explore the marketplace</div>
+
                     <h2>What are you looking for?</h2>
+
                     <p>
                         Explore product categories, discover international
                         sourcing options and tell us what products you need
@@ -1077,14 +1094,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='beauty-personal-care') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/beauty.jpg') }}"
                                  alt="Beauty, skincare and personal-care products"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">PERSONAL CARE</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Beauty &amp; Personal Care</h3>
                             <p>Beauty products, skincare, haircare and personal-care supplies.</p>
@@ -1094,14 +1114,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='automotive-mechanical') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/automotive.jpg') }}"
                                  alt="Automotive spare parts and mechanical tools"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">AUTO &amp; PARTS</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Automotive &amp; Mechanical</h3>
                             <p>Vehicle spare parts, workshop equipment, tools and mechanical supplies.</p>
@@ -1111,14 +1134,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='heavy-machinery') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/machinery.jpg') }}"
                                  alt="Heavy construction and industrial machinery"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">INDUSTRIAL</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Heavy Machinery</h3>
                             <p>Construction machinery, industrial equipment and heavy-duty components.</p>
@@ -1128,14 +1154,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='general-wholesale') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/wholesale.jpg') }}"
                                  alt="Wholesale cartons and bulk merchandise"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">BULK BUYING</span>
                         </div>
+
                         <div class="category-content">
                             <h3>General Wholesale</h3>
                             <p>General merchandise, bulk purchases and supplies for growing businesses.</p>
@@ -1145,14 +1174,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='medical-equipment-supplies') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/medical.jpg') }}"
                                  alt="Medical equipment and healthcare supplies"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">HEALTHCARE</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Medical Equipment &amp; Supplies</h3>
                             <p>Medical equipment and related supplies sourced to your requirements.</p>
@@ -1162,14 +1194,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='electronics-cameras-phones') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/electronics.jpg') }}"
                                  alt="Smartphones, cameras and electronic accessories"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">TECHNOLOGY</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Electronics &amp; Phones</h3>
                             <p>Electronics, phones, cameras, accessories and technology products.</p>
@@ -1179,14 +1214,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('browse_category', category_name='adult-sexuality-wellness') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/wellness.jpg') }}"
                                  alt="Personal wellness and self-care products"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">WELLNESS</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Wellness &amp; Personal Products</h3>
                             <p>Personal wellness and self-care products, subject to applicable laws.</p>
@@ -1196,14 +1234,17 @@
 
                     <a class="category-card"
                        href="{{ url_for('request_product') }}">
+
                         <div class="category-image-wrap">
                             <img class="category-image"
                                  src="{{ url_for('static', filename='uploads/something.jpg') }}"
                                  alt="Products prepared for sourcing and delivery"
                                  loading="lazy"
                                  onerror="this.style.display='none'">
+
                             <span class="category-badge">CUSTOM REQUEST</span>
                         </div>
+
                         <div class="category-content">
                             <h3>Something Else?</h3>
                             <p>Can't find your item? Submit a sourcing request describing what you need.</p>
@@ -1221,13 +1262,15 @@
             </div>
         </section>
 
-        <!-- GLOBAL SOURCING SECTION -->
+        <!-- GLOBAL SOURCING -->
         <section class="section">
             <div class="container">
+
                 <div class="cross-border">
                     <div class="cross-border-content">
 
                         <div class="cross-border-copy">
+
                             <div class="eyebrow" style="color:#8EE6AD;">
                                 Connecting markets worldwide
                             </div>
@@ -1241,6 +1284,7 @@
                                 options, review quotations and coordinate purchasing
                                 and delivery across international destinations.
                             </p>
+
                         </div>
 
                         <div class="global-icon" aria-label="Global trade">
@@ -1249,6 +1293,7 @@
 
                     </div>
                 </div>
+
             </div>
         </section>
 
@@ -1258,7 +1303,9 @@
 
                 <div class="section-heading">
                     <div class="eyebrow">Simple sourcing process</div>
+
                     <h2>From product request to delivery</h2>
+
                     <p>
                         A clear process helps buyers communicate their needs,
                         review available options and coordinate international purchases.
@@ -1305,6 +1352,7 @@
         <!-- CALL TO ACTION -->
         <section class="cta-section">
             <div class="container">
+
                 <div class="cta-panel">
 
                     <h2>Your next product starts with a request.</h2>
@@ -1322,16 +1370,21 @@
                         </a>
 
                         {% if current_user.is_authenticated %}
+
                             <a class="btn btn-outline-white" href="{{ url_for('list_quotations') }}">
                                 View Quotations
                             </a>
+
                         {% else %}
+
                             <a class="btn btn-white" href="{{ url_for('register') }}">
                                 Create an Account
                             </a>
+
                         {% endif %}
 
                     </div>
+
                 </div>
             </div>
         </section>
@@ -1348,16 +1401,18 @@
 
                     <a href="{{ url_for('home') }}" class="brand">
 
-                        <!-- FOOTER LOGO -->
                         <img
                             class="brand-logo"
                             src="{{ url_for('static', filename='uploads/URM.jpeg') }}"
-                            alt="Universal Runner Marketplace Logo">
+                            alt="Universal Runner Marketplace Logo"
+                            onerror="this.style.display='none';"
+                        >
 
                         <div>
                             <div class="brand-name">Universal Runner Marketplace</div>
                             <span class="brand-tagline">GLOBAL SOURCING • WORLDWIDE DELIVERY</span>
                         </div>
+
                     </a>
 
                     <p class="footer-description">
