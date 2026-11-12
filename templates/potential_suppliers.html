@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Potential Suppliers | Universal Runner Marketplace</title>
+    <style>
+        :root { --blue:#00209F; --green:#009543; --light:#f3f6fb; }
+        * { box-sizing:border-box; }
+        body { margin:0; padding:20px; font-family:Arial,sans-serif; background:var(--light); color:#171717; }
+        main { max-width:1200px; margin:auto; }
+        header { padding:22px; color:#fff; background:var(--blue); border-bottom:6px solid var(--green); border-radius:10px; }
+        header h1 { margin:0 0 8px; }
+        .intro { line-height:1.5; margin:0; }
+        .notice { margin:16px 0; padding:13px; border-radius:7px; background:#fff3cd; }
+        .message { margin:12px 0; padding:12px; border-radius:7px; background:#e0f5e8; }
+        .actions { margin:18px 0; }
+        a.button, button { display:inline-block; padding:11px 15px; margin:4px 6px 4px 0; border:0; border-radius:6px; background:var(--green); color:#fff; text-decoration:none; font-weight:bold; cursor:pointer; }
+        .panel { background:#fff; padding:20px; margin:18px 0; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+        .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+        label { display:block; font-weight:bold; margin-bottom:6px; }
+        input, select, textarea { width:100%; padding:11px; border:1px solid #cbd2df; border-radius:6px; font:inherit; }
+        textarea { min-height:90px; resize:vertical; }
+        .wide { grid-column:1/-1; }
+        .table-wrap { overflow-x:auto; background:#fff; border-radius:10px; }
+        table { width:100%; border-collapse:collapse; min-width:950px; }
+        th,td { padding:12px; text-align:left; vertical-align:top; border-bottom:1px solid #e1e5ec; }
+        th { background:#e9eefb; }
+        .status { font-weight:bold; }
+        .small-form { display:flex; gap:6px; align-items:center; }
+        .small-form select { min-width:115px; }
+        .small-form button { margin:0; }
+        .muted { color:#5d6470; }
+        @media(max-width:650px) { body { padding:12px; } .form-grid { grid-template-columns:1fr; } .wide { grid-column:auto; } .panel { padding:15px; } header h1 { font-size:23px; } }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Potential Suppliers</h1>
+        <p class="intro">Capture supplier leads from Lesotho, South Africa and around the world.</p>
+    </header>
+
+    <div class="notice">
+        <strong>Important:</strong> These are sourcing leads, not approved suppliers.
+        A lead must be checked by the URM team before it can be registered in the approved supplier list.
+        No purchase or payment is made from this page.
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="actions">
+        <a class="button" href="{{ url_for('list_suppliers') }}">Approved Suppliers</a>
+        <a class="button" href="{{ url_for('company_dashboard') }}">Company Dashboard</a>
+    </div>
+
+    <section class="panel">
+        <h2>Add a potential supplier</h2>
+        <p class="muted">Record a supplier you found online, through a referral, or while researching a buyer's request.</p>
+        <form method="POST" action="{{ url_for('potential_suppliers') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-grid">
+                <div>
+                    <label for="supplier_name">Supplier or business name *</label>
+                    <input id="supplier_name" name="supplier_name" maxlength="150" required>
+                </div>
+                <div>
+                    <label for="country">Country *</label>
+                    <input id="country" name="country" maxlength="100" placeholder="e.g. China, India, South Africa" required>
+                </div>
+                <div>
+                    <label for="website_url">Website URL</label>
+                    <input id="website_url" name="website_url" type="url" maxlength="500" placeholder="https://">
+                </div>
+                <div>
+                    <label for="category">Product category</label>
+                    <select id="category" name="category">
+                        <option value="">Select category</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="contact_details">Contact details</label>
+                    <input id="contact_details" name="contact_details" maxlength="200" placeholder="Email, phone or contact page">
+                </div>
+                <div>
+                    <label for="source">Where was this lead found?</label>
+                    <input id="source" name="source" maxlength="255" placeholder="Website, marketplace, referral, trade directory...">
+                </div>
+                <div>
+                    <label for="estimated_price">Estimated price (optional)</label>
+                    <input id="estimated_price" name="estimated_price" type="number" min="0" step="0.01">
+                </div>
+                <div>
+                    <label for="currency">Price currency</label>
+                    <select id="currency" name="currency">
+                        <option value="">Not known</option>
+                        {% for currency in currencies %}
+                            <option value="{{ currency }}">{{ currency }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="wide">
+                    <label for="sourcing_request_id">Link to a buyer sourcing request (optional)</label>
+                    <select id="sourcing_request_id" name="sourcing_request_id">
+                        <option value="">Not linked to a request</option>
+                        {% for sourcing_request in sourcing_requests %}
+                            <option value="{{ sourcing_request.id }}">
+                                UM-{{ sourcing_request.id }} — {{ sourcing_request.product_name }} ({{ sourcing_request.status }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="wide">
+                    <label for="notes">Research notes</label>
+                    <textarea id="notes" name="notes" maxlength="5000" placeholder="Record product range, minimum order, quality information, delivery terms, unanswered questions or verification work still needed."></textarea>
+                </div>
+            </div>
+            <button type="submit">Save Potential Supplier</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Supplier leads ({{ leads|length }})</h2>
+        {% if leads %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Supplier</th><th>Country</th><th>Category</th>
+                        <th>Contact / Website</th><th>Price</th><th>Source / Notes</th>
+                        <th>Request</th><th>Status</th><th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for lead in leads %}
+                    <tr>
+                        <td><strong>{{ lead.supplier_name }}</strong><br><span class="muted">Added {{ lead.created_at.strftime("%d %b %Y") if lead.created_at else "—" }}</span></td>
+                        <td>{{ lead.country }}</td>
+                        <td>{{ lead.category or "—" }}</td>
+                        <td>
+                            {{ lead.contact_details or "—" }}
+                            {% if lead.website_url %}<br><a href="{{ lead.website_url }}" target="_blank" rel="noopener noreferrer">Visit website</a>{% endif %}
+                        </td>
+                        <td>{% if lead.estimated_price is not none %}{{ "%.2f"|format(lead.estimated_price) }} {{ lead.currency or "" }}{% else %}—{% endif %}</td>
+                        <td>{{ lead.source or "—" }}{% if lead.notes %}<br><span class="muted">{{ lead.notes }}</span>{% endif %}</td>
+                        <td>{% if lead.sourcing_request %}UM-{{ lead.sourcing_request.id }} — {{ lead.sourcing_request.product_name }}{% else %}—{% endif %}</td>
+                        <td class="status">{{ lead.verification_status }}</td>
+                        <td>
+                            <form class="small-form" method="POST" action="{{ url_for('update_potential_supplier_status', lead_id=lead.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="status" aria-label="Lead status">
+                                    {% for status in ["Pending", "Verified", "Rejected"] %}
+                                        <option value="{{ status }}" {% if lead.verification_status == status %}selected{% endif %}>{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="muted">No potential suppliers have been recorded yet.</p>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>
