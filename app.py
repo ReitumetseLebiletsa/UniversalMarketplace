@@ -254,6 +254,38 @@ class Supplier(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+
+# --------------------------------------------------
+# POTENTIAL SUPPLIER MODEL — UNVERIFIED SOURCING LEADS
+# --------------------------------------------------
+
+class PotentialSupplier(db.Model):
+    __tablename__ = "potential_supplier"
+
+    id = db.Column(db.Integer, primary_key=True)
+    supplier_name = db.Column(db.String(150), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    website_url = db.Column(db.String(500), nullable=True)
+    category = db.Column(db.String(100), nullable=True)
+    contact_details = db.Column(db.String(200), nullable=True)
+    estimated_price = db.Column(db.Float, nullable=True)
+    currency = db.Column(db.String(3), nullable=True)
+    source = db.Column(db.String(255), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    verification_status = db.Column(
+        db.String(20), nullable=False, default="Pending", index=True
+    )
+    sourcing_request_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sourcing_request.id"),
+        nullable=True,
+        index=True,
+    )
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    sourcing_request = db.relationship("SourcingRequest")
+
+
 # --------------------------------------------------
 # QUOTATION MODEL
 # --------------------------------------------------
@@ -1563,6 +1595,159 @@ def list_suppliers():
         "suppliers.html",
         suppliers=suppliers,
     )
+
+
+
+# --------------------------------------------------
+# POTENTIAL SUPPLIERS — SOURCING LEADS (ADMIN ONLY)
+# --------------------------------------------------
+
+@app.route(
+    "/company/potential-suppliers",
+    methods=["GET", "POST"],
+)
+@admin_required
+def potential_suppliers():
+    supported_currencies = {
+        "LSL", "ZAR", "USD", "EUR", "GBP", "CNY", "INR",
+        "AED", "JPY", "AUD", "CAD", "CHF", "SGD", "BWP",
+        "MZN", "ZMW",
+    }
+
+    if request.method == "POST":
+        supplier_name = request.form.get("supplier_name", "").strip()
+        country = request.form.get("country", "").strip()
+        website_url = request.form.get("website_url", "").strip()
+        category = request.form.get("category", "").strip()
+        contact_details = request.form.get("contact_details", "").strip()
+        source = request.form.get("source", "").strip()
+        notes = request.form.get("notes", "").strip()
+        currency = request.form.get("currency", "").strip().upper()
+        price_text = request.form.get("estimated_price", "").strip()
+        request_id_text = request.form.get("sourcing_request_id", "").strip()
+
+        if not supplier_name or len(supplier_name) > 150:
+            flash("Enter a supplier name of no more than 150 characters.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        if not country or len(country) > 100:
+            flash("Enter a supplier country of no more than 100 characters.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        if website_url and (
+            len(website_url) > 500
+            or not website_url.startswith(("https://", "http://"))
+        ):
+            flash("Website URL must begin with https:// or http://.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        if category and category not in MARKETPLACE_CATEGORIES:
+            flash("Select a valid marketplace category.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        if len(contact_details) > 200 or len(source) > 255 or len(notes) > 5000:
+            flash("One or more details exceed the allowed length.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        estimated_price = None
+        if price_text:
+            try:
+                estimated_price = float(price_text)
+            except (TypeError, ValueError):
+                estimated_price = -1
+
+            if not math.isfinite(estimated_price) or estimated_price < 0:
+                flash("Enter a valid non-negative estimated price.", "error")
+                return redirect(url_for("potential_suppliers"))
+
+        if currency and currency not in supported_currencies:
+            flash("Select a supported currency.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        sourcing_request_id = None
+        if request_id_text:
+            try:
+                sourcing_request_id = int(request_id_text)
+            except (TypeError, ValueError):
+                sourcing_request_id = -1
+
+            if sourcing_request_id < 1 or db.session.get(
+                SourcingRequest, sourcing_request_id
+            ) is None:
+                flash("Select an existing sourcing request or leave it blank.", "error")
+                return redirect(url_for("potential_suppliers"))
+
+        lead = PotentialSupplier(
+            supplier_name=supplier_name,
+            country=country,
+            website_url=website_url or None,
+            category=category or None,
+            contact_details=contact_details or None,
+            estimated_price=estimated_price,
+            currency=currency or None,
+            source=source or None,
+            notes=notes or None,
+            verification_status="Pending",
+            sourcing_request_id=sourcing_request_id,
+        )
+
+        try:
+            db.session.add(lead)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("Could not save potential supplier lead.")
+            flash("The supplier lead could not be saved. Please try again.", "error")
+            return redirect(url_for("potential_suppliers"))
+
+        flash("Potential supplier saved as Pending. It is not yet an approved supplier.", "success")
+        return redirect(url_for("potential_suppliers"))
+
+    leads = PotentialSupplier.query.order_by(
+        PotentialSupplier.created_at.desc()
+    ).all()
+    sourcing_requests = SourcingRequest.query.order_by(
+        SourcingRequest.created_at.desc()
+    ).all()
+
+    return render_template(
+        "potential_suppliers.html",
+        leads=leads,
+        sourcing_requests=sourcing_requests,
+        categories=MARKETPLACE_CATEGORIES,
+        currencies=sorted(supported_currencies),
+    )
+
+
+@app.route(
+    "/company/potential-suppliers/<int:lead_id>/status",
+    methods=["POST"],
+)
+@admin_required
+def update_potential_supplier_status(lead_id):
+    lead = db.session.get(PotentialSupplier, lead_id)
+    if lead is None:
+        abort(404)
+
+    allowed_statuses = {"Pending", "Verified", "Rejected"}
+    new_status = request.form.get("status", "").strip()
+
+    if new_status not in allowed_statuses:
+        abort(400, description="Invalid potential supplier status.")
+
+    lead.verification_status = new_status
+    db.session.commit()
+
+    if new_status == "Verified":
+        flash(
+            "Lead marked Verified. It remains separate from approved suppliers; "
+            "use Add Supplier when you are ready to register it.",
+            "success",
+        )
+    else:
+        flash(f"Potential supplier marked {new_status}.", "success")
+
+    return redirect(url_for("potential_suppliers"))
 
 
 # --------------------------------------------------
