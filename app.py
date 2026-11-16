@@ -1703,9 +1703,50 @@ def potential_suppliers():
         flash("Potential supplier saved as Pending. It is not yet an approved supplier.", "success")
         return redirect(url_for("potential_suppliers"))
 
-    leads = PotentialSupplier.query.order_by(
+    # Phase 3: searchable supplier lead register. Filters are read-only
+    # and do not change or delete existing supplier records.
+    search_text = request.args.get("q", "").strip()[:150]
+    country_filter = request.args.get("country", "").strip()[:100]
+    category_filter = request.args.get("category", "").strip()[:100]
+    status_filter = request.args.get("status", "").strip()
+
+    leads_query = PotentialSupplier.query
+
+    if search_text:
+        pattern = f"%{search_text}%"
+        leads_query = leads_query.filter(
+            db.or_(
+                PotentialSupplier.supplier_name.ilike(pattern),
+                PotentialSupplier.contact_details.ilike(pattern),
+                PotentialSupplier.website_url.ilike(pattern),
+                PotentialSupplier.source.ilike(pattern),
+                PotentialSupplier.notes.ilike(pattern),
+            )
+        )
+
+    if country_filter:
+        leads_query = leads_query.filter(
+            PotentialSupplier.country.ilike(f"%{country_filter}%")
+        )
+
+    if category_filter in MARKETPLACE_CATEGORIES:
+        leads_query = leads_query.filter(
+            PotentialSupplier.category == category_filter
+        )
+    else:
+        category_filter = ""
+
+    if status_filter in {"Pending", "Verified", "Rejected"}:
+        leads_query = leads_query.filter(
+            PotentialSupplier.verification_status == status_filter
+        )
+    else:
+        status_filter = ""
+
+    leads = leads_query.order_by(
         PotentialSupplier.created_at.desc()
     ).all()
+    total_leads = PotentialSupplier.query.count()
     sourcing_requests = SourcingRequest.query.order_by(
         SourcingRequest.created_at.desc()
     ).all()
@@ -1716,6 +1757,11 @@ def potential_suppliers():
         sourcing_requests=sourcing_requests,
         categories=MARKETPLACE_CATEGORIES,
         currencies=sorted(supported_currencies),
+        search_text=search_text,
+        country_filter=country_filter,
+        category_filter=category_filter,
+        status_filter=status_filter,
+        total_leads=total_leads,
     )
 
 
