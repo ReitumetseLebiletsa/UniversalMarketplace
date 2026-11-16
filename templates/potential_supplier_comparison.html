@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supplier Price Comparison | Universal Runner Marketplace</title>
+    <style>
+        :root { --blue:#00209F; --green:#009543; --light:#f3f6fb; }
+        * { box-sizing:border-box; }
+        body { margin:0; padding:20px; font-family:Arial,sans-serif; background:var(--light); color:#171717; }
+        main { max-width:1100px; margin:auto; }
+        header { padding:22px; color:#fff; background:var(--blue); border-bottom:6px solid var(--green); border-radius:10px; }
+        .panel { background:#fff; padding:20px; margin:18px 0; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+        .notice { padding:14px; border-radius:7px; background:#fff3cd; line-height:1.5; margin:16px 0; }
+        .muted { color:#5d6470; }
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; min-width:800px; }
+        th,td { padding:12px; text-align:left; vertical-align:top; border-bottom:1px solid #e1e5ec; }
+        th { background:#e9eefb; }
+        .lowest { background:#e5f5e9; }
+        .pill { display:inline-block; padding:4px 8px; border-radius:20px; background:#d9f0df; color:#14532d; font-weight:bold; font-size:12px; }
+        a.button { display:inline-block; padding:11px 15px; margin:12px 8px 0 0; border-radius:6px; background:var(--green); color:#fff; text-decoration:none; font-weight:bold; }
+        @media(max-width:650px) { body { padding:12px; } .panel { padding:14px; } header h1 { font-size:23px; } }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>International Supplier Price Comparison</h1>
+        <p>Request UM-{{ sourcing_request.id }} — {{ sourcing_request.product_name }}</p>
+    </header>
+
+    <div class="notice">
+        <strong>Important:</strong> These are indicative prices entered for potential supplier leads.
+        They are not formal quotations, confirmed supplier offers, landed costs or final buyer prices.
+        Shipping, customs, taxes, duties, quality checks and URM fees are not included.
+        A low estimated price does not mean the supplier is verified or approved.
+    </div>
+
+    <section class="panel">
+        <h2>Comparison results</h2>
+        <p class="muted">{{ comparable_count }} of {{ comparisons|length }} linked leads have an estimated price and a usable exchange rate.</p>
+        {% if comparisons %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Country / Status</th>
+                        <th>Original estimate</th>
+                        <th>Indicative ZAR</th>
+                        <th>Indicative LSL</th>
+                        <th>Exchange-rate information</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in comparisons %}
+                    <tr class="{% if item.lowest %}lowest{% endif %}">
+                        <td>
+                            <strong>{{ item.lead.supplier_name }}</strong>
+                            {% if item.lowest %}<br><span class="pill">Lowest recorded estimate</span>{% endif %}
+                            {% if item.lead.website_url %}<br><a href="{{ item.lead.website_url }}" target="_blank" rel="noopener noreferrer">Supplier website</a>{% endif %}
+                        </td>
+                        <td>{{ item.lead.country }}<br><span class="muted">{{ item.lead.verification_status }}</span></td>
+                        <td>{% if item.lead.estimated_price is not none %}{{ "%.2f"|format(item.lead.estimated_price) }} {{ item.lead.currency or "Currency not set" }}{% else %}Not provided{% endif %}</td>
+                        <td>{% if item.price_zar is not none %}R {{ "%.2f"|format(item.price_zar) }}{% else %}—{% endif %}</td>
+                        <td>{% if item.price_lsl is not none %}M {{ "%.2f"|format(item.price_lsl) }}{% else %}—{% endif %}</td>
+                        <td>
+                            {% if item.error %}
+                                <span class="muted">{{ item.error }}</span>
+                            {% else %}
+                                1 {{ item.lead.currency }} = {{ "%.6f"|format(item.rate) }} ZAR<br>
+                                <span class="muted">{{ item.rate_provider }} · {{ item.rate_date.strftime("%d %b %Y") if item.rate_date else "Date unavailable" }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="muted">No potential supplier leads are linked to this sourcing request yet.</p>
+        {% endif %}
+        <a class="button" href="{{ url_for('potential_suppliers') }}">Back to Potential Suppliers</a>
+        <a class="button" href="{{ url_for('list_quotations') }}">View Formal Quotations</a>
+    </section>
+</main>
+</body>
+</html>
