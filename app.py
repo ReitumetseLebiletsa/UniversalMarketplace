@@ -1818,6 +1818,95 @@ def potential_suppliers():
 
 
 @app.route(
+    "/company/potential-suppliers/compare/<int:request_id>",
+    methods=["GET"],
+)
+@admin_required
+def compare_potential_supplier_prices(request_id):
+    sourcing_request = db.session.get(SourcingRequest, request_id)
+    if sourcing_request is None:
+        abort(404)
+
+    leads = PotentialSupplier.query.filter_by(
+        sourcing_request_id=request_id
+    ).order_by(PotentialSupplier.created_at.desc()).all()
+
+    rate_cache = {}
+    comparisons = []
+
+    for lead in leads:
+        item = {
+            "lead": lead,
+            "price_zar": None,
+            "price_lsl": None,
+            "rate": None,
+            "rate_date": None,
+            "rate_provider": None,
+            "error": None,
+        }
+
+        if lead.estimated_price is None or not lead.currency:
+            item["error"] = "Add an estimated price and currency to compare."
+            comparisons.append(item)
+            continue
+
+        source_currency = lead.currency.strip().upper()
+        try:
+            amount = float(lead.estimated_price)
+            if not math.isfinite(amount) or amount < 0:
+                raise CurrencyServiceError("The stored estimated price is invalid.")
+
+            if source_currency in {"ZAR", "LSL"}:
+                rate_details = {
+                    "rate": 1.0,
+                    "date": datetime.utcnow().date(),
+                    "provider": "LSL/ZAR 1:1 peg",
+                }
+            else:
+                if source_currency not in rate_cache:
+                    rate_cache[source_currency] = get_exchange_rate(
+                        source_currency,
+                        "ZAR",
+                    )
+                rate_details = rate_cache[source_currency]
+
+            converted_zar = amount * rate_details["rate"]
+            if not math.isfinite(converted_zar):
+                raise CurrencyServiceError("The converted estimate is invalid.")
+
+            # The Lesotho loti is pegged at parity with the South African rand.
+            item.update({
+                "price_zar": round(converted_zar, 2),
+                "price_lsl": round(converted_zar, 2),
+                "rate": rate_details["rate"],
+                "rate_date": rate_details["date"],
+                "rate_provider": rate_details["provider"],
+            })
+        except (CurrencyServiceError, TypeError, ValueError) as error:
+            item["error"] = str(error)
+
+        comparisons.append(item)
+
+    valid_comparisons = [
+        item for item in comparisons if item["price_lsl"] is not None
+    ]
+    if valid_comparisons:
+        lowest = min(item["price_lsl"] for item in valid_comparisons)
+        for item in valid_comparisons:
+            item["lowest"] = item["price_lsl"] == lowest
+    else:
+        lowest = None
+
+    return render_template(
+        "potential_supplier_comparison.html",
+        sourcing_request=sourcing_request,
+        comparisons=comparisons,
+        lowest_price_lsl=lowest,
+        comparable_count=len(valid_comparisons),
+    )
+
+
+@app.route(
     "/company/potential-suppliers/<int:lead_id>/status",
     methods=["POST"],
 )
