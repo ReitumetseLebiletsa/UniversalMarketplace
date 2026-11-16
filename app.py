@@ -1677,6 +1677,41 @@ def potential_suppliers():
                 flash("Select an existing sourcing request or leave it blank.", "error")
                 return redirect(url_for("potential_suppliers"))
 
+        # Phase 3: identify likely duplicate leads without blocking or
+        # deleting anything. A match is based on the supplier name + country,
+        # or the exact normalized website URL.
+        def normalize_supplier_value(value):
+            return "".join(
+                character.lower()
+                for character in (value or "")
+                if character.isalnum()
+            )
+
+        def normalize_supplier_url(value):
+            value = (value or "").strip().lower()
+            value = value.removeprefix("https://").removeprefix("http://")
+            value = value.removeprefix("www.").rstrip("/")
+            return value
+
+        submitted_name = normalize_supplier_value(supplier_name)
+        submitted_country = normalize_supplier_value(country)
+        submitted_website = normalize_supplier_url(website_url)
+
+        possible_duplicates = []
+        for existing_lead in PotentialSupplier.query.all():
+            same_name_and_country = (
+                normalize_supplier_value(existing_lead.supplier_name) == submitted_name
+                and normalize_supplier_value(existing_lead.country) == submitted_country
+            )
+            existing_website = normalize_supplier_url(existing_lead.website_url)
+            same_website = bool(
+                submitted_website
+                and existing_website
+                and submitted_website == existing_website
+            )
+            if same_name_and_country or same_website:
+                possible_duplicates.append(existing_lead)
+
         lead = PotentialSupplier(
             supplier_name=supplier_name,
             country=country,
@@ -1700,7 +1735,24 @@ def potential_suppliers():
             flash("The supplier lead could not be saved. Please try again.", "error")
             return redirect(url_for("potential_suppliers"))
 
-        flash("Potential supplier saved as Pending. It is not yet an approved supplier.", "success")
+        if possible_duplicates:
+            duplicate_names = ", ".join(
+                f"{item.supplier_name} ({item.country})"
+                for item in possible_duplicates[:3]
+            )
+            if len(possible_duplicates) > 3:
+                duplicate_names += f" and {len(possible_duplicates) - 3} more"
+            flash(
+                "Possible duplicate detected: "
+                + duplicate_names
+                + ". The new lead was saved for administrator review.",
+                "warning",
+            )
+        else:
+            flash(
+                "Potential supplier saved as Pending. It is not yet an approved supplier.",
+                "success",
+            )
         return redirect(url_for("potential_suppliers"))
 
     # Phase 3: searchable supplier lead register. Filters are read-only
