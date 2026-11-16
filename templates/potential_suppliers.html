@@ -31,6 +31,13 @@
         .small-form select { min-width:115px; }
         .small-form button { margin:0; }
         .muted { color:#5d6470; }
+        .filter-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0 20px; padding:16px; background:#f7f9fd; border:1px solid #e1e5ec; border-radius:8px; }
+        .filter-form label { display:block; font-weight:bold; margin-bottom:6px; }
+        .filter-form input, .filter-form select { width:100%; padding:10px; border:1px solid #cbd2df; border-radius:6px; font:inherit; }
+        .filter-actions { display:flex; align-items:end; gap:12px; }
+        .filter-actions button { margin:0; }
+        .filter-actions a { padding:10px 0; color:var(--blue); }
+        @media(max-width:650px) { .filter-form { grid-template-columns:1fr; } .filter-actions { align-items:center; } }
         @media(max-width:650px) { body { padding:12px; } .form-grid { grid-template-columns:1fr; } .wide { grid-column:auto; } .panel { padding:15px; } header h1 { font-size:23px; } }
     </style>
 </head>
@@ -127,7 +134,39 @@
     </section>
 
     <section class="panel">
-        <h2>Supplier leads ({{ leads|length }})</h2>
+        <h2>Supplier leads ({{ leads|length }} shown of {{ total_leads }})</h2>
+        <form method="GET" action="{{ url_for('potential_suppliers') }}" class="filter-form">
+            <div>
+                <label for="q">Search supplier records</label>
+                <input id="q" name="q" value="{{ search_text }}" placeholder="Name, contact, website, source or notes">
+            </div>
+            <div>
+                <label for="filter_country">Country</label>
+                <input id="filter_country" name="country" value="{{ country_filter }}" placeholder="Any country">
+            </div>
+            <div>
+                <label for="filter_category">Category</label>
+                <select id="filter_category" name="category">
+                    <option value="">All categories</option>
+                    {% for item in categories %}
+                        <option value="{{ item }}" {% if category_filter == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filter_status">Verification status</label>
+                <select id="filter_status" name="status">
+                    <option value="">All statuses</option>
+                    {% for item in ["Pending", "Verified", "Rejected"] %}
+                        <option value="{{ item }}" {% if status_filter == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit">Apply filters</button>
+                <a href="{{ url_for('potential_suppliers') }}">Clear</a>
+            </div>
+        </form>
         {% if leads %}
         <div class="table-wrap">
             <table>
