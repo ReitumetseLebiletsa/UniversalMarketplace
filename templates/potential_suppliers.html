@@ -190,7 +190,7 @@
                         </td>
                         <td>{% if lead.estimated_price is not none %}{{ "%.2f"|format(lead.estimated_price) }} {{ lead.currency or "" }}{% else %}—{% endif %}</td>
                         <td>{{ lead.source or "—" }}{% if lead.notes %}<br><span class="muted">{{ lead.notes }}</span>{% endif %}</td>
-                        <td>{% if lead.sourcing_request %}UM-{{ lead.sourcing_request.id }} — {{ lead.sourcing_request.product_name }}{% else %}—{% endif %}</td>
+                        <td>{% if lead.sourcing_request %}UM-{{ lead.sourcing_request.id }} — {{ lead.sourcing_request.product_name }}<br><a href="{{ url_for('compare_potential_supplier_prices', request_id=lead.sourcing_request.id) }}">Compare linked prices</a>{% else %}—{% endif %}</td>
                         <td class="status">{{ lead.verification_status }}</td>
                         <td>
                             <form class="small-form" method="POST" action="{{ url_for('update_potential_supplier_status', lead_id=lead.id) }}">
