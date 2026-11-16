@@ -1887,13 +1887,21 @@ def compare_potential_supplier_prices(request_id):
 
         comparisons.append(item)
 
+    # Rejected leads remain visible for audit purposes, but must never
+    # be presented as the recommended lowest-cost sourcing option.
     valid_comparisons = [
-        item for item in comparisons if item["price_lsl"] is not None
+        item for item in comparisons
+        if item["price_lsl"] is not None
+        and item["lead"].verification_status != "Rejected"
     ]
     if valid_comparisons:
         lowest = min(item["price_lsl"] for item in valid_comparisons)
-        for item in valid_comparisons:
-            item["lowest"] = item["price_lsl"] == lowest
+        for item in comparisons:
+            item["lowest"] = (
+                item["price_lsl"] is not None
+                and item["lead"].verification_status != "Rejected"
+                and item["price_lsl"] == lowest
+            )
     else:
         lowest = None
 
