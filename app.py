@@ -3698,6 +3698,22 @@ def update_order(order_id):
         flash("Tracking link must begin with http:// or https://.", "error")
         return redirect(url_for("company_orders"))
 
+    # Enforce a simple forward-only fulfilment sequence (or cancellation).
+    next_status = {
+        "Awaiting Payment": {"Payment Received"},
+        "Payment Received": {"Sourcing"},
+        "Sourcing": {"Processing"},
+        "Processing": {"Ready for Dispatch"},
+        "Ready for Dispatch": {"Dispatched"},
+        "Dispatched": {"Delivered"},
+        "Delivered": {"Completed"},
+        "Completed": set(),
+        "Cancelled": set(),
+    }
+    if status != order.status and status != "Cancelled" and status not in next_status.get(order.status, set()):
+        flash("Order status must follow the fulfilment sequence.", "error")
+        return redirect(url_for("company_orders"))
+
     # Keep the payment milestone tied to confirmed payment records.
     if status == "Payment Received" and order.payment_status != "Paid":
         flash("The order can be marked Payment Received only after full payment is confirmed.", "error")
