@@ -2984,22 +2984,71 @@ def buyer_quotation_decision(quotation_id):
         return redirect(url_for("list_quotations"))
 
     if decision == "approve":
+        # Prevent duplicate order creation if an order already exists.
+        existing_order = Order.query.filter_by(
+            quotation_id=quotation.id
+        ).first()
+
+        if existing_order is not None:
+            flash(
+                f"This quotation already has order {existing_order.order_number}.",
+                "info",
+            )
+            return redirect(url_for("list_quotations"))
+
         quotation.buyer_decision = "Approved"
         quotation.buyer_approved_at = datetime.utcnow()
-        flash("Quotation approved successfully.", "success")
+
+        buyer = current_user
+        new_order = Order(
+            order_number=f"URM-PENDING-{quotation.id}",
+            quotation_id=quotation.id,
+            sourcing_request_id=sourcing_request.id,
+            buyer_user_id=buyer.id,
+            status="Awaiting Payment",
+            payment_status="Unpaid",
+            total_amount=quotation.selling_price,
+            currency=quotation.currency,
+            total_amount_lsl=quotation.selling_price_lsl,
+            delivery_country=buyer.country,
+            delivery_province_district=buyer.province_district,
+            delivery_town_city=buyer.town_city,
+            delivery_area=buyer.area,
+            delivery_address=buyer.delivery_address,
+        )
+
+        db.session.add(new_order)
+
+        try:
+            # Flush gets a database ID, giving us a concurrency-safe unique reference.
+            db.session.flush()
+            new_order.order_number = (
+                f"URM-{datetime.utcnow().year}-{new_order.id:05d}"
+            )
+            db.session.commit()
+            flash(
+                f"Quotation approved! Your order {new_order.order_number} has been created.",
+                "success",
+            )
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("Could not save quotation approval and create order")
+            flash(
+                "Your approval could not be processed. Please try again.",
+                "error",
+            )
     else:
         quotation.buyer_decision = "Rejected"
-        flash("Quotation rejected.", "success")
-
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        app.logger.exception("Could not save buyer quotation decision")
-        flash(
-            "Your decision could not be saved. Please try again.",
-            "error",
-        )
+        try:
+            db.session.commit()
+            flash("Quotation rejected.", "success")
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("Could not save buyer quotation decision")
+            flash(
+                "Your decision could not be saved. Please try again.",
+                "error",
+            )
 
     return redirect(url_for("list_quotations"))
 
