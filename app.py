@@ -434,6 +434,78 @@ class Quotation(db.Model):
     supplier = db.relationship("Supplier")
 
  # --------------------------------------------------
+
+
+# --------------------------------------------------
+# ORDER MODEL — PHASE 4
+# --------------------------------------------------
+
+class Order(db.Model):
+    __tablename__ = "order"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String(30), unique=True, nullable=False, index=True)
+
+    # A quotation can produce at most one order.
+    quotation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("quotation.id"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    sourcing_request_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sourcing_request.id"),
+        nullable=False,
+        index=True,
+    )
+    buyer_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False,
+        index=True,
+    )
+
+    # Track order progress separately from payment progress.
+    status = db.Column(db.String(40), default="Awaiting Payment", nullable=False, index=True)
+    payment_status = db.Column(db.String(30), default="Unpaid", nullable=False)
+
+
+    # Snapshot of the approved quotation totals.
+    total_amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), nullable=False)
+    total_amount_lsl = db.Column(db.Float, nullable=True)
+
+
+    # Snapshot of buyer delivery destination when the order is created.
+    delivery_country = db.Column(db.String(100), nullable=True)
+    delivery_province_district = db.Column(db.String(100), nullable=True)
+    delivery_town_city = db.Column(db.String(100), nullable=True)
+    delivery_area = db.Column(db.String(150), nullable=True)
+    delivery_address = db.Column(db.String(300), nullable=True)
+
+
+    # Delivery tracking details.
+    freight_provider = db.Column(db.String(150), nullable=True)
+    tracking_number = db.Column(db.String(150), nullable=True)
+    tracking_url = db.Column(db.String(500), nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    buyer_notes = db.Column(db.Text, nullable=True)
+
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    dispatched_at = db.Column(db.DateTime, nullable=True)
+    delivered_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    quotation = db.relationship("Quotation")
+    sourcing_request = db.relationship("SourcingRequest")
+    buyer = db.relationship("User")
+
+
 # PAYMENT MODEL — UNIVERSAL RUNNER MARKETPLACE
 # --------------------------------------------------
 
