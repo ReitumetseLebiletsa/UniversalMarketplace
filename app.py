@@ -184,6 +184,10 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(30), nullable=False, default="buyer")
     active = db.Column(db.Boolean, nullable=False, default=True)
     country = db.Column(db.String(100), nullable=False, default="Lesotho")
+    province_district = db.Column(db.String(100), nullable=True)
+    town_city = db.Column(db.String(100), nullable=True)
+    area = db.Column(db.String(150), nullable=True)
+    delivery_address = db.Column(db.String(300), nullable=True)
     preferred_currency = db.Column(db.String(3), nullable=False, default="LSL")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -784,6 +788,41 @@ def initialise_database():
         print("Database tables checked.")
 
         # --------------------------------------------------
+        # 2. SAFE BUYER LOCATION COLUMN MIGRATIONS
+        # --------------------------------------------------
+
+        if "user" in existing_tables:
+
+            existing_columns = {
+                column["name"]
+                for column in inspector.get_columns("user")
+            }
+
+            user_columns = {
+                "province_district": "VARCHAR(100)",
+                "town_city": "VARCHAR(100)",
+                "area": "VARCHAR(150)",
+                "delivery_address": "VARCHAR(300)",
+            }
+
+            with db.engine.begin() as connection:
+
+                for column_name, definition in user_columns.items():
+
+                    if column_name not in existing_columns:
+
+                        connection.execute(
+                            text(
+                                f'ALTER TABLE "user" '
+                                f'ADD COLUMN "{column_name}" {definition}'
+                            )
+                        )
+
+                        print(
+                            f"Added user column: {column_name}"
+                        )
+
+        # --------------------------------------------------
         # 2. SAFE QUOTATION COLUMN MIGRATIONS
         # --------------------------------------------------
 
@@ -1066,7 +1105,27 @@ def register():
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
-        if not username or not email or not password:
+        country = request.form.get("country", "").strip()
+        other_country = request.form.get("other_country", "").strip()
+
+        if country == "Other":
+            country = other_country
+
+        province_district = request.form.get(
+            "province_district", ""
+        ).strip()
+
+        town_city = request.form.get("town_city", "").strip()
+        area = request.form.get("area", "").strip()
+        delivery_address = request.form.get(
+            "delivery_address", ""
+        ).strip()
+
+        if not all([
+            username, email, password, confirm_password,
+            country, province_district, town_city,
+            area, delivery_address
+        ]):
             flash("Please complete all required fields.", "error")
 
         elif len(password) < 12:
@@ -1086,7 +1145,13 @@ def register():
                 email=email,
                 role="buyer",
                 active=True,
+                country=country,
+                province_district=province_district,
+                town_city=town_city,
+                area=area,
+                delivery_address=delivery_address,
             )
+
             buyer.set_password(password)
 
             db.session.add(buyer)
@@ -1541,6 +1606,90 @@ def buyer_accounts():
         buyers=buyers,
     )
 
+# --------------------------------------------------
+# PERMANENT BUYER ACCOUNT DELETION
+# --------------------------------------------------
+
+@app.route(
+    "/company/buyers/<int:buyer_id>/delete",
+    methods=["POST"],
+)
+@admin_required
+def delete_buyer_account(buyer_id):
+
+    buyer = db.session.get(User, buyer_id)
+
+    if buyer is None or buyer.role != "buyer":
+        abort(404)
+
+    # Protect financial audit history.
+    # Never delete a buyer linked to a payment record.
+
+    payment_references = (
+        Payment.query.filter(
+            db.or_(
+                Payment.submitted_by == buyer.id,
+                Payment.recorded_by == buyer.id,
+                Payment.confirmed_by == buyer.id,
+            )
+        ).count()
+    )
+
+    if payment_references > 0:
+        flash(
+            "This buyer cannot be permanently deleted because "
+            "payment records are linked to the account. "
+            "Deactivate the account instead.",
+            "error",
+        )
+        return redirect(url_for("buyer_accounts"))
+
+    try:
+        # Preserve sourcing requests and quotations.
+        # Remove only the link to the buyer account.
+
+        SourcingRequest.query.filter_by(
+            buyer_user_id=buyer.id
+        ).update(
+            {SourcingRequest.buyer_user_id: None},
+            synchronize_session=False,
+        )
+
+        # Preserve product enquiries.
+
+        ProductEnquiry.query.filter_by(
+            customer_user_id=buyer.id
+        ).update(
+            {ProductEnquiry.customer_user_id: None},
+            synchronize_session=False,
+        )
+
+        # Delete only the buyer account.
+
+        db.session.delete(buyer)
+        db.session.commit()
+
+        flash(
+            "Buyer account permanently deleted. "
+            "Historical sourcing requests and enquiries were preserved.",
+            "success",
+        )
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Could not delete buyer account %s",
+            buyer_id,
+        )
+
+        flash(
+            "The buyer account could not be deleted. "
+            "No changes were committed.",
+            "error",
+        )
+
+    return redirect(url_for("buyer_accounts"))
 
 # --------------------------------------------------
 # SUPPLIER MANAGEMENT
