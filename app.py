@@ -184,6 +184,10 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(30), nullable=False, default="buyer")
     active = db.Column(db.Boolean, nullable=False, default=True)
     country = db.Column(db.String(100), nullable=False, default="Lesotho")
+    province_district = db.Column(db.String(100), nullable=True)
+    town_city = db.Column(db.String(100), nullable=True)
+    area = db.Column(db.String(150), nullable=True)
+    delivery_address = db.Column(db.String(300), nullable=True)
     preferred_currency = db.Column(db.String(3), nullable=False, default="LSL")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -784,6 +788,41 @@ def initialise_database():
         print("Database tables checked.")
 
         # --------------------------------------------------
+        # 2. SAFE BUYER LOCATION COLUMN MIGRATIONS
+        # --------------------------------------------------
+
+        if "user" in existing_tables:
+
+            existing_columns = {
+                column["name"]
+                for column in inspector.get_columns("user")
+            }
+
+            user_columns = {
+                "province_district": "VARCHAR(100)",
+                "town_city": "VARCHAR(100)",
+                "area": "VARCHAR(150)",
+                "delivery_address": "VARCHAR(300)",
+            }
+
+            with db.engine.begin() as connection:
+
+                for column_name, definition in user_columns.items():
+
+                    if column_name not in existing_columns:
+
+                        connection.execute(
+                            text(
+                                f'ALTER TABLE "user" '
+                                f'ADD COLUMN "{column_name}" {definition}'
+                            )
+                        )
+
+                        print(
+                            f"Added user column: {column_name}"
+                        )
+
+        # --------------------------------------------------
         # 2. SAFE QUOTATION COLUMN MIGRATIONS
         # --------------------------------------------------
 
@@ -1066,7 +1105,27 @@ def register():
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
-        if not username or not email or not password:
+        country = request.form.get("country", "").strip()
+        other_country = request.form.get("other_country", "").strip()
+
+        if country == "Other":
+            country = other_country
+
+        province_district = request.form.get(
+            "province_district", ""
+        ).strip()
+
+        town_city = request.form.get("town_city", "").strip()
+        area = request.form.get("area", "").strip()
+        delivery_address = request.form.get(
+            "delivery_address", ""
+        ).strip()
+
+        if not all([
+            username, email, password, confirm_password,
+            country, province_district, town_city,
+            area, delivery_address
+        ]):
             flash("Please complete all required fields.", "error")
 
         elif len(password) < 12:
@@ -1086,7 +1145,13 @@ def register():
                 email=email,
                 role="buyer",
                 active=True,
+                country=country,
+                province_district=province_district,
+                town_city=town_city,
+                area=area,
+                delivery_address=delivery_address,
             )
+
             buyer.set_password(password)
 
             db.session.add(buyer)
@@ -1541,6 +1606,90 @@ def buyer_accounts():
         buyers=buyers,
     )
 
+# --------------------------------------------------
+# PERMANENT BUYER ACCOUNT DELETION
+# --------------------------------------------------
+
+@app.route(
+    "/company/buyers/<int:buyer_id>/delete",
+    methods=["POST"],
+)
+@admin_required
+def delete_buyer_account(buyer_id):
+
+    buyer = db.session.get(User, buyer_id)
+
+    if buyer is None or buyer.role != "buyer":
+        abort(404)
+
+    # Protect financial audit history.
+    # Never delete a buyer linked to a payment record.
+
+    payment_references = (
+        Payment.query.filter(
+            db.or_(
+                Payment.submitted_by == buyer.id,
+                Payment.recorded_by == buyer.id,
+                Payment.confirmed_by == buyer.id,
+            )
+        ).count()
+    )
+
+    if payment_references > 0:
+        flash(
+            "This buyer cannot be permanently deleted because "
+            "payment records are linked to the account. "
+            "Deactivate the account instead.",
+            "error",
+        )
+        return redirect(url_for("buyer_accounts"))
+
+    try:
+        # Preserve sourcing requests and quotations.
+        # Remove only the link to the buyer account.
+
+        SourcingRequest.query.filter_by(
+            buyer_user_id=buyer.id
+        ).update(
+            {SourcingRequest.buyer_user_id: None},
+            synchronize_session=False,
+        )
+
+        # Preserve product enquiries.
+
+        ProductEnquiry.query.filter_by(
+            customer_user_id=buyer.id
+        ).update(
+            {ProductEnquiry.customer_user_id: None},
+            synchronize_session=False,
+        )
+
+        # Delete only the buyer account.
+
+        db.session.delete(buyer)
+        db.session.commit()
+
+        flash(
+            "Buyer account permanently deleted. "
+            "Historical sourcing requests and enquiries were preserved.",
+            "success",
+        )
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Could not delete buyer account %s",
+            buyer_id,
+        )
+
+        flash(
+            "The buyer account could not be deleted. "
+            "No changes were committed.",
+            "error",
+        )
+
+    return redirect(url_for("buyer_accounts"))
 
 # --------------------------------------------------
 # SUPPLIER MANAGEMENT
@@ -1677,6 +1826,41 @@ def potential_suppliers():
                 flash("Select an existing sourcing request or leave it blank.", "error")
                 return redirect(url_for("potential_suppliers"))
 
+        # Phase 3: identify likely duplicate leads without blocking or
+        # deleting anything. A match is based on the supplier name + country,
+        # or the exact normalized website URL.
+        def normalize_supplier_value(value):
+            return "".join(
+                character.lower()
+                for character in (value or "")
+                if character.isalnum()
+            )
+
+        def normalize_supplier_url(value):
+            value = (value or "").strip().lower()
+            value = value.removeprefix("https://").removeprefix("http://")
+            value = value.removeprefix("www.").rstrip("/")
+            return value
+
+        submitted_name = normalize_supplier_value(supplier_name)
+        submitted_country = normalize_supplier_value(country)
+        submitted_website = normalize_supplier_url(website_url)
+
+        possible_duplicates = []
+        for existing_lead in PotentialSupplier.query.all():
+            same_name_and_country = (
+                normalize_supplier_value(existing_lead.supplier_name) == submitted_name
+                and normalize_supplier_value(existing_lead.country) == submitted_country
+            )
+            existing_website = normalize_supplier_url(existing_lead.website_url)
+            same_website = bool(
+                submitted_website
+                and existing_website
+                and submitted_website == existing_website
+            )
+            if same_name_and_country or same_website:
+                possible_duplicates.append(existing_lead)
+
         lead = PotentialSupplier(
             supplier_name=supplier_name,
             country=country,
@@ -1700,12 +1884,70 @@ def potential_suppliers():
             flash("The supplier lead could not be saved. Please try again.", "error")
             return redirect(url_for("potential_suppliers"))
 
-        flash("Potential supplier saved as Pending. It is not yet an approved supplier.", "success")
+        if possible_duplicates:
+            duplicate_names = ", ".join(
+                f"{item.supplier_name} ({item.country})"
+                for item in possible_duplicates[:3]
+            )
+            if len(possible_duplicates) > 3:
+                duplicate_names += f" and {len(possible_duplicates) - 3} more"
+            flash(
+                "Possible duplicate detected: "
+                + duplicate_names
+                + ". The new lead was saved for administrator review.",
+                "warning",
+            )
+        else:
+            flash(
+                "Potential supplier saved as Pending. It is not yet an approved supplier.",
+                "success",
+            )
         return redirect(url_for("potential_suppliers"))
 
-    leads = PotentialSupplier.query.order_by(
+    # Phase 3: searchable supplier lead register. Filters are read-only
+    # and do not change or delete existing supplier records.
+    search_text = request.args.get("q", "").strip()[:150]
+    country_filter = request.args.get("country", "").strip()[:100]
+    category_filter = request.args.get("category", "").strip()[:100]
+    status_filter = request.args.get("status", "").strip()
+
+    leads_query = PotentialSupplier.query
+
+    if search_text:
+        pattern = f"%{search_text}%"
+        leads_query = leads_query.filter(
+            db.or_(
+                PotentialSupplier.supplier_name.ilike(pattern),
+                PotentialSupplier.contact_details.ilike(pattern),
+                PotentialSupplier.website_url.ilike(pattern),
+                PotentialSupplier.source.ilike(pattern),
+                PotentialSupplier.notes.ilike(pattern),
+            )
+        )
+
+    if country_filter:
+        leads_query = leads_query.filter(
+            PotentialSupplier.country.ilike(f"%{country_filter}%")
+        )
+
+    if category_filter in MARKETPLACE_CATEGORIES:
+        leads_query = leads_query.filter(
+            PotentialSupplier.category == category_filter
+        )
+    else:
+        category_filter = ""
+
+    if status_filter in {"Pending", "Verified", "Rejected"}:
+        leads_query = leads_query.filter(
+            PotentialSupplier.verification_status == status_filter
+        )
+    else:
+        status_filter = ""
+
+    leads = leads_query.order_by(
         PotentialSupplier.created_at.desc()
     ).all()
+    total_leads = PotentialSupplier.query.count()
     sourcing_requests = SourcingRequest.query.order_by(
         SourcingRequest.created_at.desc()
     ).all()
@@ -1716,6 +1958,108 @@ def potential_suppliers():
         sourcing_requests=sourcing_requests,
         categories=MARKETPLACE_CATEGORIES,
         currencies=sorted(supported_currencies),
+        search_text=search_text,
+        country_filter=country_filter,
+        category_filter=category_filter,
+        status_filter=status_filter,
+        total_leads=total_leads,
+    )
+
+
+@app.route(
+    "/company/potential-suppliers/compare/<int:request_id>",
+    methods=["GET"],
+)
+@admin_required
+def compare_potential_supplier_prices(request_id):
+    sourcing_request = db.session.get(SourcingRequest, request_id)
+    if sourcing_request is None:
+        abort(404)
+
+    leads = PotentialSupplier.query.filter_by(
+        sourcing_request_id=request_id
+    ).order_by(PotentialSupplier.created_at.desc()).all()
+
+    rate_cache = {}
+    comparisons = []
+
+    for lead in leads:
+        item = {
+            "lead": lead,
+            "price_zar": None,
+            "price_lsl": None,
+            "rate": None,
+            "rate_date": None,
+            "rate_provider": None,
+            "error": None,
+        }
+
+        if lead.estimated_price is None or not lead.currency:
+            item["error"] = "Add an estimated price and currency to compare."
+            comparisons.append(item)
+            continue
+
+        source_currency = lead.currency.strip().upper()
+        try:
+            amount = float(lead.estimated_price)
+            if not math.isfinite(amount) or amount < 0:
+                raise CurrencyServiceError("The stored estimated price is invalid.")
+
+            if source_currency in {"ZAR", "LSL"}:
+                rate_details = {
+                    "rate": 1.0,
+                    "date": datetime.utcnow().date(),
+                    "provider": "LSL/ZAR 1:1 peg",
+                }
+            else:
+                if source_currency not in rate_cache:
+                    rate_cache[source_currency] = get_exchange_rate(
+                        source_currency,
+                        "ZAR",
+                    )
+                rate_details = rate_cache[source_currency]
+
+            converted_zar = amount * rate_details["rate"]
+            if not math.isfinite(converted_zar):
+                raise CurrencyServiceError("The converted estimate is invalid.")
+
+            # The Lesotho loti is pegged at parity with the South African rand.
+            item.update({
+                "price_zar": round(converted_zar, 2),
+                "price_lsl": round(converted_zar, 2),
+                "rate": rate_details["rate"],
+                "rate_date": rate_details["date"],
+                "rate_provider": rate_details["provider"],
+            })
+        except (CurrencyServiceError, TypeError, ValueError) as error:
+            item["error"] = str(error)
+
+        comparisons.append(item)
+
+    # Rejected leads remain visible for audit purposes, but must never
+    # be presented as the recommended lowest-cost sourcing option.
+    valid_comparisons = [
+        item for item in comparisons
+        if item["price_lsl"] is not None
+        and item["lead"].verification_status != "Rejected"
+    ]
+    if valid_comparisons:
+        lowest = min(item["price_lsl"] for item in valid_comparisons)
+        for item in comparisons:
+            item["lowest"] = (
+                item["price_lsl"] is not None
+                and item["lead"].verification_status != "Rejected"
+                and item["price_lsl"] == lowest
+            )
+    else:
+        lowest = None
+
+    return render_template(
+        "potential_supplier_comparison.html",
+        sourcing_request=sourcing_request,
+        comparisons=comparisons,
+        lowest_price_lsl=lowest,
+        comparable_count=len(valid_comparisons),
     )
 
 

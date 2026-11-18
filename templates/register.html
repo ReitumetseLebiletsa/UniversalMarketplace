@@ -6,6 +6,8 @@
     <title>Register | Universal Runner Marketplace</title>
 
     <style>
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -21,7 +23,7 @@
         }
 
         main {
-            max-width: 440px;
+            max-width: 520px;
             margin: 40px auto;
             padding: 24px;
             background: white;
@@ -37,13 +39,20 @@
             font-weight: bold;
         }
 
-        input {
+        input, select, textarea {
+            display: block;
             width: 100%;
             padding: 11px;
             margin-top: 6px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 16px;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
         }
 
         button {
@@ -65,6 +74,13 @@
         }
 
         a { color: #00209F; }
+
+        @media (max-width: 600px) {
+            main {
+                margin: 20px 12px;
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 
@@ -95,7 +111,7 @@
         <input id="email" name="email" type="email"
                autocomplete="email" required>
 
-        <label for="password">Password</label>
+        <label for="password">Password (minimum 12 characters)</label>
         <input id="password" name="password" type="password"
                minlength="12" autocomplete="new-password" required>
 
@@ -104,11 +120,62 @@
                type="password" minlength="12"
                autocomplete="new-password" required>
 
+        <hr style="margin-top: 24px; border: 0; border-top: 1px solid #d8e2f5;">
+        <h2 style="color: #00209F; font-size: 20px;">Your location</h2>
+        <p>This information helps us coordinate sourcing and delivery.</p>
+
+        <label for="country">Country</label>
+        <select id="country" name="country" required>
+            <option value="">Select your country</option>
+            <option value="Lesotho">Lesotho</option>
+            <option value="South Africa">South Africa</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <div id="other-country-container" hidden>
+            <label for="other_country">Enter your country</label>
+            <input id="other_country" name="other_country"
+                   autocomplete="country-name">
+        </div>
+
+        <label for="province_district">Province / District</label>
+        <input id="province_district" name="province_district"
+               autocomplete="address-level1" required>
+
+        <label for="town_city">Town / City</label>
+        <input id="town_city" name="town_city"
+               autocomplete="address-level2" required>
+
+        <label for="area">Area / Suburb / Village</label>
+        <input id="area" name="area" required>
+
+        <label for="delivery_address">Delivery address</label>
+        <textarea id="delivery_address" name="delivery_address"
+                  autocomplete="street-address" required></textarea>
+
         <button type="submit">Create account</button>
     </form>
 
     <p>Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
     <p><a href="{{ url_for('home') }}">Back to marketplace</a></p>
 </main>
+
+<script>
+    const countrySelect = document.getElementById("country");
+    const otherCountryContainer = document.getElementById("other-country-container");
+    const otherCountryInput = document.getElementById("other_country");
+
+    function updateOtherCountryField() {
+        const isOther = countrySelect.value === "Other";
+        otherCountryContainer.hidden = !isOther;
+        otherCountryInput.required = isOther;
+        if (!isOther) {
+            otherCountryInput.value = "";
+        }
+    }
+
+    countrySelect.addEventListener("change", updateOtherCountryField);
+    updateOtherCountryField();
+</script>
 </body>
 </html>

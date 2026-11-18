@@ -14,6 +14,7 @@
         .intro { line-height:1.5; margin:0; }
         .notice { margin:16px 0; padding:13px; border-radius:7px; background:#fff3cd; }
         .message { margin:12px 0; padding:12px; border-radius:7px; background:#e0f5e8; }
+        .message.warning { background:#fff3cd; border:1px solid #e0b84f; }
         .actions { margin:18px 0; }
         a.button, button { display:inline-block; padding:11px 15px; margin:4px 6px 4px 0; border:0; border-radius:6px; background:var(--green); color:#fff; text-decoration:none; font-weight:bold; cursor:pointer; }
         .panel { background:#fff; padding:20px; margin:18px 0; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
@@ -31,6 +32,13 @@
         .small-form select { min-width:115px; }
         .small-form button { margin:0; }
         .muted { color:#5d6470; }
+        .filter-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0 20px; padding:16px; background:#f7f9fd; border:1px solid #e1e5ec; border-radius:8px; }
+        .filter-form label { display:block; font-weight:bold; margin-bottom:6px; }
+        .filter-form input, .filter-form select { width:100%; padding:10px; border:1px solid #cbd2df; border-radius:6px; font:inherit; }
+        .filter-actions { display:flex; align-items:end; gap:12px; }
+        .filter-actions button { margin:0; }
+        .filter-actions a { padding:10px 0; color:var(--blue); }
+        @media(max-width:650px) { .filter-form { grid-template-columns:1fr; } .filter-actions { align-items:center; } }
         @media(max-width:650px) { body { padding:12px; } .form-grid { grid-template-columns:1fr; } .wide { grid-column:auto; } .panel { padding:15px; } header h1 { font-size:23px; } }
     </style>
 </head>
@@ -49,7 +57,7 @@
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
-            <div class="message">{{ message }}</div>
+            <div class="message {{ category }}">{{ message }}</div>
         {% endfor %}
     {% endwith %}
 
@@ -127,7 +135,39 @@
     </section>
 
     <section class="panel">
-        <h2>Supplier leads ({{ leads|length }})</h2>
+        <h2>Supplier leads ({{ leads|length }} shown of {{ total_leads }})</h2>
+        <form method="GET" action="{{ url_for('potential_suppliers') }}" class="filter-form">
+            <div>
+                <label for="q">Search supplier records</label>
+                <input id="q" name="q" value="{{ search_text }}" placeholder="Name, contact, website, source or notes">
+            </div>
+            <div>
+                <label for="filter_country">Country</label>
+                <input id="filter_country" name="country" value="{{ country_filter }}" placeholder="Any country">
+            </div>
+            <div>
+                <label for="filter_category">Category</label>
+                <select id="filter_category" name="category">
+                    <option value="">All categories</option>
+                    {% for item in categories %}
+                        <option value="{{ item }}" {% if category_filter == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filter_status">Verification status</label>
+                <select id="filter_status" name="status">
+                    <option value="">All statuses</option>
+                    {% for item in ["Pending", "Verified", "Rejected"] %}
+                        <option value="{{ item }}" {% if status_filter == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit">Apply filters</button>
+                <a href="{{ url_for('potential_suppliers') }}">Clear</a>
+            </div>
+        </form>
         {% if leads %}
         <div class="table-wrap">
             <table>
@@ -150,7 +190,7 @@
                         </td>
                         <td>{% if lead.estimated_price is not none %}{{ "%.2f"|format(lead.estimated_price) }} {{ lead.currency or "" }}{% else %}—{% endif %}</td>
                         <td>{{ lead.source or "—" }}{% if lead.notes %}<br><span class="muted">{{ lead.notes }}</span>{% endif %}</td>
-                        <td>{% if lead.sourcing_request %}UM-{{ lead.sourcing_request.id }} — {{ lead.sourcing_request.product_name }}{% else %}—{% endif %}</td>
+                        <td>{% if lead.sourcing_request %}UM-{{ lead.sourcing_request.id }} — {{ lead.sourcing_request.product_name }}<br><a href="{{ url_for('compare_potential_supplier_prices', request_id=lead.sourcing_request.id) }}">Compare linked prices</a>{% else %}—{% endif %}</td>
                         <td class="status">{{ lead.verification_status }}</td>
                         <td>
                             <form class="small-form" method="POST" action="{{ url_for('update_potential_supplier_status', lead_id=lead.id) }}">
