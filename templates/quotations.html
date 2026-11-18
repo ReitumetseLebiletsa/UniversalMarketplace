@@ -330,6 +330,11 @@
         <a class="button" href="{{ url_for('list_quotations') }}">
             📄 Quotations
         </a>
+        {% if current_user.role == "buyer" %}
+            <a class="button" href="{{ url_for('buyer_orders') }}">My Orders</a>
+        {% elif current_user.role in ADMIN_ROLES %}
+            <a class="button" href="{{ url_for('company_orders') }}">Order Management</a>
+        {% endif %}
 
         {% if current_user.role in ADMIN_ROLES %}
 
