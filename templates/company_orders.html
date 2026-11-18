@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orders | URM Admin</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:18px;font-family:Arial,sans-serif;background:#f3f6fb;color:#18212b}main{max-width:1500px;margin:auto}header{background:#00209F;color:#fff;padding:22px;border-radius:12px;border-bottom:6px solid #009543}.nav,.panel{background:#fff;padding:16px;margin:16px 0;border-radius:10px}.nav{display:flex;flex-wrap:wrap;gap:9px}a.btn,button{background:#009543;color:#fff;border:0;border-radius:6px;padding:9px 12px;text-decoration:none;font-weight:bold;cursor:pointer}a.blue{background:#00209F}.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:1150px}th,td{padding:12px;border-bottom:1px solid #e1e5ec;text-align:left;vertical-align:top}input,select,textarea{width:100%;padding:8px;margin:4px 0;border:1px solid #ccd3dd;border-radius:5px}textarea{min-height:60px}.update{min-width:260px}.muted{color:#667085;font-size:13px}
+</style></head><body><main>
+<header><h1>Order Management</h1><p>Review buyer orders, verify payment progress, and manage fulfilment and tracking.</p></header>
+<nav class="nav"><a class="btn blue" href="{{ url_for('company_dashboard') }}">Dashboard</a><a class="btn" href="{{ url_for('manage_quotations') }}">Quotations</a><a class="btn" href="{{ url_for('company_orders') }}">Refresh orders</a></nav>
+<section class="panel"><div class="wrap"><table><thead><tr><th>Order</th><th>Buyer</th><th>Quotation / Product</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Update order</th></tr></thead><tbody>
+{% for order in orders %}<tr>
+<td><strong>{{ order.order_number }}</strong><br><span class="muted">{{ order.created_at.strftime('%d %b %Y') }}</span><br>{{ order.status }}</td>
+<td>{{ order.buyer.username if order.buyer else 'Buyer' }}<br>{{ order.buyer.email if order.buyer else '' }}</td>
+<td>Q{{ order.quotation_id }}<br>{{ order.sourcing_request.product_name if order.sourcing_request else 'Sourcing request' }}</td>
+<td>{{ order.currency }} {{ '%.2f'|format(order.total_amount) }}<br><span class="muted">LSL {{ '%.2f'|format(order.total_amount_lsl or 0) }}</span></td>
+<td><strong>{{ order.payment_status }}</strong><br><a href="{{ url_for('manage_quotation_payments', quotation_id=order.quotation_id) }}">View payments</a></td>
+<td>{{ order.delivery_country or '-' }}<br>{{ order.delivery_town_city or '' }} {{ order.delivery_area or '' }}<br>{{ order.freight_provider or '' }}<br>{{ order.tracking_number or '' }}</td>
+<td><form class="update" method="post" action="{{ url_for('update_order', order_id=order.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Status</label><select name="status">{% for status in ['Awaiting Payment','Payment Received','Sourcing','Processing','Ready for Dispatch','Dispatched','Delivered','Completed','Cancelled'] %}<option value="{{ status }}" {% if order.status==status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select>
+<label>Freight provider</label><input name="freight_provider" value="{{ order.freight_provider or '' }}" placeholder="Courier / transporter">
+<label>Tracking number</label><input name="tracking_number" value="{{ order.tracking_number or '' }}">
+<label>Tracking link</label><input type="url" name="tracking_url" value="{{ order.tracking_url or '' }}" placeholder="https://...">
+<label>Admin notes</label><textarea name="admin_notes">{{ order.admin_notes or '' }}</textarea><button type="submit">Save update</button></form></td>
+</tr>{% else %}<tr><td colspan="7">No orders have been created yet. Orders appear here after buyers approve quotations.</td></tr>{% endfor %}
+</tbody></table></div></section></main></body></html>
