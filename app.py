@@ -3624,6 +3624,135 @@ def send_quotation_to_buyer(quotation_id):
     return redirect(url_for("list_quotations"))
 
 # --------------------------------------------------
+# --------------------------------------------------
+# PHASE 4 & 5 — ORDER MANAGEMENT / BUYER ORDER TRACKING
+# --------------------------------------------------
+
+ORDER_STATUSES = [
+    "Awaiting Payment",
+    "Payment Received",
+    "Sourcing",
+    "Processing",
+    "Ready for Dispatch",
+    "Dispatched",
+    "Delivered",
+    "Completed",
+    "Cancelled",
+]
+
+
+def refresh_order_payment_state(order):
+    """Reconcile the order's payment status using confirmed quotation payments."""
+    confirmed_total = sum(
+        payment.amount
+        for payment in order.quotation.payments
+        if payment.status == "Confirmed"
+    )
+    order_total = max(0.0, float(order.total_amount or 0))
+    if confirmed_total <= 0:
+        order.payment_status = "Unpaid"
+        order.paid_at = None
+    elif confirmed_total + 0.001 >= order_total:
+        order.payment_status = "Paid"
+        order.paid_at = datetime.utcnow()
+    else:
+        order.payment_status = "Partially Paid"
+        order.paid_at = None
+    return confirmed_total, max(0.0, order_total - confirmed_total)
+
+
+@app.route("/company/orders")
+@admin_required
+def company_orders():
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template("company_orders.html", orders=orders)
+
+
+@app.route("/company/orders/<int:order_id>/update", methods=["POST"])
+@admin_required
+def update_order(order_id):
+    order = db.session.get(Order, order_id)
+    if order is None:
+        abort(404)
+
+    status = request.form.get("status", "").strip()
+    freight_provider = request.form.get("freight_provider", "").strip()
+    tracking_number = request.form.get("tracking_number", "").strip()
+    tracking_url = request.form.get("tracking_url", "").strip()
+    admin_notes = request.form.get("admin_notes", "").strip()
+
+    if status not in ORDER_STATUSES:
+        flash("Choose a valid order status.", "error")
+        return redirect(url_for("company_orders"))
+
+    if any(len(value) > limit for value, limit in [
+        (freight_provider, 150), (tracking_number, 150),
+        (tracking_url, 500), (admin_notes, 5000),
+    ]):
+        flash("One or more order fields are too long.", "error")
+        return redirect(url_for("company_orders"))
+
+    if tracking_url and not tracking_url.startswith(("https://", "http://")):
+        flash("Tracking link must begin with http:// or https://.", "error")
+        return redirect(url_for("company_orders"))
+
+    # Do not allow an order to move into procurement or delivery before payment.
+    if status in {"Sourcing", "Processing", "Ready for Dispatch", "Dispatched", "Delivered", "Completed"} and order.payment_status != "Paid":
+        flash("Confirm full payment before moving this order into fulfilment.", "error")
+        return redirect(url_for("company_orders"))
+
+    order.status = status
+    order.freight_provider = freight_provider or None
+    order.tracking_number = tracking_number or None
+    order.tracking_url = tracking_url or None
+    order.admin_notes = admin_notes or None
+    order.updated_at = datetime.utcnow()
+
+    if status == "Dispatched" and order.dispatched_at is None:
+        order.dispatched_at = datetime.utcnow()
+    if status == "Delivered" and order.delivered_at is None:
+        order.delivered_at = datetime.utcnow()
+    if status == "Completed" and order.completed_at is None:
+        order.completed_at = datetime.utcnow()
+
+    try:
+        db.session.commit()
+        flash(f"Order {order.order_number} updated.", "success")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to update order %s", order.id)
+        flash("The order update failed. Please try again.", "error")
+    return redirect(url_for("company_orders"))
+
+
+@app.route("/buyer/orders")
+@login_required
+def buyer_orders():
+    if current_user.role != "buyer":
+        abort(403)
+    orders = Order.query.filter_by(
+        buyer_user_id=current_user.id
+    ).order_by(Order.created_at.desc()).all()
+    return render_template("buyer_orders.html", orders=orders)
+
+
+@app.route("/buyer/orders/<int:order_id>")
+@login_required
+def buyer_order_detail(order_id):
+    if current_user.role != "buyer":
+        abort(403)
+    order = db.session.get(Order, order_id)
+    if order is None or order.buyer_user_id != current_user.id:
+        abort(404)
+    confirmed_total, outstanding = get_quotation_payment_summary(order.quotation)
+    return render_template(
+        "buyer_order_detail.html",
+        order=order,
+        confirmed_total=confirmed_total,
+        outstanding=outstanding,
+    )
+
+
 # PAYMENT MANAGEMENT — ADMIN ONLY
 # --------------------------------------------------
 
@@ -4237,6 +4366,10 @@ def confirm_quotation_payment(payment_id):
         payment.status = "Confirmed"
         payment.confirmed_by = current_user.id
         payment.confirmed_at = datetime.utcnow()
+
+        order = Order.query.filter_by(quotation_id=quotation.id).first()
+        if order is not None:
+            refresh_order_payment_state(order)
 
         db.session.commit()
 
