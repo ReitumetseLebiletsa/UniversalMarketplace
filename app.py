@@ -3050,6 +3050,9 @@ def buyer_quotation_decision(quotation_id):
                 "error",
             )
 
+    if decision == "approve" and quotation.buyer_decision == "Approved":
+        return redirect(url_for("buyer_orders"))
+
     return redirect(url_for("list_quotations"))
 
     open_requests = SourcingRequest.query.filter(
