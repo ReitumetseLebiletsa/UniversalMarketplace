@@ -3752,11 +3752,20 @@ def buyer_order_detail(order_id):
     if order is None or order.buyer_user_id != current_user.id:
         abort(404)
     confirmed_total, outstanding = get_quotation_payment_summary(order.quotation)
+    pending_total = sum(
+        float(payment.amount)
+        for payment in order.quotation.payments
+        if payment.status == "Pending"
+    )
+    available_to_submit = max(0.0, outstanding - pending_total)
     return render_template(
         "buyer_order_detail.html",
         order=order,
         confirmed_total=confirmed_total,
         outstanding=outstanding,
+        pending_total=pending_total,
+        available_to_submit=available_to_submit,
+        payments=order.quotation.payments,
     )
 
 
