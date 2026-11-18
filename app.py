@@ -3654,7 +3654,9 @@ def refresh_order_payment_state(order):
         order.paid_at = None
     elif confirmed_total + 0.001 >= order_total:
         order.payment_status = "Paid"
-        order.paid_at = datetime.utcnow()
+        order.paid_at = order.paid_at or datetime.utcnow()
+        if order.status == "Awaiting Payment":
+            order.status = "Payment Received"
     else:
         order.payment_status = "Partially Paid"
         order.paid_at = None
@@ -3694,6 +3696,11 @@ def update_order(order_id):
 
     if tracking_url and not tracking_url.startswith(("https://", "http://")):
         flash("Tracking link must begin with http:// or https://.", "error")
+        return redirect(url_for("company_orders"))
+
+    # Keep the payment milestone tied to confirmed payment records.
+    if status == "Payment Received" and order.payment_status != "Paid":
+        flash("The order can be marked Payment Received only after full payment is confirmed.", "error")
         return redirect(url_for("company_orders"))
 
     # Do not allow an order to move into procurement or delivery before payment.
