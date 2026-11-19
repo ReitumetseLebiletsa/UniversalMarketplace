@@ -434,6 +434,78 @@ class Quotation(db.Model):
     supplier = db.relationship("Supplier")
 
  # --------------------------------------------------
+
+
+# --------------------------------------------------
+# ORDER MODEL — PHASE 4
+# --------------------------------------------------
+
+class Order(db.Model):
+    __tablename__ = "order"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String(30), unique=True, nullable=False, index=True)
+
+    # A quotation can produce at most one order.
+    quotation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("quotation.id"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    sourcing_request_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sourcing_request.id"),
+        nullable=False,
+        index=True,
+    )
+    buyer_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False,
+        index=True,
+    )
+
+    # Track order progress separately from payment progress.
+    status = db.Column(db.String(40), default="Awaiting Payment", nullable=False, index=True)
+    payment_status = db.Column(db.String(30), default="Unpaid", nullable=False)
+
+
+    # Snapshot of the approved quotation totals.
+    total_amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), nullable=False)
+    total_amount_lsl = db.Column(db.Float, nullable=True)
+
+
+    # Snapshot of buyer delivery destination when the order is created.
+    delivery_country = db.Column(db.String(100), nullable=True)
+    delivery_province_district = db.Column(db.String(100), nullable=True)
+    delivery_town_city = db.Column(db.String(100), nullable=True)
+    delivery_area = db.Column(db.String(150), nullable=True)
+    delivery_address = db.Column(db.String(300), nullable=True)
+
+
+    # Delivery tracking details.
+    freight_provider = db.Column(db.String(150), nullable=True)
+    tracking_number = db.Column(db.String(150), nullable=True)
+    tracking_url = db.Column(db.String(500), nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    buyer_notes = db.Column(db.Text, nullable=True)
+
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    dispatched_at = db.Column(db.DateTime, nullable=True)
+    delivered_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    quotation = db.relationship("Quotation")
+    sourcing_request = db.relationship("SourcingRequest")
+    buyer = db.relationship("User")
+
+
 # PAYMENT MODEL — UNIVERSAL RUNNER MARKETPLACE
 # --------------------------------------------------
 
@@ -2912,22 +2984,74 @@ def buyer_quotation_decision(quotation_id):
         return redirect(url_for("list_quotations"))
 
     if decision == "approve":
+        # Prevent duplicate order creation if an order already exists.
+        existing_order = Order.query.filter_by(
+            quotation_id=quotation.id
+        ).first()
+
+        if existing_order is not None:
+            flash(
+                f"This quotation already has order {existing_order.order_number}.",
+                "info",
+            )
+            return redirect(url_for("list_quotations"))
+
         quotation.buyer_decision = "Approved"
         quotation.buyer_approved_at = datetime.utcnow()
-        flash("Quotation approved successfully.", "success")
+
+        buyer = current_user
+        new_order = Order(
+            order_number=f"URM-PENDING-{quotation.id}",
+            quotation_id=quotation.id,
+            sourcing_request_id=sourcing_request.id,
+            buyer_user_id=buyer.id,
+            status="Awaiting Payment",
+            payment_status="Unpaid",
+            total_amount=quotation.selling_price,
+            currency=quotation.currency,
+            total_amount_lsl=quotation.selling_price_lsl,
+            delivery_country=buyer.country,
+            delivery_province_district=buyer.province_district,
+            delivery_town_city=buyer.town_city,
+            delivery_area=buyer.area,
+            delivery_address=buyer.delivery_address,
+        )
+
+        db.session.add(new_order)
+
+        try:
+            # Flush gets a database ID, giving us a concurrency-safe unique reference.
+            db.session.flush()
+            new_order.order_number = (
+                f"URM-{datetime.utcnow().year}-{new_order.id:05d}"
+            )
+            db.session.commit()
+            flash(
+                f"Quotation approved! Your order {new_order.order_number} has been created.",
+                "success",
+            )
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("Could not save quotation approval and create order")
+            flash(
+                "Your approval could not be processed. Please try again.",
+                "error",
+            )
     else:
         quotation.buyer_decision = "Rejected"
-        flash("Quotation rejected.", "success")
+        try:
+            db.session.commit()
+            flash("Quotation rejected.", "success")
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("Could not save buyer quotation decision")
+            flash(
+                "Your decision could not be saved. Please try again.",
+                "error",
+            )
 
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        app.logger.exception("Could not save buyer quotation decision")
-        flash(
-            "Your decision could not be saved. Please try again.",
-            "error",
-        )
+    if decision == "approve" and quotation.buyer_decision == "Approved":
+        return redirect(url_for("buyer_orders"))
 
     return redirect(url_for("list_quotations"))
 
@@ -3503,6 +3627,167 @@ def send_quotation_to_buyer(quotation_id):
     return redirect(url_for("list_quotations"))
 
 # --------------------------------------------------
+# --------------------------------------------------
+# PHASE 4 & 5 — ORDER MANAGEMENT / BUYER ORDER TRACKING
+# --------------------------------------------------
+
+ORDER_STATUSES = [
+    "Awaiting Payment",
+    "Payment Received",
+    "Sourcing",
+    "Processing",
+    "Ready for Dispatch",
+    "Dispatched",
+    "Delivered",
+    "Completed",
+    "Cancelled",
+]
+
+
+def refresh_order_payment_state(order):
+    """Reconcile the order's payment status using confirmed quotation payments."""
+    confirmed_total = sum(
+        payment.amount
+        for payment in order.quotation.payments
+        if payment.status == "Confirmed"
+    )
+    order_total = max(0.0, float(order.total_amount or 0))
+    if confirmed_total <= 0:
+        order.payment_status = "Unpaid"
+        order.paid_at = None
+    elif confirmed_total + 0.001 >= order_total:
+        order.payment_status = "Paid"
+        order.paid_at = order.paid_at or datetime.utcnow()
+        if order.status == "Awaiting Payment":
+            order.status = "Payment Received"
+    else:
+        order.payment_status = "Partially Paid"
+        order.paid_at = None
+    return confirmed_total, max(0.0, order_total - confirmed_total)
+
+
+@app.route("/company/orders")
+@admin_required
+def company_orders():
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template("company_orders.html", orders=orders)
+
+
+@app.route("/company/orders/<int:order_id>/update", methods=["POST"])
+@admin_required
+def update_order(order_id):
+    order = db.session.get(Order, order_id)
+    if order is None:
+        abort(404)
+
+    status = request.form.get("status", "").strip()
+    freight_provider = request.form.get("freight_provider", "").strip()
+    tracking_number = request.form.get("tracking_number", "").strip()
+    tracking_url = request.form.get("tracking_url", "").strip()
+    admin_notes = request.form.get("admin_notes", "").strip()
+
+    if status not in ORDER_STATUSES:
+        flash("Choose a valid order status.", "error")
+        return redirect(url_for("company_orders"))
+
+    if any(len(value) > limit for value, limit in [
+        (freight_provider, 150), (tracking_number, 150),
+        (tracking_url, 500), (admin_notes, 5000),
+    ]):
+        flash("One or more order fields are too long.", "error")
+        return redirect(url_for("company_orders"))
+
+    if tracking_url and not tracking_url.startswith(("https://", "http://")):
+        flash("Tracking link must begin with http:// or https://.", "error")
+        return redirect(url_for("company_orders"))
+
+    # Enforce a simple forward-only fulfilment sequence (or cancellation).
+    next_status = {
+        "Awaiting Payment": {"Payment Received"},
+        "Payment Received": {"Sourcing"},
+        "Sourcing": {"Processing"},
+        "Processing": {"Ready for Dispatch"},
+        "Ready for Dispatch": {"Dispatched"},
+        "Dispatched": {"Delivered"},
+        "Delivered": {"Completed"},
+        "Completed": set(),
+        "Cancelled": set(),
+    }
+    if status != order.status and status != "Cancelled" and status not in next_status.get(order.status, set()):
+        flash("Order status must follow the fulfilment sequence.", "error")
+        return redirect(url_for("company_orders"))
+
+    # Keep the payment milestone tied to confirmed payment records.
+    if status == "Payment Received" and order.payment_status != "Paid":
+        flash("The order can be marked Payment Received only after full payment is confirmed.", "error")
+        return redirect(url_for("company_orders"))
+
+    # Do not allow an order to move into procurement or delivery before payment.
+    if status in {"Sourcing", "Processing", "Ready for Dispatch", "Dispatched", "Delivered", "Completed"} and order.payment_status != "Paid":
+        flash("Confirm full payment before moving this order into fulfilment.", "error")
+        return redirect(url_for("company_orders"))
+
+    order.status = status
+    order.freight_provider = freight_provider or None
+    order.tracking_number = tracking_number or None
+    order.tracking_url = tracking_url or None
+    order.admin_notes = admin_notes or None
+    order.updated_at = datetime.utcnow()
+
+    if status == "Dispatched" and order.dispatched_at is None:
+        order.dispatched_at = datetime.utcnow()
+    if status == "Delivered" and order.delivered_at is None:
+        order.delivered_at = datetime.utcnow()
+    if status == "Completed" and order.completed_at is None:
+        order.completed_at = datetime.utcnow()
+
+    try:
+        db.session.commit()
+        flash(f"Order {order.order_number} updated.", "success")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to update order %s", order.id)
+        flash("The order update failed. Please try again.", "error")
+    return redirect(url_for("company_orders"))
+
+
+@app.route("/buyer/orders")
+@login_required
+def buyer_orders():
+    if current_user.role != "buyer":
+        abort(403)
+    orders = Order.query.filter_by(
+        buyer_user_id=current_user.id
+    ).order_by(Order.created_at.desc()).all()
+    return render_template("buyer_orders.html", orders=orders)
+
+
+@app.route("/buyer/orders/<int:order_id>")
+@login_required
+def buyer_order_detail(order_id):
+    if current_user.role != "buyer":
+        abort(403)
+    order = db.session.get(Order, order_id)
+    if order is None or order.buyer_user_id != current_user.id:
+        abort(404)
+    confirmed_total, outstanding = get_quotation_payment_summary(order.quotation)
+    pending_total = sum(
+        float(payment.amount)
+        for payment in order.quotation.payments
+        if payment.status == "Pending"
+    )
+    available_to_submit = max(0.0, outstanding - pending_total)
+    return render_template(
+        "buyer_order_detail.html",
+        order=order,
+        confirmed_total=confirmed_total,
+        outstanding=outstanding,
+        pending_total=pending_total,
+        available_to_submit=available_to_submit,
+        payments=order.quotation.payments,
+    )
+
+
 # PAYMENT MANAGEMENT — ADMIN ONLY
 # --------------------------------------------------
 
@@ -4116,6 +4401,10 @@ def confirm_quotation_payment(payment_id):
         payment.status = "Confirmed"
         payment.confirmed_by = current_user.id
         payment.confirmed_at = datetime.utcnow()
+
+        order = Order.query.filter_by(quotation_id=quotation.id).first()
+        if order is not None:
+            refresh_order_payment_state(order)
 
         db.session.commit()
 
